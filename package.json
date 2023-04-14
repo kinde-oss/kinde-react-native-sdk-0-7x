@@ -1,14 +1,14 @@
 {
-    "name": "@kinde-oss/react-native-sdk",
+    "name": "@kinde-oss/react-native-sdk-0-7",
     "version": "1.1.0",
     "description": "Kinde React Native SDK for authentication",
     "license": "MIT",
     "homepage": "https://kinde.com",
     "repository": {
         "type": "git",
-        "url": "https://github.com/@kinde-oss/react-native-sdk"
+        "url": "https://github.com/@kinde-oss/react-native-sdk-0-7"
     },
-    "bugs": "https://github.com/@kinde-oss/react-native-sdk",
+    "bugs": "https://github.com/@kinde-oss/react-native-sdk-0-7",
     "main": "dist/index.js",
     "scripts": {
         "build": "rimraf dist && npm run build:types && npm run build:js",
