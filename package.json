@@ -1,0 +1,129 @@
+{
+    "name": "@kinde-oss/react-native-sdk",
+    "version": "1.1.0",
+    "description": "Kinde React Native SDK for authentication",
+    "license": "MIT",
+    "homepage": "https://kinde.com",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/@kinde-oss/react-native-sdk"
+    },
+    "bugs": "https://github.com/@kinde-oss/react-native-sdk",
+    "main": "dist/index.js",
+    "scripts": {
+        "build": "rimraf dist && npm run build:types && npm run build:js",
+        "build:types": "tsc --emitDeclarationOnly",
+        "build:js": "babel src --out-dir dist --extensions \".js,.ts\"",
+        "prepare": "npm run build && husky install",
+        "test": "jest"
+    },
+    "author": {
+        "name": "Kinde",
+        "email": "engineering@kinde.com",
+        "url": "https://kinde.com"
+    },
+    "browser": {
+        "fs": false
+    },
+    "keywords": [
+        "Kinde",
+        "login",
+        "Authorization Code Grant Flow",
+        "PKCE",
+        "Single Page Application authentication",
+        "React Native authentication"
+    ],
+    "dependencies": {
+        "@babel/runtime": "^7.19.4",
+        "crypto-js": "3.3.0",
+        "expo-constants": "^14.2.1",
+        "expo-modules-core": "^1.2.6",
+        "expo-secure-store": "^12.1.1",
+        "jwt-decode": "^3.1.2",
+        "qs": "^6.11.0",
+        "react-native-keychain": "^8.0.0",
+        "superagent": "^7.0.2",
+        "url-parse": "^1.5.10"
+    },
+    "devDependencies": {
+        "@babel/cli": "^7.0.0",
+        "@babel/core": "^7.0.0",
+        "@babel/eslint-parser": "^7.19.1",
+        "@babel/plugin-proposal-class-properties": "^7.0.0",
+        "@babel/plugin-proposal-decorators": "^7.0.0",
+        "@babel/plugin-proposal-do-expressions": "^7.0.0",
+        "@babel/plugin-proposal-export-default-from": "^7.0.0",
+        "@babel/plugin-proposal-export-namespace-from": "^7.0.0",
+        "@babel/plugin-proposal-function-bind": "^7.0.0",
+        "@babel/plugin-proposal-function-sent": "^7.0.0",
+        "@babel/plugin-proposal-json-strings": "^7.0.0",
+        "@babel/plugin-proposal-logical-assignment-operators": "^7.0.0",
+        "@babel/plugin-proposal-nullish-coalescing-operator": "^7.0.0",
+        "@babel/plugin-proposal-numeric-separator": "^7.0.0",
+        "@babel/plugin-proposal-optional-chaining": "^7.0.0",
+        "@babel/plugin-proposal-pipeline-operator": "^7.0.0",
+        "@babel/plugin-proposal-throw-expressions": "^7.0.0",
+        "@babel/plugin-syntax-dynamic-import": "^7.0.0",
+        "@babel/plugin-syntax-import-meta": "^7.0.0",
+        "@babel/preset-env": "^7.0.0",
+        "@babel/preset-typescript": "^7.18.6",
+        "@babel/register": "^7.0.0",
+        "@types/crypto-js": "^3.1.47",
+        "@types/node": "^18.11.7",
+        "@types/react-native": "^0.70.6",
+        "@types/url-parse": "^1.4.8",
+        "babel-core": "^7.0.0-bridge.0",
+        "babel-jest": "25.5.1",
+        "eslint": "^8.26.0",
+        "eslint-config-prettier": "^8.5.0",
+        "husky": "^8.0.1",
+        "jest": "25.5.1",
+        "lint-staged": "^13.0.3",
+        "metro-react-native-babel-preset": "^0.73.3",
+        "prettier": "^2.7.1",
+        "react": "18.1.0",
+        "react-native": "0.70.8",
+        "react-test-renderer": "18.1.0",
+        "rimraf": "^3.0.2",
+        "ts-jest": "^23.10.5",
+        "typescript": "^4.8.4"
+    },
+    "peerDependencies": {
+        "expo-secure-store": "*",
+        "react-native": ">= 0.70",
+        "react-native-keychain": ">= 8.0"
+    },
+    "files": [
+        "dist"
+    ],
+    "lint-staged": {
+        "**/*.{js,jsx,ts,tsx}": [
+            "npx prettier --write .",
+            "npx eslint --fix"
+        ]
+    },
+    "jest": {
+        "preset": "react-native",
+        "moduleFileExtensions": [
+            "ts",
+            "tsx",
+            "js"
+        ],
+        "transform": {
+            "^.+\\.js$": "babel-jest",
+            "^.+\\.tsx?$": "ts-jest"
+        },
+        "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$",
+        "testPathIgnorePatterns": [
+            "\\.snap$",
+            "<rootDir>/node_modules/"
+        ],
+        "modulePaths": [
+            "<rootDir>"
+        ],
+        "cacheDirectory": ".jest/cache",
+        "transformIgnorePatterns": [
+            "/node_modules/(?!(@react-native|react-native)/).*/"
+        ]
+    }
+}
