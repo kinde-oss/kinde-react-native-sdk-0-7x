@@ -16,10 +16,14 @@ import { Linking } from 'react-native';
 import Url from 'url-parse';
 import { UnAuthenticatedException } from '../common/exceptions/unauthenticated.exception';
 import { UnexpectedException } from '../common/exceptions/unexpected.exception';
-import { AdditionalParameters, TokenResponse } from '../types/KindeSDK';
-import { AuthStatus, TokenType } from './Enums';
+import {
+    OrgAdditionalParams,
+    AdditionalParameters,
+    TokenResponse
+} from '../types/KindeSDK';
+import { TokenType } from './Enums';
 import AuthorizationCode from './OAuth/AuthorizationCode';
-import { sessionStorage as Storage } from './Storage';
+import Storage from './Storage';
 import { checkAdditionalParameters, checkNotNull } from './Utils';
 
 /**
@@ -36,7 +40,6 @@ class KindeSDK {
     public scope: string;
     public clientSecret?: string;
     public additionalParameters: AdditionalParameters;
-    public authStatus: AuthStatus;
 
     /**
      * The constructor function takes in a bunch of parameters and sets them to the class properties
@@ -55,7 +58,7 @@ class KindeSDK {
         clientId: string,
         logoutRedirectUri: string,
         scope: string = 'openid profile email offline',
-        additionalParameters: AdditionalParameters = {}
+        additionalParameters: Pick<AdditionalParameters, 'audience'> = {}
     ) {
         this.issuer = issuer;
         checkNotNull(this.issuer, 'Issuer');
@@ -73,9 +76,6 @@ class KindeSDK {
             checkAdditionalParameters(additionalParameters);
 
         this.scope = scope;
-
-        this.clientSecret = '';
-        this.authStatus = AuthStatus.UNAUTHENTICATED;
     }
 
     /**
@@ -84,47 +84,87 @@ class KindeSDK {
      * @param {AdditionalParameters} additionalParameters - AdditionalParameters = {}
      * @returns A promise that resolves to void.
      */
-    login(additionalParameters: AdditionalParameters = {}): Promise<void> {
+    async login(
+        additionalParameters: Omit<OrgAdditionalParams, 'is_create_org'> = {}
+    ): Promise<void> {
         checkAdditionalParameters(additionalParameters);
-        this.cleanUp();
+        await this.cleanUp();
         const auth = new AuthorizationCode();
-        this.updateAuthStatus(AuthStatus.AUTHENTICATING);
 
         const additionalParametersMerged = {
             ...this.additionalParameters,
             ...additionalParameters
         };
-        return auth.login(this, true, 'login', additionalParametersMerged);
+        return auth.authenticate(
+            this,
+            true,
+            'login',
+            additionalParametersMerged
+        );
     }
 
     /**
-     * It takes a URL as a parameter, parses it, and then uses the code from the URL to get an access
-     * token from the token endpoint
-     * @param {string} url - The URL that the user is redirected to after the authorization process.
-     * @returns A promise that resolves to a TokenResponse object.
+     * This function registers an organization with additional parameters and authenticates it using an
+     * authorization code.
+     * @param {OrgAdditionalParams} additionalParameters - `additionalParameters` is an optional object
+     * parameter that can be passed to the `register` function. It is used to provide additional
+     * parameters that may be required for the registration process. These parameters can vary
+     * depending on the specific implementation of the registration process.
+     * @returns A Promise that resolves to void.
      */
-    async getToken(url: string = ''): Promise<TokenResponse> {
-        // Checking for case token still valid
-        const token = await Storage.getToken();
-        if (token && !url) {
+    register(additionalParameters: OrgAdditionalParams = {}): Promise<void> {
+        checkAdditionalParameters(additionalParameters);
+        const auth = new AuthorizationCode();
+        return auth.authenticate(
+            this,
+            true,
+            'registration',
+            additionalParameters
+        );
+    }
+
+    /**
+     * This function creates an organization with additional parameters.
+     * @param additionalParameters
+     * @returns A promise that resolves to void.
+     */
+    createOrg(
+        additionalParameters: Omit<OrgAdditionalParams, 'is_create_org'> = {}
+    ) {
+        return this.register({ is_create_org: true, ...additionalParameters });
+    }
+
+    /**
+     * It cleans up the local storage, and then opens a URL that will log the user out of the identity
+     * provider
+     */
+    async logout() {
+        await this.cleanUp();
+        const URLParsed = Url(this.logoutEndpoint, true);
+        URLParsed.query['redirect'] = this.logoutRedirectUri;
+        return Linking.openURL(URLParsed.toString());
+    }
+
+    /**
+     * This function retrieves a token from a given URL using authorization code grant type and checks
+     * for validity before doing so.
+     * @param {string} [url] - The URL to fetch the token from. It is an optional parameter with a
+     * default value of an empty string.
+     * @returns The function `getToken` is returning a Promise that resolves to a `TokenResponse`
+     * object.
+     */
+    async getToken(url?: string): Promise<TokenResponse> {
+        // Checking for case token still valid or not
+        try {
             if (await this.isAuthenticated) {
-                return token;
+                const token = await Storage.getToken();
+                return token!;
             }
+        } catch (_) {}
 
-            const formData = new FormData();
-            formData.append('client_id', this.clientId);
-            formData.append('client_secret', this.clientSecret);
-            formData.append('grant_type', 'refresh_token');
-            formData.append('refresh_token', token.refresh_token);
-            return this.fetchToken(formData);
-        }
-
-        if (this.checkIsUnAuthenticated()) {
-            throw new UnAuthenticatedException();
-        }
         checkNotNull(url, 'URL');
 
-        const URLParsed = Url(url, true);
+        const URLParsed = Url(String(url), true);
         const { code, error, error_description } = URLParsed.query;
         if (error) {
             const msg = error_description ?? error;
@@ -135,7 +175,6 @@ class KindeSDK {
         const formData = new FormData();
         formData.append('code', code);
         formData.append('client_id', this.clientId);
-        formData.append('client_secret', this.clientSecret);
         formData.append('grant_type', 'authorization_code');
         formData.append('redirect_uri', this.redirectUri);
 
@@ -151,6 +190,36 @@ class KindeSDK {
         return this.fetchToken(formData);
     }
 
+    /**
+     * This function refreshes an access token using a refresh token.
+     * @param {TokenResponse} [token] - The `token` parameter is an optional parameter of type
+     * `TokenResponse`. It represents the token that needs to be refreshed. If this parameter is not
+     * provided, the function will try to retrieve the token from the storage using the
+     * `Storage.getToken()` method.
+     * @returns The `useRefreshToken` function is returning the result of calling the `fetchToken`
+     * function with a `FormData` object containing the necessary parameters for refreshing an access
+     * token.
+     */
+    async useRefreshToken(token: TokenResponse | null = null) {
+        const newToken = token || (await Storage.getToken());
+        if (!newToken) {
+            throw new UnAuthenticatedException();
+        }
+
+        const formData = new FormData();
+        formData.append('client_id', this.clientId);
+        formData.append('grant_type', 'refresh_token');
+        formData.append('refresh_token', newToken?.refresh_token);
+        return this.fetchToken(formData);
+    }
+
+    /**
+     * This function fetches a token from a server using a POST request with form data and stores it in
+     * local storage.
+     * @param {FormData} formData - FormData object containing the data to be sent in the request body.
+     * This can include files, text, or a combination of both.
+     * @returns A Promise that resolves to a TokenResponse object.
+     */
     fetchToken(formData: FormData): Promise<TokenResponse> {
         return new Promise(async (resolve, reject) => {
             const response = await fetch(this.tokenEndpoint, {
@@ -168,36 +237,8 @@ class KindeSDK {
             }
 
             await Storage.setToken(dataResponse);
-            this.updateAuthStatus(AuthStatus.AUTHENTICATED);
             resolve(dataResponse);
         });
-    }
-
-    /**
-     * The function calls the login function of the AuthorizationCode class, passing in the current
-     * instance of the class, a boolean value of true, and the string 'registration'
-     * @returns A promise that resolves to void.
-     */
-    register(additionalParameters = {}): Promise<void> {
-        checkAdditionalParameters(additionalParameters);
-        const auth = new AuthorizationCode();
-        this.updateAuthStatus(AuthStatus.AUTHENTICATING);
-        return auth.login(this, true, 'registration', additionalParameters);
-    }
-
-    createOrg(additionalParameters = {}) {
-        return this.register({ is_create_org: true, ...additionalParameters });
-    }
-
-    /**
-     * It cleans up the local storage, and then opens a URL that will log the user out of the identity
-     * provider
-     */
-    async logout() {
-        await this.cleanUp();
-        const URLParsed = Url(this.logoutEndpoint, true);
-        URLParsed.query['redirect'] = this.logoutRedirectUri;
-        return Linking.openURL(URLParsed.toString());
     }
 
     /**
@@ -205,34 +246,7 @@ class KindeSDK {
      * @returns The Storage.clear() method is being returned.
      */
     async cleanUp() {
-        this.updateAuthStatus(AuthStatus.UNAUTHENTICATED);
         return Storage.clearAll();
-    }
-
-    /**
-     * It updates the authStatus variable and then saves the new value to the Storage
-     * @param {AuthStatus} _authStatus - The new auth status to set.
-     */
-    updateAuthStatus(_authStatus: AuthStatus): void {
-        this.authStatus = _authStatus;
-        Storage.setAuthStatus(this.authStatus);
-    }
-
-    /**
-     * If the authStatus is UNAUTHENTICATED, then return true
-     * @returns A boolean value.
-     */
-    checkIsUnAuthenticated() {
-        const authStatusStorage = Storage.getAuthStatus();
-        if (
-            (!this.authStatus ||
-                this.authStatus === AuthStatus.UNAUTHENTICATED) &&
-            (!authStatusStorage ||
-                authStatusStorage === AuthStatus.UNAUTHENTICATED)
-        ) {
-            return true;
-        }
-        return false;
     }
 
     /**
@@ -331,15 +345,29 @@ class KindeSDK {
     }
 
     /**
-     * If the user is unauthenticated, return false. Otherwise, return true if the current time is less
-     * than the time the user's session expires
-     * @returns A boolean value.
+     * This is a TypeScript function that checks if a user is authenticated by checking if their token
+     * has expired or if a refresh token can be used to obtain a new token.
+     * @returns A promise is being returned, which resolves to a boolean value indicating whether the
+     * user is authenticated or not. The function uses asynchronous operations to check if the user's
+     * authentication token is still valid, and if not, it tries to use a refresh token to obtain a new
+     * token.
      */
     get isAuthenticated() {
         return (async () => {
             const timeExpired = await Storage.getExpiredAt();
             const now = new Date().getTime();
-            return timeExpired * 1000 > now;
+
+            const isAuthenticated = timeExpired * 1000 > now;
+            if (isAuthenticated) {
+                return true;
+            }
+
+            try {
+                const token = await this.useRefreshToken();
+                return (token?.expires_in || 0) > 0;
+            } catch (_) {
+                return false;
+            }
         })();
     }
 

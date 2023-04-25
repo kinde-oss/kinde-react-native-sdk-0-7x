@@ -21,6 +21,7 @@ export type AdditionalParameters = {
     org_code?: string;
     org_name?: string;
 };
+export type OrgAdditionalParams = Omit<AdditionalParameters, 'audience'>;
 export type TokenID = {
     sub: string;
     given_name: string;

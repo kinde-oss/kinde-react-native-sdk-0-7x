@@ -1,7 +1,7 @@
-import { Storage } from '../SDK/Storage';
+import Storage from '../SDK/Storage';
 
 declare global {
-    var sessionStorage: Storage;
+    var sessionStorage: typeof Storage;
 }
 
 export {};

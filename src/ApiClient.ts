@@ -11,7 +11,7 @@
  *
  */
 
-import { sessionStorage } from './SDK/Storage';
+import Storage from './SDK/Storage';
 export const BASE_PATH = 'https://your_kinde_domain.kinde.com/api/v1'.replace(
     /\/+$/,
     ''
@@ -137,7 +137,7 @@ export class BaseAPI {
             context,
             initOverrides
         );
-        const accessToken = await sessionStorage.getAccessToken();
+        const accessToken = await Storage.getAccessToken();
         const response = await this.fetchApi(url, {
             ...init,
             headers: {

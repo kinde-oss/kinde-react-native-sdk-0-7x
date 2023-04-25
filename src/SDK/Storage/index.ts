@@ -79,7 +79,7 @@ class Storage extends BaseStore {
 
     async getExpiredAt() {
         const token = await this.getAccessToken();
-        return token ? jwtDecode<AccessTokenDecoded>(token)['exp'] : 0;
+        return token ? jwtDecode<AccessTokenDecoded>(token)?.['exp'] : 0;
     }
 
     getState() {
@@ -99,14 +99,6 @@ class Storage extends BaseStore {
             'codeVerifier',
             this.convertString(newCodeVerifier)
         );
-    }
-
-    getAuthStatus(): string | undefined {
-        return this.getItem('authStatus');
-    }
-
-    setAuthStatus(newAuthStatus: string): void {
-        return this.setItem('authStatus', this.convertString(newAuthStatus));
     }
 
     async clearAll() {
@@ -134,4 +126,4 @@ class Storage extends BaseStore {
 const sessionStorage = (globalThis.sessionStorage =
     globalThis.sessionStorage ?? new Storage()) as Storage;
 
-export { Storage, sessionStorage };
+export default sessionStorage;

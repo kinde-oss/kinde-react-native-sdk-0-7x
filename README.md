@@ -12,8 +12,9 @@ For more information, please visit [https://kinde.com/docs](https://kinde.com/do
 
 We support both **Expo** and **React Native** versions 0.70 and higher.
 To use this package with older versions of **React Native**, please visit
-- [react-native-sdk-0-5x *(Not support Expo)*](https://github.com/kinde-oss/react-native-sdk-0-5x)
-- [react-native-sdk-0-6x](https://github.com/kinde-oss/react-native-sdk-0-6x)
+
+-   [react-native-sdk-0-5x _(Not support Expo)_](https://github.com/kinde-oss/react-native-sdk-0-5x)
+-   [react-native-sdk](https://github.com/kinde-oss/react-native-sdk-0-6x)
 
 ## Installing dependencies
 
@@ -106,9 +107,11 @@ brew install cocoapods
 cd ios && pod install
 ```
 
+##### React Native
+
 If the `react-native-keychain` not linked, you need to install manually
 
-##### Option: With CocoaPods (High recommended)
+**With CocoaPods (High recommended)**
 
 Add the following to your `Podfile` and run pod update:
 
@@ -116,7 +119,7 @@ Add the following to your `Podfile` and run pod update:
 pod 'RNKeychain', :path => '../node_modules/react-native-keychain'
 ```
 
-##### Option: Manually
+**Manually**
 
 -   Click to `Build Phases` tab
 -   Choose `Link Binary With Libraries`
@@ -124,6 +127,16 @@ pod 'RNKeychain', :path => '../node_modules/react-native-keychain'
 -   **Add Other...** => **Add Files...** => **node_modules/react-native-keychain/RNKeychain.xcodeproj**
 -   Then, you need to add `libRNKeychain.a`
 -   Clean and rebuild
+
+##### [Expo] Installation in Bare React Native
+
+Run this below command to update the package to your npm dependencies:
+
+```bash
+expo install expo-secure-store
+// or
+npx expo install expo-secure-store
+```
 
 ##### Enable `Keychain Sharing` entitlement for iOS 10+
 
@@ -333,60 +346,55 @@ const handleSignIn = () => {
 
 ### Handle redirect
 
-#### With React Native
+After the user logs in to Kinde, it will be redirected to your app via a deep link, which includes some information (e.g., code) as parameters, and then you need to call the `getToken` method to receive a token from Kinde. The SDK will store the token on the keychain. Now, the user will be authenticated without logging in again.
 
-Once your user is redirected back to your app from Kinde, using the `getToken` method to get token instance from Kinde
+##### Handle redirect with React Native
 
 ```javascript
+...
+import { Linking } from 'react-native';
+...
+
+//
 const handleCallback = async (url: string) => {
     const token = await client.getToken(url);
     console.log('token here', token);
 };
 
-useEffect(() => {
-    Linking.getInitialURL()
-        .then((url) => {
-            if (url) {
-                handleCallback(url);
-            }
-        })
-        .catch((err) => console.error('An error occurred', err));
+const checkAuthenticate = async () => {
+  if (await client.isAuthenticated) { // Using `isAuthenticated` to check if the user is authenticated or not
+    // Need to implement, e.g: call an api,etc... In this case, we will get a token:
+    const token = await client.getToken();
+    console.log('token here', token);
+  } else {
+    // Need to implement, e.g: redirect user to sign in or sign up screens,etc...
+  }
+}
 
-    Linking.addEventListener('url', (event) => {
-        if (event.url) {
-            handleCallback(event.url);
-        }
-    });
+useEffect(() => {
+  Linking.getInitialURL()
+    .then(url => {
+      if (url) {
+        return handleCallback(url);
+      }
+      checkAuthenticate();
+    })
+    .catch(err => console.error('An error occurred', err));
+
+  const onChangeURL = (event: {url: string}) => {
+    if (event.url) {
+      handleCallback(event.url);
+    }
+  };
+  Linking.addEventListener('url', onChangeURL);
+
+  return () => {
+    Linking.removeAllListeners('url');
+  };
 }, []);
 ```
 
-You can also get the current authentication status with `AuthStatus`:
-
-```javascript
-...
-import {..., AuthStatus ,...} from '@kinde-oss/react-native-sdk-0-7';
-...
-
-const handleCallback = async (url: string) => {
-  if (client.authStatus !== AuthStatus.UNAUTHENTICATED) {
-    const token = await client.getToken(url);
-    console.log('token here', token);
-  }
-};
-```
-
-Or simply use `isAuthenticated` from the SDK to determine whether the user is authenticated or not:
-
-```javascript
-const handleCallback = async (url: string) => {
-    if (client.isAuthenticated) {
-        const token = await client.getToken(url);
-        console.log('token here', token);
-    }
-};
-```
-
-#### With Expo
+##### Handle redirect with Expo
 
 You must install `expo-linking`. This provides utilities for your app to interact with other installed apps using deep links. It also provides helper methods for constructing and parsing deep links into your app. This module is an extension of the React Native [Linking](https://reactnative.dev/docs/linking.html) module.
 
@@ -404,16 +412,30 @@ const client = new KindeSDK(
 
 const url = Linking.useURL();
 
-useEffect(() => {
-  if (url) {
-    handleCallback(url);
+const checkAuthenticate = async () => {
+  if (await client.isAuthenticated) { // Using `isAuthenticated` to check if the user is authenticated or not
+    // Need to implement, e.g: call an api,etc... In this case, we will get a token:
+    const token = await client.getToken();
+    console.log('token here', token);
+  } else {
+    // Need to implement, e.g: redirect user to sign in or sign up screens,etc...
   }
-}, [url]);
+}
+
+useEffect(() => {
+  checkAuthenticate();
+}, []);
 
 const handleCallback = async (url) => {
   const token = await client.getToken(url);
   console.log('token here', token);
 }
+
+useEffect(() => {
+  if (url) {
+    handleCallback(url);
+  }
+}, [url]);
 ```
 
 ### Logout
@@ -473,17 +495,17 @@ const permissions = [
 We provide helper functions to more easily access permissions:
 
 ```javascript
-client.getPermission('create:todos');
+await client.getPermission('create:todos');
 // {orgCode: "org_1234", isGranted: true}
 
-client.getPermissions();
+await client.getPermissions();
 // {orgCode: "org_1234", permissions: ["create:todos", "update:todos", "read:todos"]}
 ```
 
 A practical example in code might look something like:
 
 ```
-if (client.getPermission("create:todos").isGranted) {
+if ((await client.getPermission("create:todos")).isGranted) {
     // show Create Todo button in UI
 }
 ```
@@ -535,10 +557,10 @@ const client = new KindeSDK(
 We have provided a helper to grab any claim from your id or access tokens. The helper defaults to access tokens:
 
 ```javascript
-client.getClaim('aud');
+await client.getClaim('aud');
 // ["api.yourapp.com"]
 
-client.getClaim('given_name', 'id_token');
+await client.getClaim('given_name', 'id_token');
 // "David"
 ```
 
@@ -608,18 +630,30 @@ The `id_token` will also contain an array of Organizations that a user belongs t
 There are two helper functions you can use to extract information:
 
 ```javascript
-client.getOrganization();
+await client.getOrganization();
 // {orgCode: "org_1234"}
 
-client.getUserOrganizations();
+await client.getUserOrganizations();
 // {orgCodes: ["org_1234", "org_abcd"]}
 ```
 
 ## Token Storage
 
-Once the user has successfully authenticated, you'll have a JWT and possibly a refresh token that should be stored securely.
+Once the user has successfully authenticated, you'll have a JWT and a refresh token and that has been stored securely.
+E.g., using the `getAccessToken` method of `the Storage` class to get an access token:
 
-Recommendations on secure token storage can be found [here](https://reactnative.dev/docs/security#storing-sensitive-info).
+```javascript
+...
+import Storage from '@kinde-oss/react-native-sdk-0-7'
+...
+
+
+const accessToken = await Storage.getAccessToken();
+console.log('access_token', accessToken);
+```
+
+We're using the [react-native-keychain](https://www.npmjs.com/package/react-native-keychain) for `React Native` and the [expo-secure-store](https://www.npmjs.com/package/expo-secure-store) for `Expo`.
+The storage handler can be found at: [Storage class](./dist/SDK/Storage/index.d.ts)
 
 ## How to run test
 
@@ -678,7 +712,8 @@ Assume your project path is `<StarterKit_PATH>`.
 1. Clean cache:
 
 ```bash
-cd <StarterKit_PATH>/android./gradlew clean
+cd <StarterKit_PATH>/android
+./gradlew clean
 ```
 
 2. Follow the steps in the above `General tips`.
@@ -689,7 +724,8 @@ cd <StarterKit_PATH>/android./gradlew clean
 2. Clean cache:
 
 ```bash
-cd <StarterKit_PATH>/rm -rf Pods && rm -rd Podfile.lock
+cd <StarterKit_PATH>/ios
+rm -rf Pods && rm Podfile.lock
 ```
 
 3. Clean build folders on Xcode.
@@ -701,15 +737,18 @@ If you need any assistance with getting Kinde connected reach out to us at suppo
 The simplest way to run the JavaScript test suite is by using the following command at the root of your React Native checkout:
 
 ```bash
-npm test
+npm run test
+
+// or
+yarn test
 ```
 
 ## Documentation for API Endpoints
 
 All URIs are relative to *https://your_kinde_domain.kinde.com/api/v1*
 
-| Class                                  | Method                                                    | HTTP request                    | Description                                                 |
-| -------------------------------------- | --------------------------------------------------------- | ------------------------------- | ----------------------------------------------------------- |
+| Class                                      | Method                                                    | HTTP request                    | Description                                                 |
+| ------------------------------------------ | --------------------------------------------------------- | ------------------------------- | ----------------------------------------------------------- |
 | _@kinde-oss/react-native-sdk-0-7.OAuthApi_ | [**getUser**](docs/OAuthApi.md#getUser)                   | **GET** /oauth2/user_profile    | Returns the details of the currently logged in user         |
 | _@kinde-oss/react-native-sdk-0-7.OAuthApi_ | [**getUserProfileV2**](docs/OAuthApi.md#getUserProfileV2) | **GET** /oauth2/v2/user_profile | Returns the details of the currently logged in user         |
 | _@kinde-oss/react-native-sdk-0-7.UsersApi_ | [**createUser**](docs/UsersApi.md#createUser)             | **POST** /user                  | Creates a user record                                       |

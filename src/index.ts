@@ -13,8 +13,7 @@
 
 import KindeSDK from './SDK/KindeSDK';
 import * as Utils from './SDK/Utils';
-import { sessionStorage as Storage } from './SDK/Storage';
-import * as AuthStatus from './SDK/Enums/AuthStatus.enum';
+import Storage from './SDK/Storage';
 
 import * as ApiClient from './ApiClient';
 
@@ -24,9 +23,9 @@ import * as ApiClient from './ApiClient';
  * <p>
  * An AMD (recommended!) or CommonJS application will generally do something equivalent to the following:
  * <pre>
- * var @KindeOssReactNativeSdk07 = require('index'); // See note below*.
- * var xxxSvc = new @KindeOssReactNativeSdk07.XxxApi(); // Allocate the API class we're going to use.
- * var yyyModel = new @KindeOssReactNativeSdk07.Yyy(); // Construct a model instance.
+ * var @KindeOssReactNativeSdk = require('index'); // See note below*.
+ * var xxxSvc = new @KindeOssReactNativeSdk.XxxApi(); // Allocate the API class we're going to use.
+ * var yyyModel = new @KindeOssReactNativeSdk.Yyy(); // Construct a model instance.
  * yyyModel.someProperty = 'someValue';
  * ...
  * var zzz = xxxSvc.doSomething(yyyModel); // Invoke the service.
@@ -38,8 +37,8 @@ import * as ApiClient from './ApiClient';
  * <p>
  * A non-AMD browser application (discouraged) might do something like this:
  * <pre>
- * var xxxSvc = new @KindeOssReactNativeSdk07.XxxApi(); // Allocate the API class we're going to use.
- * var yyy = new @KindeOssReactNativeSdk07.Yyy(); // Construct a model instance.
+ * var xxxSvc = new @KindeOssReactNativeSdk.XxxApi(); // Allocate the API class we're going to use.
+ * var yyy = new @KindeOssReactNativeSdk.Yyy(); // Construct a model instance.
  * yyyModel.someProperty = 'someValue';
  * ...
  * var zzz = xxxSvc.doSomething(yyyModel); // Invoke the service.
@@ -73,13 +72,7 @@ export {
      * The Storage SDK module.
      * @property {module:SDK/Storage}
      */
-    Storage,
-
-    /**
-     * The AuthStatus SDK module.
-     * @property {module:SDK/Enums/AuthStatus}
-     */
-    AuthStatus
+    Storage
 };
 
 export * from './apis';
