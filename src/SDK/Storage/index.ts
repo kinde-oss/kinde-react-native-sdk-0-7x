@@ -47,14 +47,18 @@ class Storage extends BaseStore {
     async getToken(): Promise<TokenResponse | null> {
         const storage = await this.getStorage();
         const cred = await storage.getItem();
-        if (typeof cred === 'object') {
-            // RNStorage (KeyChain)
-            return cred
-                ? JSON.parse((cred as { password: string }).password)
-                : null;
+        try {
+            if (typeof cred === 'object') {
+                // RNStorage (KeyChain)
+                return cred
+                    ? JSON.parse((cred as { password: string }).password)
+                    : null;
+            }
+            // Expo Secure Store
+            return cred ? JSON.parse(cred as string) : null;
+        } catch (_) {
+            return null;
         }
-        // Expo Secure Store
-        return cred ? JSON.parse(cred as string) : null;
     }
 
     async setToken(token: string) {

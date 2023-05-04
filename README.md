@@ -355,11 +355,15 @@ After the user logs in to Kinde, it will be redirected to your app via a deep li
 import { Linking } from 'react-native';
 ...
 
-//
-const handleCallback = async (url: string) => {
+const handleCallback = async (url) => {
+  try {
     const token = await client.getToken(url);
     console.log('token here', token);
-};
+  } catch (e) {
+    // Perhaps the deep link is not from Kinde authentication, or something went wrong. Logging the error to see detail
+    console.error('ERR getToken', e);
+  }
+}
 
 const checkAuthenticate = async () => {
   if (await client.isAuthenticated) { // Using `isAuthenticated` to check if the user is authenticated or not
@@ -427,8 +431,13 @@ useEffect(() => {
 }, []);
 
 const handleCallback = async (url) => {
-  const token = await client.getToken(url);
-  console.log('token here', token);
+  try {
+    const token = await client.getToken(url);
+    console.log('token here', token);
+  } catch (e) {
+    // Perhaps the deep link is not from Kinde authentication, or something went wrong. Logging the error to see detail
+    console.error('ERR getToken', e);
+  }
 }
 
 useEffect(() => {
