@@ -80,24 +80,24 @@ export declare const COLLECTION_FORMATS: {
     tsv: string;
     pipes: string;
 };
-export type FetchAPI = WindowOrWorkerGlobalScope['fetch'];
-export type Json = any;
-export type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS' | 'HEAD';
-export type HTTPHeaders = {
+export declare type FetchAPI = WindowOrWorkerGlobalScope['fetch'];
+export declare type Json = any;
+export declare type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS' | 'HEAD';
+export declare type HTTPHeaders = {
     [key: string]: string;
 };
-export type HTTPQuery = {
+export declare type HTTPQuery = {
     [key: string]: string | number | null | boolean | Array<string | number | null | boolean> | Set<string | number | null | boolean> | HTTPQuery;
 };
-export type HTTPBody = Json | FormData | URLSearchParams;
-export type HTTPRequestInit = {
+export declare type HTTPBody = Json | FormData | URLSearchParams;
+export declare type HTTPRequestInit = {
     headers?: HTTPHeaders;
     method: HTTPMethod;
     credentials?: RequestCredentials_;
     body?: HTTPBody;
 };
-export type ModelPropertyNaming = 'camelCase' | 'snake_case' | 'PascalCase' | 'original';
-export type InitOverrideFunction = (requestContext: {
+export declare type ModelPropertyNaming = 'camelCase' | 'snake_case' | 'PascalCase' | 'original';
+export declare type InitOverrideFunction = (requestContext: {
     init: HTTPRequestInit;
     context: RequestOpts;
 }) => Promise<RequestInit>;

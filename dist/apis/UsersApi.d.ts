@@ -56,4 +56,4 @@ export declare const GetUsersSortEnum: {
     readonly EmailAsc: "email_asc";
     readonly EmailDesc: "email_desc";
 };
-export type GetUsersSortEnum = (typeof GetUsersSortEnum)[keyof typeof GetUsersSortEnum];
+export declare type GetUsersSortEnum = (typeof GetUsersSortEnum)[keyof typeof GetUsersSortEnum];

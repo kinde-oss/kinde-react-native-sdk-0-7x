@@ -10,7 +10,6 @@
  * Do not edit the class manually.
  *
  */
-/// <reference types="react-native" />
 import { OrgAdditionalParams, AdditionalParameters, TokenResponse } from '../types/KindeSDK';
 import { TokenType } from './Enums';
 /**
