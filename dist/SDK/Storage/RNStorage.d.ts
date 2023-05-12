@@ -18,6 +18,6 @@ import * as KeyChain from 'react-native-keychain';
  */
 export default class RNStorage {
     getItem(): Promise<false | KeyChain.UserCredentials>;
-    setItem<T>(value: T): Promise<false | KeyChain.Result>;
+    setItem<T>(value: T): Promise<boolean>;
     clear(): Promise<boolean>;
 }

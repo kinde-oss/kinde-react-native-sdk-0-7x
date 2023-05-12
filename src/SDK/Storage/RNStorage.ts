@@ -25,10 +25,11 @@ export default class RNStorage {
     }
 
     async setItem<T>(value: T) {
-        return KeyChain.setGenericPassword(
+        const rs = await KeyChain.setGenericPassword(
             'kinde',
             typeof value === 'string' ? value : JSON.stringify(value)
         );
+        return Boolean(rs);
     }
 
     clear() {

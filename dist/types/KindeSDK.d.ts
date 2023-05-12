@@ -15,26 +15,26 @@
  * @module SDK/types
  * @version 1.1.0
  */
-export type AdditionalParameters = {
+export declare type AdditionalParameters = {
     audience?: string;
     is_create_org?: boolean;
     org_code?: string;
     org_name?: string;
 };
-export type OrgAdditionalParams = Omit<AdditionalParameters, 'audience'>;
-export type TokenID = {
+export declare type OrgAdditionalParams = Omit<AdditionalParameters, 'audience'>;
+export declare type TokenID = {
     sub: string;
     given_name: string;
     family_name: string;
     email: string;
 };
-export type UserProfile = {
+export declare type UserProfile = {
     id: string;
     given_name: string;
     family_name: string;
     email: string;
 };
-export type TokenResponse = {
+export declare type TokenResponse = {
     access_token: string;
     refresh_token: string;
     id_token: string;
@@ -42,7 +42,7 @@ export type TokenResponse = {
     token_type: string;
     expires_in: number;
 };
-export type AccessTokenDecoded = {
+export declare type AccessTokenDecoded = {
     aud: string[];
     azp: string;
     exp: number;
@@ -52,7 +52,7 @@ export type AccessTokenDecoded = {
     gty?: string[];
     scp?: string[];
 };
-export type IdTokenDecoded = {
+export declare type IdTokenDecoded = {
     sub: string;
     given_name: string;
     family_name: string;
