@@ -66,5 +66,3 @@ KindeSDK,
  * @property {module:SDK/Storage}
  */
 Storage };
-export * from './apis';
-export * from './models';

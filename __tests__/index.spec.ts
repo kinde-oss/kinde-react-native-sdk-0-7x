@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-const { KindeSDK, ApiClient, OAuthApi } = require(process.cwd() + '/src/index');
+const { KindeSDK } = require(process.cwd() + '/src/index');
 import jwtDecode from 'jwt-decode';
 import Url from 'url-parse';
 import RNStorage from '../src/SDK/Storage/RNStorage';
@@ -406,28 +406,6 @@ describe('KindeSDK', () => {
                 token_type: 'this_is_token_type',
                 expires_in: 86400
             });
-        });
-    });
-
-    describe('Api', () => {
-        test('Get user profile', async () => {
-            const config = new ApiClient.Configuration({
-                basePath: configuration.issuer
-            });
-            const apiInstance = new OAuthApi(config);
-            jest.spyOn(apiInstance, 'getUserProfileV2').mockImplementation(
-                () => {
-                    return {
-                        id: 'kp:58ece9f68a7c4c098efc1cf45c774e16',
-                        last_name: 'test',
-                        first_name: 'user',
-                        provided_id: null,
-                        preferred_email: 'usertesting@yopmail.com'
-                    };
-                }
-            );
-            const data = await apiInstance.getUserProfileV2();
-            await expect(data).toEqual(fakeUserProfile);
         });
     });
 
