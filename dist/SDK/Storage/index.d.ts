@@ -10,7 +10,7 @@
  * Do not edit the class manually.
  *
  */
-import { TokenResponse } from '../../types/KindeSDK';
+import { TokenResponse, UserProfile } from '../../types/KindeSDK';
 import { TokenType } from '../Enums/TokenType.enum';
 import BaseStore from './Base';
 /**
@@ -32,12 +32,7 @@ declare class Storage extends BaseStore {
     getCodeVerifier(): string | undefined;
     setCodeVerifier(newCodeVerifier: string): void;
     clearAll(): Promise<boolean>;
-    getUserProfile(): Promise<{
-        id: string;
-        given_name: string;
-        family_name: string;
-        email: string;
-    }>;
+    getUserProfile(): Promise<UserProfile>;
     convertString(str: string | object): string;
 }
 declare const sessionStorage: Storage;

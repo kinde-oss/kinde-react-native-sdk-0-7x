@@ -11,7 +11,6 @@
  *
  */
 import KindeSDK from './SDK/KindeSDK';
-import * as Utils from './SDK/Utils';
 import Storage from './SDK/Storage';
 import * as ApiClient from './ApiClient';
 /**
@@ -52,11 +51,6 @@ export {
  */
 ApiClient, 
 /**
- * The Utils SDK module.
- * @property {module:SDK/Utils}
- */
-Utils, 
-/**
  * The KindeSDK module.
  * @property {module:SDK/KindeSDK}
  */
@@ -66,3 +60,6 @@ KindeSDK,
  * @property {module:SDK/Storage}
  */
 Storage };
+export * from './SDK/Enums';
+export * from './SDK/Utils';
+export * from './types/KindeSDK';

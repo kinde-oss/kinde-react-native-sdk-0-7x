@@ -102,12 +102,7 @@ declare class KindeSDK {
      * It returns the user profile from session storage
      * @returns The user profile object.
      */
-    getUserDetails(): Promise<{
-        id: string;
-        given_name: string;
-        family_name: string;
-        email: string;
-    }>;
+    getUserDetails(): Promise<import("../types/KindeSDK").UserProfile>;
     /**
      * It returns the claims of the token stored in Storage
      * @param {TokenType} [tokenType=accessToken] - The type of token to get the claims from.
