@@ -11,30 +11,25 @@
  *
  */
 /**
- * The KindeSDK module.
- * @module SDK/types
+ * The Types SDK module.
+ * @module SDK/Types
  * @version 1.1.0
  */
-export declare type AdditionalParameters = {
+export type AdditionalParameters = {
     audience?: string;
     is_create_org?: boolean;
     org_code?: string;
     org_name?: string;
 };
-export declare type OrgAdditionalParams = Omit<AdditionalParameters, 'audience'>;
-export declare type TokenID = {
-    sub: string;
-    given_name: string;
-    family_name: string;
-    email: string;
-};
-export declare type UserProfile = {
+export type OrgAdditionalParams = Omit<AdditionalParameters, 'audience'>;
+export type UserProfile = {
     id: string;
     given_name: string;
     family_name: string;
     email: string;
+    picture: string;
 };
-export declare type TokenResponse = {
+export type TokenResponse = {
     access_token: string;
     refresh_token: string;
     id_token: string;
@@ -42,7 +37,7 @@ export declare type TokenResponse = {
     token_type: string;
     expires_in: number;
 };
-export declare type AccessTokenDecoded = {
+export type AccessTokenDecoded = {
     aud: string[];
     azp: string;
     exp: number;
@@ -51,10 +46,11 @@ export declare type AccessTokenDecoded = {
     jti: string;
     gty?: string[];
     scp?: string[];
-};
-export declare type IdTokenDecoded = {
+} & Record<string, any>;
+export type IdTokenDecoded = {
     sub: string;
     given_name: string;
     family_name: string;
     email: string;
-};
+    picture: string;
+} & Record<string, any>;

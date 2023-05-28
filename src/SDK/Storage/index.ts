@@ -15,7 +15,8 @@ import jwtDecode from 'jwt-decode';
 import {
     AccessTokenDecoded,
     IdTokenDecoded,
-    TokenResponse
+    TokenResponse,
+    UserProfile
 } from '../../types/KindeSDK';
 import { TokenType } from '../Enums/TokenType.enum';
 import BaseStore from './Base';
@@ -111,14 +112,15 @@ class Storage extends BaseStore {
         return storage.clear();
     }
 
-    async getUserProfile() {
+    async getUserProfile(): Promise<UserProfile> {
         const token = await this.getIdToken();
         const payload = (token ? jwtDecode(token) : {}) as IdTokenDecoded;
         return {
             id: payload['sub'] ?? '',
             given_name: payload['given_name'] ?? '',
             family_name: payload['family_name'] ?? '',
-            email: payload['email'] ?? ''
+            email: payload['email'] ?? '',
+            picture: payload['picture'] ?? ''
         };
     }
 

@@ -73,19 +73,12 @@ const configuration = {
     fakeCodeChallenge: '3Aqg8_tu8aNwnxPmhE1b1ONsThy-b6hppET0knva9Kc'
 };
 
-const fakeUserProfile = {
-    id: 'kp:58ece9f68a7c4c098efc1cf45c774e16',
-    last_name: 'test',
-    first_name: 'user',
-    provided_id: null,
-    preferred_email: 'usertesting@yopmail.com'
-};
-
 const fakeUserDetail = {
     id: 'kp:58ece9f68a7c4c098efc1cf45c774e16',
     given_name: 'test',
     family_name: 'user',
-    email: 'usertesting@yopmail.com'
+    email: 'usertesting@yopmail.com',
+    picture: ''
 };
 
 const fakePayloadFromDecodeToken = {
