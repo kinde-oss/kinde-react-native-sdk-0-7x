@@ -11,12 +11,17 @@
  *
  */
 
-import crypto, { LibWordArray } from 'crypto-js';
-import { InvalidTypeException } from '../common/exceptions/invalid-type.exception';
-import { PropertyRequiredException } from '../common/exceptions/property-required.exception';
-import { UnexpectedException } from '../common/exceptions/unexpected.exception';
-import { AdditionalParameters } from '../types/KindeSDK';
-import { AdditionalParametersAllow } from './constants';
+import crypto, {LibWordArray} from 'crypto-js';
+import {InvalidTypeException} from '../common/exceptions/invalid-type.exception';
+import {PropertyRequiredException} from '../common/exceptions/property-required.exception';
+import {UnexpectedException} from '../common/exceptions/unexpected.exception';
+import {AdditionalParameters} from '../types/KindeSDK';
+import {AdditionalParametersAllow} from './constants';
+import InAppBrowser from 'react-native-inappbrowser-reborn';
+import {Linking} from 'react-native';
+import KindeSDK from './KindeSDK';
+import Constants, {ExecutionEnvironment} from 'expo-constants';
+import * as WebBrowser from 'expo-web-browser';
 
 /**
  * The Utils SDK module.
@@ -30,11 +35,11 @@ import { AdditionalParametersAllow } from './constants';
  * @returns A string
  */
 function base64URLEncode(str: string | LibWordArray): string {
-    return str
-        .toString()
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=/g, '');
+  return str
+    .toString()
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
 }
 
 /**
@@ -43,7 +48,7 @@ function base64URLEncode(str: string | LibWordArray): string {
  * @returns A string
  */
 function sha256(buffer: string | LibWordArray): string {
-    return crypto.SHA256(buffer).toString(crypto.enc.Base64);
+  return crypto.SHA256(buffer).toString(crypto.enc.Base64);
 }
 
 /**
@@ -52,7 +57,7 @@ function sha256(buffer: string | LibWordArray): string {
  * @returns A random string of 32 bytes.
  */
 export function generateRandomString(byteLength: number = 32): string {
-    return base64URLEncode(crypto.lib.WordArray.random(byteLength));
+  return base64URLEncode(crypto.lib.WordArray.random(byteLength));
 }
 
 /**
@@ -60,18 +65,18 @@ export function generateRandomString(byteLength: number = 32): string {
  * @returns An object with three properties: state, codeVerifier, and codeChallenge.
  */
 export function generateChallenge(): {
-    state: string;
-    codeVerifier: string;
-    codeChallenge: string;
+  state: string;
+  codeVerifier: string;
+  codeChallenge: string;
 } {
-    const state = generateRandomString();
-    const codeVerifier = generateRandomString();
-    const codeChallenge = base64URLEncode(sha256(codeVerifier));
-    return {
-        state,
-        codeVerifier,
-        codeChallenge
-    };
+  const state = generateRandomString();
+  const codeVerifier = generateRandomString();
+  const codeChallenge = base64URLEncode(sha256(codeVerifier));
+  return {
+    state,
+    codeVerifier,
+    codeChallenge,
+  };
 }
 
 /**
@@ -81,13 +86,13 @@ export function generateChallenge(): {
  * @returns A function that takes two parameters and returns either the first parameter or an Error.
  */
 export function checkNotNull<T>(
-    reference: T | undefined | null,
-    name: string
+  reference: T | undefined | null,
+  name: string,
 ): T | Error {
-    if (reference === null || reference === undefined) {
-        throw new PropertyRequiredException(name);
-    }
-    return reference;
+  if (reference === null || reference === undefined) {
+    throw new PropertyRequiredException(name);
+  }
+  return reference;
 }
 
 const getValueByKey = (obj: Record<string, any>, key: string) => obj[key];
@@ -100,35 +105,32 @@ type AdditionalParametersKeys = keyof AdditionalParameters;
  * @returns An object with the keys and values of the additionalParameters object.
  */
 export const checkAdditionalParameters = (
-    additionalParameters: AdditionalParameters = {}
+  additionalParameters: AdditionalParameters = {},
 ) => {
-    if (typeof additionalParameters !== 'object') {
-        throw new UnexpectedException('additionalParameters');
-    }
-    const keyExists = Object.keys(
-        additionalParameters
+  if (typeof additionalParameters !== 'object') {
+    throw new UnexpectedException('additionalParameters');
+  }
+  const keyExists = Object.keys(
+    additionalParameters,
+  ) as AdditionalParametersKeys[];
+  if (keyExists.length) {
+    const keysAllow = Object.keys(
+      AdditionalParametersAllow,
     ) as AdditionalParametersKeys[];
-    if (keyExists.length) {
-        const keysAllow = Object.keys(
-            AdditionalParametersAllow
-        ) as AdditionalParametersKeys[];
-        for (const key of keyExists) {
-            if (!keysAllow.includes(key)) {
-                throw new UnexpectedException(key);
-            }
-            if (
-                typeof additionalParameters[key] !==
-                AdditionalParametersAllow[key]
-            ) {
-                throw new InvalidTypeException(
-                    key,
-                    getValueByKey(AdditionalParametersAllow, key)
-                );
-            }
-        }
-        return additionalParameters;
+    for (const key of keyExists) {
+      if (!keysAllow.includes(key)) {
+        throw new UnexpectedException(key);
+      }
+      if (typeof additionalParameters[key] !== AdditionalParametersAllow[key]) {
+        throw new InvalidTypeException(
+          key,
+          getValueByKey(AdditionalParametersAllow, key),
+        );
+      }
     }
-    return {};
+    return additionalParameters;
+  }
+  return {};
 };
 
 /**
@@ -139,14 +141,74 @@ export const checkAdditionalParameters = (
  * @returns A function that takes two parameters, target and additionalParameters.
  */
 export const addAdditionalParameters = (
-    target: Record<string, string | undefined>,
-    additionalParameters: AdditionalParameters = {}
+  target: Record<string, string | undefined>,
+  additionalParameters: AdditionalParameters = {},
 ) => {
-    const keyExists = Object.keys(additionalParameters);
-    if (keyExists.length) {
-        keyExists.forEach((key) => {
-            target[key] = getValueByKey(additionalParameters, key);
-        });
+  const keyExists = Object.keys(additionalParameters);
+  if (keyExists.length) {
+    keyExists.forEach(key => {
+      target[key] = getValueByKey(additionalParameters, key);
+    });
+  }
+  return target;
+};
+
+export const OpenWebInApp = async (url: string, kindeSDK: KindeSDK) => {
+  try {
+    const response = await openWebBrowser(url, kindeSDK.redirectUri);
+    if (response.type === 'success' && response.url) {
+      return kindeSDK.getToken(response.url);
     }
-    return target;
+    console.error(
+      'Something wrong when trying to authenticating. Reason: ',
+      response.type,
+    );
+    return null;
+  } catch (error: any) {
+    console.error(
+      'Something wrong when trying to authenticating. Reason: ',
+      error.message,
+    );
+    return null;
+  }
+};
+
+export const isExpoGo =
+  Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+export const openWebBrowser = async (url: string, redirectUri: string) => {
+  if (isExpoGo) {
+    return WebBrowser.openAuthSessionAsync(url, redirectUri);
+  }
+  if (InAppBrowser) {
+    if (await InAppBrowser.isAvailable()) {
+      return InAppBrowser.openAuth(url, redirectUri, {
+        ephemeralWebSession: false,
+        showTitle: false,
+        enableUrlBarHiding: true,
+        enableDefaultShare: false,
+      });
+    }
+  }
+  throw new Error('Not found web browser');
+};
+
+export const openWebBrowserWithoutAuth = async (
+  url: string,
+  redirectUri: string,
+) => {
+  if (isExpoGo) {
+    return WebBrowser.openBrowserAsync(url);
+  }
+  if (InAppBrowser) {
+    if (await InAppBrowser.isAvailable()) {
+      return InAppBrowser.open(url, {
+        ephemeralWebSession: false,
+        showTitle: false,
+        enableUrlBarHiding: true,
+        enableDefaultShare: false,
+      });
+    }
+  }
+  throw new Error('Not found web browser');
 };
