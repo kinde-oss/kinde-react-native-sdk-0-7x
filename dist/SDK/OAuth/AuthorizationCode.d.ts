@@ -10,7 +10,7 @@
  * Do not edit the class manually.
  *
  */
-import { AdditionalParameters } from '../../types/KindeSDK';
+import { AdditionalParameters, TokenResponse } from '../../types/KindeSDK';
 import KindeSDK from '../KindeSDK';
 declare class AuthorizationCode {
     /**
@@ -21,6 +21,6 @@ declare class AuthorizationCode {
      * @param {AdditionalParameters} additionalParameters - AdditionalParameters = {}
      * @returns A promise that resolves when the URL is opened.
      */
-    authenticate(kindSDK: KindeSDK, usePKCE?: boolean, startPage?: 'login' | 'registration', additionalParameters?: AdditionalParameters): Promise<void>;
+    authenticate(kindeSDK: KindeSDK, usePKCE?: boolean, startPage?: 'login' | 'registration', additionalParameters?: AdditionalParameters): Promise<TokenResponse | null>;
 }
 export default AuthorizationCode;

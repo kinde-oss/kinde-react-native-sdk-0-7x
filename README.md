@@ -31,7 +31,7 @@ npm install @kinde-oss/react-native-sdk-0-7x --save
 
 ### Android
 
-Checking `MainApplication.java` to verify the `react-native-keychain` was added. If not, you need to install manually:
+Checking `MainApplication.java` to verify the `react-native-keychain`, `react-native-inappbrowser-reborn` were added. If not, you need to install manually:
 
 -   Edit `android/settings.gradle`
 
@@ -40,6 +40,9 @@ Checking `MainApplication.java` to verify the `react-native-keychain` was added.
 
 include ':react-native-keychain'
 project(':react-native-keychain').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-keychain/android')
+
+include ':react-native-inappbrowser-reborn'
+project(':react-native-inappbrowser-reborn').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-inappbrowser-reborn/android')
 
 ...
 ```
@@ -57,6 +60,7 @@ dependencies {
   ...
 
   implementation project(':react-native-keychain')
+  implementation project(':react-native-inappbrowser-reborn')
 
   ...
 }
@@ -68,7 +72,7 @@ dependencies {
 ...
 
 import com.oblador.keychain.KeychainPackage;
-
+import com.proyecto26.inappbrowser.RNInAppBrowserPackage;
 ...
 
 public class MainActivity extends extends ReactActivity {
@@ -77,7 +81,8 @@ public class MainActivity extends extends ReactActivity {
   protected List<ReactPackage> getPackages() {
       return Arrays.<ReactPackage>asList(
               new MainReactPackage(),
-              new KeychainPackage()
+              new KeychainPackage(),
+              new RNInAppBrowserPackage()
       );
   }
 
@@ -87,6 +92,7 @@ public class MainActivity extends extends ReactActivity {
     @SuppressWarnings("UnnecessaryLocalVariable")
     List<ReactPackage> packages = new PackageList(this).getPackages();
     packages.add(new KeychainPackage());
+    packages.add(new RNInAppBrowserPackage());
     return packages;
   }
   ...
@@ -114,6 +120,7 @@ Add the following to your `Podfile` and run pod update:
 
 ```Swift
 pod 'RNKeychain', :path => '../node_modules/react-native-keychain'
+pod 'RNInAppBrowser', :path => '../node_modules/react-native-inappbrowser-reborn'
 ```
 
 **Option: Manually**
@@ -121,7 +128,7 @@ pod 'RNKeychain', :path => '../node_modules/react-native-keychain'
 -   Click to `Build Phases` tab
 -   Choose `Link Binary With Libraries`
 -   Click `+` in bottom
--   **Add Other...** => **Add Files...** => **node_modules/react-native-keychain/RNKeychain.xcodeproj**
+-   **Add Other...** => **Add Files...** => **node_modules/react-native-keychain/RNKeychain.xcodeproj** (similar with RNInAppBrowser)
 -   Then, you need to add `libRNKeychain.a`
 -   Clean and rebuild
 
@@ -130,9 +137,9 @@ pod 'RNKeychain', :path => '../node_modules/react-native-keychain'
 Run this below command to update the package to your npm dependencies:
 
 ```bash
-expo install expo-secure-store
+expo install expo-secure-store expo-web-browser
 // or
-npx expo install expo-secure-store
+npx expo install expo-secure-store expo-web-browser
 ```
 
 ##### Enable `Keychain Sharing` entitlement for iOS 10+
@@ -180,29 +187,6 @@ KINDE_CLIENT_ID=your_kinde_client_id
 ### Configuration Deep link
 
 #### With React Native
-
-If your app was launched from an external url registered to your app you can access and handle it from any component you want with:
-
-```javascript
-...
-import { ..., Linking, Platform, ... } from 'react-native';
-...
-useEffect(() => {
-  Linking.getInitialURL()
-    .then((url) => {
-      if (url) {
-        // Your code here
-      }
-    })
-    .catch((err) => console.error("An error occurred", err));
-
-  Linking.addEventListener('url', (event) => {
-    if (event.url) {
-      // Your code here
-    }
-  })
-}, []);
-```
 
 ##### iOS
 
@@ -327,25 +311,31 @@ As an example if you add buttons in your render as follows:
 ```
 
 Then define new functions that match for each button:
-**\*Note**: Make sure you've already defined KindeSDK as `client`\*
+_**Note**: Make sure you've already defined KindeSDK as `client`_
 
 ```javascript
 ...
-const handleSignUp = () => {
-  client.register();
+const handleSignUp = async () => {
+  const token = await client.register();
+  if (token) {
+    // User was authenticated
+  }
 };
 
-const handleSignIn = () => {
-  client.login();
+const handleSignIn = async () => {
+  const token = client.login();
+  if (token) {
+    // User was authenticated
+  }
 };
 ...
 ```
 
-### Handle redirect
+### ~~Handle redirect~~ [Deprecated]
 
 After the user logs in to Kinde, it will be redirected to your app via a deep link, which includes some information (e.g., code) as parameters, and then you need to call the `getToken` method to receive a token from Kinde. The SDK will store the token on the keychain. Now, the user will be authenticated without logging in again.
 
-##### Handle redirect with React Native
+##### ~~Handle redirect with React Native~~
 
 ```javascript
 ...
@@ -395,7 +385,7 @@ useEffect(() => {
 }, []);
 ```
 
-##### Handle redirect with Expo
+##### ~~Handle redirect with Expo~~
 
 You must install `expo-linking`. This provides utilities for your app to interact with other installed apps using deep links. It also provides helper methods for constructing and parsing deep links into your app. This module is an extension of the React Native [Linking](https://reactnative.dev/docs/linking.html) module.
 
@@ -449,8 +439,11 @@ useEffect(() => {
 This is implemented in much the same way as logging in or registering. The Kinde SPA client comes with a logout method
 
 ```javascript
-const handleLogout = () => {
-    client.logout();
+const handleLogout = async () => {
+    const loggedOut = client.logout();
+    if (loggedOut) {
+        // User was logged out
+    }
 };
 ```
 
@@ -499,8 +492,8 @@ await client.getPermissions();
 
 A practical example in code might look something like:
 
-```
-if ((await client.getPermission("create:todos")).isGranted) {
+```javascript
+if ((await client.getPermission('create:todos')).isGranted) {
     // show Create Todo button in UI
 }
 ```
@@ -674,20 +667,22 @@ _Note: Ensure you have already run `npm install` before_
 
 ## KindeSDK methods
 
-| Property             | Description                                                                                       | Arguments                           | Usage                                                                                                                                                                     | Sample output                                                                                                                                                                                                                |
-| -------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| login                | Constructs redirect url and sends user to Kinde to sign in                                        | {<br>org_code?: string<br>}         | kinde.login(); or<br>kinde.login({org_code: 'your organization code'}) // Allow org_code to be provided if a specific org is to be signed up into.                        |                                                                                                                                                                                                                              |
-| register             | Constructs redirect url and sends user to Kinde to sign up                                        | {<br>org_code?: string<br>}         | kinde.register(); or<br>kinde.register({org_code: 'your organization code'}) // Allow org_code to be provided if a specific org is to be registered into.                 |                                                                                                                                                                                                                              |
-| logout               | Logs the user out of Kinde                                                                        |                                     | kinde.logout();                                                                                                                                                           |                                                                                                                                                                                                                              |
-| getToken             | Returns the raw Access token from URL after logged from Kinde                                     | url?: string                        | kinde.getToken(url); or<br>kinde.getToken(); //  In this case, you have already authenticated before. Otherwise, an error will be thrown in here                          | {<br>"access_token": "eyJhbGciOiJSUzI...",<br>"expires_in": 86400,<br>"id_token": "eyJhbGciOiJSU...",<br>"refresh_token": "yXI1bFQKbXKLD7AIU...",<br>"scope": "openid profile email offline",<br>"token_type": "bearer"<br>} |
-| createOrg            | Constructs redirect url and sends user to Kinde to sign up and create a new org for your business | {<br>org_name?: string<br>}         | kinde.createOrg(); or<br>kinde.createOrg({org_name: 'your organization name'}); // Allow org_name to be provided if you want a specific organization name when you create |                                                                                                                                                                                                                              |
-| getClaim             | Gets a claim from an access or id token                                                           | claim: string;<br>tokenKey?: string | await kinde.getClaim('given_name', 'id_token');                                                                                                                           | "David"                                                                                                                                                                                                                      |
-| getPermission        | Returns the state of a given permission                                                           | key: string                         | await kinde.getPermission('read:todos');                                                                                                                                  | {"orgCode":"org_1234","isGranted":true}                                                                                                                                                                                      |
-| getPermissions       | Returns all permissions for the current user for the organization they are logged into            |                                     | await kinde.getPermissions();                                                                                                                                             | {"orgCode":"org_1234","permissions":["create:todos","update:todos","read:todos"]}                                                                                                                                            |
-| getOrganization      | Get details for the organization your user is logged into                                         |                                     | await kinde.getOrganization();                                                                                                                                            | {"orgCode": "org_1234"}                                                                                                                                                                                                      |
-| getUserDetails       | Returns the profile for the current user                                                          |                                     | await kinde.getUserDetails();                                                                                                                                             | {"given_name":"Dave","id":"abcdef","family_name":"Smith","email":"dave@smith.com"}                                                                                                                                           |
-| getUserOrganizations | Gets an array of all organizations the user has access to                                         |                                     | await kinde.getUserOrganizations();                                                                                                                                       | {"orgCodes":["org1​234","org5​678"]}                                                                                                                                                                                         |
-| isAuthenticated      | Return the boolean to demonstrate whether the user is authenticated or not.                       |                                     | await kinde.isAuthenticate                                                                                                                                                | true or false                                                                                                                                                                                                                |
+Outer pipes Cell padding
+No sorting
+| Property | Description | Arguments | Usage | Sample output |
+| -------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| login | Constructs redirect url and sends user to Kinde to sign in | {<br>org_code?: string<br>} | await kinde.login(); or<br>await kinde.login({org_code: 'your organization code'}) // Allow org_code to be provided if a specific org is to be signed up into. | {<br>"access_token": "eyJhbGciOiJSUzI...",<br>"expires_in": 86400,<br>"id_token": "eyJhbGciOiJSU...",<br>"refresh_token": "yXI1bFQKbXKLD7AIU...",<br>"scope": "openid profile email offline",<br>"token_type": "bearer"<br>} |
+| register | Constructs redirect url and sends user to Kinde to sign up | {<br>org_code?: string<br>} | await kinde.register(); or<br>await kinde.register({org_code: 'your organization code'}) // Allow org_code to be provided if a specific org is to be registered into. | {<br>"access_token": "eyJhbGciOiJSUzI...",<br>"expires_in": 86400,<br>"id_token": "eyJhbGciOiJSU...",<br>"refresh_token": "yXI1bFQKbXKLD7AIU...",<br>"scope": "openid profile email offline",<br>"token_type": "bearer"<br>} |
+| logout | Logs the user out of Kinde | | await kinde.logout(); | true or false |
+| getToken | Returns the raw Access token from URL after logged from Kinde | url?: string | kinde.getToken(url); or<br>kinde.getToken(); // In this case, you have already authenticated before. Otherwise, an error will be thrown in here | {<br>"access_token": "eyJhbGciOiJSUzI...",<br>"expires_in": 86400,<br>"id_token": "eyJhbGciOiJSU...",<br>"refresh_token": "yXI1bFQKbXKLD7AIU...",<br>"scope": "openid profile email offline",<br>"token_type": "bearer"<br>} |
+| createOrg | Constructs redirect url and sends user to Kinde to sign up and create a new org for your business | {<br>org_name?: string<br>} | await kinde.createOrg(); or<br>await kinde.createOrg({org_name: 'your organization name'}); // Allow org_name to be provided if you want a specific organization name when you create | {<br>"access_token": "eyJhbGciOiJSUzI...",<br>"expires_in": 86400,<br>"id_token": "eyJhbGciOiJSU...",<br>"refresh_token": "yXI1bFQKbXKLD7AIU...",<br>"scope": "openid profile email offline",<br>"token_type": "bearer"<br>} |
+| getClaim | Gets a claim from an access or id token | claim: string;<br>tokenKey?: string | await kinde.getClaim('given_name', 'id_token'); | "David" |
+| getPermission | Returns the state of a given permission | key: string | await kinde.getPermission('read:todos'); | {"orgCode":"org_1234","isGranted":true} |
+| getPermissions | Returns all permissions for the current user for the organization they are logged into | | await kinde.getPermissions(); | {"orgCode":"org_1234","permissions":["create:todos","update:todos","read:todos"]} |
+| getOrganization | Get details for the organization your user is logged into | | await kinde.getOrganization(); | {"orgCode": "org_1234"} |
+| getUserDetails | Returns the profile for the current user | | await kinde.getUserDetails(); | {"given_name":"Dave","id":"abcdef","family_name":"Smith","email":"dave@smith.com"} |
+| getUserOrganizations | Gets an array of all organizations the user has access to | | await kinde.getUserOrganizations(); | {"orgCodes":["org1​234","org5​678"]} |
+| isAuthenticated | Return the boolean to demonstrate whether the user is authenticated or not. | | await kinde.isAuthenticate | true or false |
 
 ## General tips
 
