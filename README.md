@@ -625,6 +625,109 @@ await client.getUserOrganizations();
 // {orgCodes: ["org_1234", "org_abcd"]}
 ```
 
+## Feature Flags - Helper methods
+
+We have provided a helper to grab any feature flag from `access_token`:
+
+```javascript
+client.getFlag("theme");
+// returns
+{
+    "code": "theme",
+    "type": "string",
+    "value": "pink",
+    "is_default": false // whether the fallback value had to be used
+}
+
+// Another usage case
+client.getFlag("is_dark_mode");
+// returns
+{
+    "code": "is_dark_mode",
+    "type": "boolean",
+    "value": true,
+    "is_default": false
+}
+
+// This flag does not exist - default value provided
+client.getFlag("create_competition", { defaultValue: false });
+// returns
+{
+    "code": "create_competition",
+    "type": "boolean",
+    "value": false,
+    "is_default": true // because fallback value had to be used
+}
+
+// The flag type was provided as string, but it is an integer
+client.getFlag("competitions_limit", { defaultValue: 3 }, "s");
+// should error out - Flag "competitions_limit" is type integer - requested type string
+
+
+// This flag does not exist, and no default value provided
+client.getFlag("new_feature");
+// should error out - This flag was not found, and no default value has been provided
+```
+
+We also provide wrapper functions which should leverage `getFlag` above
+
+### Get boolean flags
+
+```javascript
+client.getBooleanFlag('is_dark_mode');
+// true
+
+client.getBooleanFlag('is_dark_mode', { defaultValue: false });
+// true
+
+client.getBooleanFlag('new_feature', { defaultValue: false });
+// false (flag does not exist so falls back to default)
+
+client.getBooleanFlag('new_feature');
+// Error - flag does not exist and no default provided
+
+client.getBooleanFlag('theme', { defaultValue: false });
+// Error - Flag "theme" is of type string not boolean
+```
+
+### Get string flags
+
+```javascript
+client.getStringFlag('theme');
+// "pink"
+
+client.getStringFlag('theme', { defaultValue: 'red' });
+// "pink"
+
+client.getStringFlag('cta_color', { defaultValue: 'blue' });
+// "blue" (flag does not exist so falls back to default)
+
+client.getStringFlag('cta_color');
+// Error - flag does not exist and no default provided
+
+client.getStringFlag('is_dark_mode', { defaultValue: true });
+// Error - Flag "is_dark_mode" is of type boolean not string
+```
+
+### Get integer flags
+
+```javascript
+client.getIntegerFlag('competitions_limit');
+// 5
+
+client.getIntegerFlag('competitions_limit', { defaultValue: 3 });
+// 5
+
+client.getIntegerFlag('team_count', { defaultValue: 2 });
+// 2 (flag does not exist so falls back to default)
+
+client.getIntegerFlag('team_count');
+// Error - flag does not exist and no default provided
+
+client.getIntegerFlag('is_dark_mode', { defaultValue: true });
+// Error - Flag "is_dark_mode" is of type string not integer
+```
+
 ## Token Storage
 
 Once the user has successfully authenticated, you'll have a JWT and a refresh token and that has been stored securely.
@@ -667,22 +770,24 @@ _Note: Ensure you have already run `npm install` before_
 
 ## KindeSDK methods
 
-Outer pipes Cell padding
-No sorting
-| Property | Description | Arguments | Usage | Sample output |
-| -------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| login | Constructs redirect url and sends user to Kinde to sign in | {<br>org_code?: string<br>} | await kinde.login(); or<br>await kinde.login({org_code: 'your organization code'}) // Allow org_code to be provided if a specific org is to be signed up into. | {<br>"access_token": "eyJhbGciOiJSUzI...",<br>"expires_in": 86400,<br>"id_token": "eyJhbGciOiJSU...",<br>"refresh_token": "yXI1bFQKbXKLD7AIU...",<br>"scope": "openid profile email offline",<br>"token_type": "bearer"<br>} |
-| register | Constructs redirect url and sends user to Kinde to sign up | {<br>org_code?: string<br>} | await kinde.register(); or<br>await kinde.register({org_code: 'your organization code'}) // Allow org_code to be provided if a specific org is to be registered into. | {<br>"access_token": "eyJhbGciOiJSUzI...",<br>"expires_in": 86400,<br>"id_token": "eyJhbGciOiJSU...",<br>"refresh_token": "yXI1bFQKbXKLD7AIU...",<br>"scope": "openid profile email offline",<br>"token_type": "bearer"<br>} |
-| logout | Logs the user out of Kinde | | await kinde.logout(); | true or false |
-| getToken | Returns the raw Access token from URL after logged from Kinde | url?: string | kinde.getToken(url); or<br>kinde.getToken(); // In this case, you have already authenticated before. Otherwise, an error will be thrown in here | {<br>"access_token": "eyJhbGciOiJSUzI...",<br>"expires_in": 86400,<br>"id_token": "eyJhbGciOiJSU...",<br>"refresh_token": "yXI1bFQKbXKLD7AIU...",<br>"scope": "openid profile email offline",<br>"token_type": "bearer"<br>} |
-| createOrg | Constructs redirect url and sends user to Kinde to sign up and create a new org for your business | {<br>org_name?: string<br>} | await kinde.createOrg(); or<br>await kinde.createOrg({org_name: 'your organization name'}); // Allow org_name to be provided if you want a specific organization name when you create | {<br>"access_token": "eyJhbGciOiJSUzI...",<br>"expires_in": 86400,<br>"id_token": "eyJhbGciOiJSU...",<br>"refresh_token": "yXI1bFQKbXKLD7AIU...",<br>"scope": "openid profile email offline",<br>"token_type": "bearer"<br>} |
-| getClaim | Gets a claim from an access or id token | claim: string;<br>tokenKey?: string | await kinde.getClaim('given_name', 'id_token'); | "David" |
-| getPermission | Returns the state of a given permission | key: string | await kinde.getPermission('read:todos'); | {"orgCode":"org_1234","isGranted":true} |
-| getPermissions | Returns all permissions for the current user for the organization they are logged into | | await kinde.getPermissions(); | {"orgCode":"org_1234","permissions":["create:todos","update:todos","read:todos"]} |
-| getOrganization | Get details for the organization your user is logged into | | await kinde.getOrganization(); | {"orgCode": "org_1234"} |
-| getUserDetails | Returns the profile for the current user | | await kinde.getUserDetails(); | {"given_name":"Dave","id":"abcdef","family_name":"Smith","email":"dave@smith.com"} |
-| getUserOrganizations | Gets an array of all organizations the user has access to | | await kinde.getUserOrganizations(); | {"orgCodes":["org1​234","org5​678"]} |
-| isAuthenticated | Return the boolean to demonstrate whether the user is authenticated or not. | | await kinde.isAuthenticate | true or false |
+| Property             | Description                                                                                       | Arguments                                                   | Usage                                                                                                                                                                                 | Sample output                                                                                                                                                                                                                |
+| -------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| login                | Constructs redirect url and sends user to Kinde to sign in                                        | {<br>org_code?: string<br>}                                 | await kinde.login(); or<br>await kinde.login({org_code: 'your organization code'}) // Allow org_code to be provided if a specific org is to be signed up into.                        | {<br>"access_token": "eyJhbGciOiJSUzI...",<br>"expires_in": 86400,<br>"id_token": "eyJhbGciOiJSU...",<br>"refresh_token": "yXI1bFQKbXKLD7AIU...",<br>"scope": "openid profile email offline",<br>"token_type": "bearer"<br>} |
+| register             | Constructs redirect url and sends user to Kinde to sign up                                        | {<br>org_code?: string<br>}                                 | await kinde.register(); or<br>await kinde.register({org_code: 'your organization code'}) // Allow org_code to be provided if a specific org is to be registered into.                 | {<br>"access_token": "eyJhbGciOiJSUzI...",<br>"expires_in": 86400,<br>"id_token": "eyJhbGciOiJSU...",<br>"refresh_token": "yXI1bFQKbXKLD7AIU...",<br>"scope": "openid profile email offline",<br>"token_type": "bearer"<br>} |
+| logout               | Logs the user out of Kinde                                                                        |                                                             | await kinde.logout();                                                                                                                                                                 | true or false                                                                                                                                                                                                                |
+| getToken             | Returns the raw Access token from URL after logged from Kinde                                     | url?: string                                                | kinde.getToken(url); or<br>kinde.getToken(); // In this case, you have already authenticated before. Otherwise, an error will be thrown in here                                       | {<br>"access_token": "eyJhbGciOiJSUzI...",<br>"expires_in": 86400,<br>"id_token": "eyJhbGciOiJSU...",<br>"refresh_token": "yXI1bFQKbXKLD7AIU...",<br>"scope": "openid profile email offline",<br>"token_type": "bearer"<br>} |
+| createOrg            | Constructs redirect url and sends user to Kinde to sign up and create a new org for your business | {<br>org_name?: string<br>}                                 | await kinde.createOrg(); or<br>await kinde.createOrg({org_name: 'your organization name'}); // Allow org_name to be provided if you want a specific organization name when you create | {<br>"access_token": "eyJhbGciOiJSUzI...",<br>"expires_in": 86400,<br>"id_token": "eyJhbGciOiJSU...",<br>"refresh_token": "yXI1bFQKbXKLD7AIU...",<br>"scope": "openid profile email offline",<br>"token_type": "bearer"<br>} |
+| getClaim             | Gets a claim from an access or id token                                                           | claim: string;<br>tokenKey?: string                         | await kinde.getClaim('given_name', 'id_token');                                                                                                                                       | "David"                                                                                                                                                                                                                      |
+| getPermission        | Returns the state of a given permission                                                           | key: string                                                 | await kinde.getPermission('read:todos');                                                                                                                                              | {"orgCode":"org_1234","isGranted":true}                                                                                                                                                                                      |
+| getPermissions       | Returns all permissions for the current user for the organization they are logged into            |                                                             | await kinde.getPermissions();                                                                                                                                                         | {"orgCode":"org_1234","permissions":["create:todos","update:todos","read:todos"]}                                                                                                                                            |
+| getOrganization      | Get details for the organization your user is logged into                                         |                                                             | await kinde.getOrganization();                                                                                                                                                        | {"orgCode": "org_1234"}                                                                                                                                                                                                      |
+| getUserDetails       | Returns the profile for the current user                                                          |                                                             | await kinde.getUserDetails();                                                                                                                                                         | {"given_name":"Dave","id":"abcdef","family_name":"Smith","email":"dave@smith.com"}                                                                                                                                           |
+| getUserOrganizations | Gets an array of all organizations the user has access to                                         |                                                             | await kinde.getUserOrganizations();                                                                                                                                                   | {"orgCodes":["org1​234","org5​678"]}                                                                                                                                                                                         |
+| getFlag              | Gets a feature flag from an access token                                                          | code: string,<br>{ defaultValue: any },<br>flagType: string | await kinde.getFlag("theme");                                                                                                                                                         | { "code": "theme", "type": "string", "value": "pink", "is_default": False }                                                                                                                                                  |
+| getBooleanFlag       | Gets a boolean feature flag from an access token                                                  | code: string,<br>{ defaultValue: any }                      | await kinde.getBooleanFlag(”is_dark_mode”);                                                                                                                                           | true or false                                                                                                                                                                                                                |
+| getStringFlag        | Gets a string feature flag from an access token                                                   | code: string,<br>{ defaultValue: any }                      | await kinde.getStringFlag("theme");                                                                                                                                                   | "pink"                                                                                                                                                                                                                       |
+| getIntegerFlag       | Gets a integer feature flag from an access token                                                  | code: string,<br>{ defaultValue: any }                      | await kinde.getIntegerFlag("competitions_limit");                                                                                                                                     | 1                                                                                                                                                                                                                            |
+| isAuthenticated      | Return the boolean to demonstrate whether the user is authenticated or not.                       |                                                             | await kinde.isAuthenticate                                                                                                                                                            | true or false                                                                                                                                                                                                                |
 
 ## General tips
 
