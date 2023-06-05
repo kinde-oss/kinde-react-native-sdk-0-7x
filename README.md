@@ -667,8 +667,6 @@ _Note: Ensure you have already run `npm install` before_
 
 ## KindeSDK methods
 
-Outer pipes Cell padding
-No sorting
 | Property | Description | Arguments | Usage | Sample output |
 | -------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | login | Constructs redirect url and sends user to Kinde to sign in | {<br>org_code?: string<br>} | await kinde.login(); or<br>await kinde.login({org_code: 'your organization code'}) // Allow org_code to be provided if a specific org is to be signed up into. | {<br>"access_token": "eyJhbGciOiJSUzI...",<br>"expires_in": 86400,<br>"id_token": "eyJhbGciOiJSU...",<br>"refresh_token": "yXI1bFQKbXKLD7AIU...",<br>"scope": "openid profile email offline",<br>"token_type": "bearer"<br>} |
