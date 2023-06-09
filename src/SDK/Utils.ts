@@ -18,7 +18,6 @@ import { UnexpectedException } from '../common/exceptions/unexpected.exception';
 import { AdditionalParameters } from '../types/KindeSDK';
 import { AdditionalParametersAllow } from './constants';
 import InAppBrowser from 'react-native-inappbrowser-reborn';
-import { Linking } from 'react-native';
 import KindeSDK from './KindeSDK';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';

@@ -15,7 +15,7 @@ import KindeSDK from '../KindeSDK';
 declare class AuthorizationCode {
     /**
      * It opens the login page in the browser.
-     * @param {KindeSDK} kindSDK - KindeSDK - The SDK object that you created in the previous step.
+     * @param {KindeSDK} kindSDK - The KindeSDK instance
      * @param {boolean} [usePKCE=false] - boolean = false
      * @param {'login' | 'registration'} [startPage=login] - 'login' | 'registration' = 'login'
      * @param {AdditionalParameters} additionalParameters - AdditionalParameters = {}
