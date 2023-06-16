@@ -1,12 +1,14 @@
 // @ts-nocheck
 
 const { KindeSDK } = require(process.cwd() + '/src/index');
+import Constants, { ExecutionEnvironment } from 'expo-constants';
+import { openAuthSessionAsync } from 'expo-web-browser';
 import jwtDecode from 'jwt-decode';
+import InAppBrowser from 'react-native-inappbrowser-reborn';
 import Url from 'url-parse';
-import RNStorage from '../src/SDK/Storage/RNStorage';
 import ExpoStorage from '../src/SDK/Storage/ExpoStorage';
-import Constants from 'expo-constants';
-import { Linking } from 'react-native';
+import RNStorage from '../src/SDK/Storage/RNStorage';
+import { openWebBrowser } from '../src/SDK/Utils';
 
 const fakeTokenResponse = {
     access_token: 'this_is_access_token',
@@ -21,41 +23,39 @@ function FormDataMock() {
     this.append = jest.fn();
 }
 
-jest.mock('react-native', () => {
-    return {
-        Linking: {
-            openURL: jest.fn(),
-            addEventListener: jest.fn(),
-            removeEventListener: jest.fn()
-        }
-    };
-});
+jest.mock('react-native-keychain', () => ({
+    setGenericPassword: jest.fn().mockResolvedValue(),
+    getGenericPassword: jest.fn().mockResolvedValue(),
+    resetGenericPassword: jest.fn().mockResolvedValue()
+}));
 
-jest.mock('react-native-keychain', () => {
-    return {
-        setGenericPassword: jest.fn().mockResolvedValue(),
-        getGenericPassword: jest.fn().mockResolvedValue(),
-        resetGenericPassword: jest.fn().mockResolvedValue()
-    };
-});
+jest.mock('expo-constants', () => ({
+    executionEnvironment: 'test',
+    ExecutionEnvironment: {
+        Bare: 'bare',
+        Standalone: 'standalone',
+        StoreClient: 'storeClient'
+    }
+}));
 
-jest.mock('expo-constants', () => {
-    return {
-        executionEnvironment: 'test',
-        ExecutionEnvironment: {
-            Bare: 'bare',
-            Standalone: 'standalone',
-            StoreClient: 'storeClient'
-        }
-    };
-});
+jest.mock('expo-secure-store', () => ({
+    getItemAsync: jest.fn().mockResolvedValue(),
+    setItemAsync: jest.fn().mockResolvedValue({
+        type: ''
+    }),
+    deleteItemAsync: jest.fn()
+}));
 
-jest.mock('expo-secure-store', () => {
-    return {
-        getItemAsync: jest.fn().mockResolvedValue(),
-        setItemAsync: jest.fn().mockResolvedValue()
-    };
-});
+jest.mock('expo-web-browser', () => ({
+    openAuthSessionAsync: jest.fn().mockResolvedValue()
+}));
+
+jest.mock('react-native-inappbrowser-reborn', () => ({
+    isAvailable: jest.fn().mockResolvedValue(false),
+    openAuth: jest.fn().mockResolvedValue({
+        type: ''
+    })
+}));
 
 global.FormData = FormDataMock;
 
@@ -115,7 +115,43 @@ jest.mock(process.cwd() + '/src/SDK/Utils', () => ({
             });
         }
         return target;
-    })
+    }),
+    OpenWebInApp: jest.fn(async (url, kindeSDK) => {
+        try {
+            const response = await openWebBrowser(url, kindeSDK.redirectUri);
+            if (response.type === 'success' && response.url) {
+                return kindeSDK.getToken(response.url);
+            }
+            return null;
+        } catch (error: any) {
+            return null;
+        }
+    }),
+    openWebBrowser: jest.fn(async (url: string, redirectUri: string) => {
+        const isExpoGo =
+            Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+        if (isExpoGo) {
+            return openAuthSessionAsync(url, redirectUri);
+        }
+
+        if (InAppBrowser) {
+            if (await InAppBrowser.isAvailable()) {
+                return InAppBrowser.openAuth(url, redirectUri, {
+                    ephemeralWebSession: false,
+                    showTitle: false,
+                    enableUrlBarHiding: true,
+                    enableDefaultShare: false
+                });
+            }
+        }
+        throw new Error('Not found web browser');
+    }),
+    get isExpoGo() {
+        return (
+            Constants.executionEnvironment === ExecutionEnvironment.StoreClient
+        );
+    }
 }));
 
 const dataDecoded = {
@@ -164,6 +200,16 @@ describe('KindeSDK', () => {
                 json: () => Promise.resolve(fakeTokenResponse)
             })
         );
+
+        InAppBrowser.isAvailable = jest.fn().mockReturnValue(false);
+
+        InAppBrowser.openAuth = jest.fn().mockResolvedValue({
+            type: ''
+        });
+
+        openAuthSessionAsync = jest.fn().mockResolvedValue({
+            type: ''
+        });
 
         fetch.mockClear();
         jest.clearAllMocks();
@@ -216,8 +262,10 @@ describe('KindeSDK', () => {
             );
         });
     });
+
     describe('Redirect', () => {
-        test('Open authenticate endpoint', async () => {
+        test('[RNStorage] Open authenticate endpoint', async () => {
+            InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
             await globalClient.login();
             const URLParsed = Url(`${configuration.issuer}/oauth2/auth`, true);
             URLParsed.query['client_id'] = configuration.clientId;
@@ -230,10 +278,21 @@ describe('KindeSDK', () => {
             URLParsed.query['state'] = configuration.fakeState;
             URLParsed.query['code_challenge'] = configuration.fakeCodeChallenge;
             URLParsed.query['code_challenge_method'] = 'S256';
-            expect(Linking.openURL).toHaveBeenCalledWith(URLParsed.toString());
+
+            expect(InAppBrowser.openAuth).toHaveBeenCalledWith(
+                URLParsed.toString(),
+                globalClient.redirectUri,
+                {
+                    enableDefaultShare: false,
+                    enableUrlBarHiding: true,
+                    ephemeralWebSession: false,
+                    showTitle: false
+                }
+            );
         });
 
-        test('Open registration endpoint', async () => {
+        test('[RNStorage] Open registration endpoint', async () => {
+            InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
             await globalClient.register();
             const URLParsed = Url(configuration.authorizationEndpoint, true);
             URLParsed.query['client_id'] = configuration.clientId;
@@ -246,17 +305,70 @@ describe('KindeSDK', () => {
             URLParsed.query['state'] = configuration.fakeState;
             URLParsed.query['code_challenge'] = configuration.fakeCodeChallenge;
             URLParsed.query['code_challenge_method'] = 'S256';
-            expect(Linking.openURL).toHaveBeenCalledWith(URLParsed.toString());
+            expect(InAppBrowser.openAuth).toHaveBeenCalledWith(
+                URLParsed.toString(),
+                globalClient.redirectUri,
+                {
+                    enableDefaultShare: false,
+                    enableUrlBarHiding: true,
+                    ephemeralWebSession: false,
+                    showTitle: false
+                }
+            );
         });
 
-        test('Logout', async () => {
+        test('[RNStorage] Logout', async () => {
+            InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
             await globalClient.logout();
             const URLParsed = Url(configuration.logoutEndpoint, true);
             URLParsed.query['redirect'] = configuration.logoutRedirectUri;
-            expect(Linking.openURL).toHaveBeenCalledWith(URLParsed.toString());
+            expect(InAppBrowser.openAuth).toHaveBeenCalledWith(
+                URLParsed.toString(),
+                globalClient.redirectUri,
+                {
+                    enableDefaultShare: false,
+                    enableUrlBarHiding: true,
+                    ephemeralWebSession: false,
+                    showTitle: false
+                }
+            );
         });
 
-        test('Create Organization', async () => {
+        test('[RNStorage] User logged out', async () => {
+            InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
+
+            InAppBrowser.openAuth = jest.fn().mockReturnValue({
+                type: 'success'
+            });
+
+            const rs = await globalClient.logout();
+            expect(rs).toEqual(true);
+        });
+
+        test('[RNStorage] Dismiss log out', async () => {
+            InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
+
+            InAppBrowser.openAuth = jest.fn().mockReturnValue({
+                type: 'dismiss'
+            });
+
+            const rs = await globalClient.logout();
+            expect(rs).toEqual(false);
+        });
+
+        test('[RNStorage] Cancel log out', async () => {
+            InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
+
+            InAppBrowser.openAuth = jest.fn().mockReturnValue({
+                type: 'cancel'
+            });
+
+            const rs = await globalClient.logout();
+            expect(rs).toEqual(false);
+        });
+
+        test('[RNStorage] Create Organization', async () => {
+            InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
             await globalClient.createOrg();
             const URLParsed = Url(configuration.authorizationEndpoint, true);
             URLParsed.query['client_id'] = configuration.clientId;
@@ -270,59 +382,217 @@ describe('KindeSDK', () => {
             URLParsed.query['is_create_org'] = true;
             URLParsed.query['code_challenge'] = configuration.fakeCodeChallenge;
             URLParsed.query['code_challenge_method'] = 'S256';
-            expect(Linking.openURL).toHaveBeenCalledWith(URLParsed.toString());
+            expect(InAppBrowser.openAuth).toHaveBeenCalledWith(
+                URLParsed.toString(),
+                globalClient.redirectUri,
+                {
+                    enableDefaultShare: false,
+                    enableUrlBarHiding: true,
+                    ephemeralWebSession: false,
+                    showTitle: false
+                }
+            );
         });
-    });
 
-    describe('Token', () => {
-        test('[RNStorage] Check authenticated in the case access_token still valid ', async () => {
+        test('[RNStorage] Received token from login', async () => {
+            InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
+            InAppBrowser.openAuth = jest.fn().mockReturnValue({
+                type: 'success',
+                url: 'code=random_code'
+            });
             RNStorage.prototype.getItem = jest.fn().mockReturnValue({
                 password: JSON.stringify(fakeTokenResponse)
             });
 
-            const authenticated = await globalClient.isAuthenticated;
-            expect(authenticated).toEqual(true);
+            const token = await globalClient.login();
+            expect(token).toEqual({
+                access_token: 'this_is_access_token',
+                refresh_token: 'this_is_refresh_token',
+                id_token: 'this_is_id_token',
+                scope: 'this_is_scope',
+                token_type: 'this_is_token_type',
+                expires_in: 86400
+            });
         });
 
-        test('[ExpoStorage] Check authenticated in the case access_token still valid ', async () => {
+        test('[RNStorage] Dismiss web browser', async () => {
+            InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
+            InAppBrowser.openAuth = jest.fn().mockReturnValue({
+                type: 'dismiss'
+            });
+
+            const token = await globalClient.login();
+            expect(token).toEqual(null);
+        });
+
+        test('[RNStorage] Cancel web browser', async () => {
+            InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
+            InAppBrowser.openAuth = jest.fn().mockReturnValue({
+                type: 'cancel'
+            });
+
+            const token = await globalClient.login();
+            expect(token).toEqual(null);
+        });
+
+        test('[ExpoStorage] Open authenticate endpoint', async () => {
             Constants.executionEnvironment = 'storeClient';
 
+            await globalClient.login();
+            const URLParsed = Url(`${configuration.issuer}/oauth2/auth`, true);
+            URLParsed.query['client_id'] = configuration.clientId;
+            URLParsed.query['redirect_uri'] = configuration.redirectUri;
+            URLParsed.query['client_secret'] = configuration.clientSecret;
+            URLParsed.query['grant_type'] = 'authorization_code';
+            URLParsed.query['scope'] = configuration.scope;
+            URLParsed.query['start_page'] = 'login';
+            URLParsed.query['response_type'] = 'code';
+            URLParsed.query['state'] = configuration.fakeState;
+            URLParsed.query['code_challenge'] = configuration.fakeCodeChallenge;
+            URLParsed.query['code_challenge_method'] = 'S256';
+
+            expect(openAuthSessionAsync).toHaveBeenCalledWith(
+                URLParsed.toString(),
+                globalClient.redirectUri
+            );
+        });
+
+        test('[ExpoStorage] Open registration endpoint', async () => {
+            Constants.executionEnvironment = 'storeClient';
+
+            await globalClient.register();
+            const URLParsed = Url(configuration.authorizationEndpoint, true);
+            URLParsed.query['client_id'] = configuration.clientId;
+            URLParsed.query['redirect_uri'] = configuration.redirectUri;
+            URLParsed.query['client_secret'] = configuration.clientSecret;
+            URLParsed.query['grant_type'] = 'authorization_code';
+            URLParsed.query['scope'] = configuration.scope;
+            URLParsed.query['start_page'] = 'registration';
+            URLParsed.query['response_type'] = 'code';
+            URLParsed.query['state'] = configuration.fakeState;
+            URLParsed.query['code_challenge'] = configuration.fakeCodeChallenge;
+            URLParsed.query['code_challenge_method'] = 'S256';
+
+            expect(openAuthSessionAsync).toHaveBeenCalledWith(
+                URLParsed.toString(),
+                globalClient.redirectUri
+            );
+        });
+
+        test('[ExpoStorage] Logout', async () => {
+            Constants.executionEnvironment = 'storeClient';
+
+            await globalClient.logout();
+            const URLParsed = Url(configuration.logoutEndpoint, true);
+            URLParsed.query['redirect'] = configuration.logoutRedirectUri;
+
+            expect(openAuthSessionAsync).toHaveBeenCalledWith(
+                URLParsed.toString(),
+                globalClient.redirectUri
+            );
+        });
+
+        test('[ExpoStorage] User logged out', async () => {
+            Constants.executionEnvironment = 'storeClient';
+
+            openAuthSessionAsync = jest.fn().mockReturnValue({
+                type: 'success'
+            });
+
+            const rs = await globalClient.logout();
+            expect(rs).toEqual(true);
+        });
+
+        test('[ExpoStorage] Dismiss log out', async () => {
+            Constants.executionEnvironment = 'storeClient';
+
+            openAuthSessionAsync = jest.fn().mockReturnValue({
+                type: 'dismiss'
+            });
+
+            const rs = await globalClient.logout();
+            expect(rs).toEqual(false);
+        });
+
+        test('[ExpoStorage] Cancel log out', async () => {
+            Constants.executionEnvironment = 'storeClient';
+
+            openAuthSessionAsync = jest.fn().mockReturnValue({
+                type: 'cancel'
+            });
+
+            const rs = await globalClient.logout();
+            expect(rs).toEqual(false);
+        });
+
+        test('[ExpoStorage] Create Organization', async () => {
+            Constants.executionEnvironment = 'storeClient';
+            await globalClient.createOrg();
+            const URLParsed = Url(configuration.authorizationEndpoint, true);
+            URLParsed.query['client_id'] = configuration.clientId;
+            URLParsed.query['redirect_uri'] = configuration.redirectUri;
+            URLParsed.query['client_secret'] = configuration.clientSecret;
+            URLParsed.query['grant_type'] = 'authorization_code';
+            URLParsed.query['scope'] = configuration.scope;
+            URLParsed.query['start_page'] = 'registration';
+            URLParsed.query['response_type'] = 'code';
+            URLParsed.query['state'] = configuration.fakeState;
+            URLParsed.query['is_create_org'] = true;
+            URLParsed.query['code_challenge'] = configuration.fakeCodeChallenge;
+            URLParsed.query['code_challenge_method'] = 'S256';
+
+            expect(openAuthSessionAsync).toHaveBeenCalledWith(
+                URLParsed.toString(),
+                globalClient.redirectUri
+            );
+        });
+
+        test('[ExpoStorage] Received token from login', async () => {
+            Constants.executionEnvironment = 'storeClient';
+
+            openAuthSessionAsync = jest.fn().mockReturnValue({
+                type: 'success',
+                url: 'code=random_code'
+            });
             ExpoStorage.prototype.getItem = jest
                 .fn()
                 .mockReturnValue(JSON.stringify(fakeTokenResponse));
 
-            const authenticated = await globalClient.isAuthenticated;
-            expect(authenticated).toEqual(true);
-        });
-
-        test('RNStorage] Check authenticated use refresh_token', async () => {
-            RNStorage.prototype.getItem = jest.fn().mockReturnValue({
-                password: JSON.stringify({
-                    ...fakeTokenResponse,
-                    access_token: '',
-                    expires_in: 0
-                })
+            const token = await globalClient.login();
+            expect(token).toEqual({
+                access_token: 'this_is_access_token',
+                refresh_token: 'this_is_refresh_token',
+                id_token: 'this_is_id_token',
+                scope: 'this_is_scope',
+                token_type: 'this_is_token_type',
+                expires_in: 86400
             });
-
-            const authenticated = await globalClient.isAuthenticated;
-            expect(authenticated).toEqual(true);
         });
 
-        test('[ExpoStorage] Check authenticated use refresh_token', async () => {
+        test('[ExpoStorage] Dismiss web browser', async () => {
             Constants.executionEnvironment = 'storeClient';
 
-            ExpoStorage.prototype.getItem = jest.fn().mockReturnValue(
-                JSON.stringify({
-                    ...fakeTokenResponse,
-                    access_token: '',
-                    expires_in: 0
-                })
-            );
+            openAuthSessionAsync = jest.fn().mockReturnValue({
+                type: 'dismiss'
+            });
 
-            const authenticated = await globalClient.isAuthenticated;
-            expect(authenticated).toEqual(true);
+            const token = await globalClient.login();
+            expect(token).toEqual(null);
         });
 
+        test('[ExpoStorage] Cancel web browser', async () => {
+            Constants.executionEnvironment = 'storeClient';
+
+            openAuthSessionAsync = jest.fn().mockReturnValue({
+                type: 'cancel'
+            });
+
+            const token = await globalClient.login();
+            expect(token).toEqual(null);
+        });
+    });
+
+    describe('Token', () => {
         test('Check not authenticated', async () => {
             const authenticated = await globalClient.isAuthenticated;
             expect(authenticated).toEqual(false);
@@ -363,6 +633,52 @@ describe('KindeSDK', () => {
                 token_type: 'this_is_token_type',
                 expires_in: 86400
             });
+        });
+        test('[RNStorage] Check authenticated in the case access_token still valid ', async () => {
+            RNStorage.prototype.getItem = jest.fn().mockReturnValue({
+                password: JSON.stringify(fakeTokenResponse)
+            });
+
+            const authenticated = await globalClient.isAuthenticated;
+            expect(authenticated).toEqual(true);
+        });
+
+        test('[RNStorage] Check authenticated use refresh_token', async () => {
+            RNStorage.prototype.getItem = jest.fn().mockReturnValue({
+                password: JSON.stringify({
+                    ...fakeTokenResponse,
+                    access_token: '',
+                    expires_in: 0
+                })
+            });
+
+            const authenticated = await globalClient.isAuthenticated;
+            expect(authenticated).toEqual(true);
+        });
+
+        test('[ExpoStorage] Check authenticated in the case access_token still valid ', async () => {
+            Constants.executionEnvironment = 'storeClient';
+            ExpoStorage.prototype.getItem = jest
+                .fn()
+                .mockReturnValue(JSON.stringify(fakeTokenResponse));
+
+            const authenticated = await globalClient.isAuthenticated;
+            expect(authenticated).toEqual(true);
+        });
+
+        test('[ExpoStorage] Check authenticated use refresh_token', async () => {
+            Constants.executionEnvironment = 'storeClient';
+
+            ExpoStorage.prototype.getItem = jest.fn().mockReturnValue(
+                JSON.stringify({
+                    ...fakeTokenResponse,
+                    access_token: '',
+                    expires_in: 0
+                })
+            );
+
+            const authenticated = await globalClient.isAuthenticated;
+            expect(authenticated).toEqual(true);
         });
 
         test('[RNStorage] Get Token instance when user is authenticated', async () => {
