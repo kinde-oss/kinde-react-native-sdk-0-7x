@@ -753,7 +753,7 @@ If you got the error `'value' is unavailable: introduced in iOS 12.0` when tryin
 
 ##### Dependency `'androidx.browser:browser:1.6.0-beta01'` requires libraries and applications that depend on it to compile against version 34 or later of the Android APIs.
 
-The solution is add `androidXBrowser = "1.4.0"` in your project.
+The solution is add `androidXBrowser = "1.5.0"` in your project.
 
 
 ```java
@@ -762,7 +762,7 @@ buildscript {
     ...
     ext {
         // ...
-        androidXBrowser = "1.4.0"
+        androidXBrowser = "1.5.0"
         // ....
     }
     ...
