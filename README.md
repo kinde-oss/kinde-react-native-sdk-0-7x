@@ -8,14 +8,25 @@ Provides endpoints to manage your Kinde Businesses
 We only support the recommended [Authorization Code Flow with PKCE](https://oauth.net/2/pkce/).
 For more information, please visit [https://kinde.com/docs](https://kinde.com/docs)
 
-## Support versions
+## Table of contents
+- [Support Versions](#support-versions)
+- [Installing Dependencies](#installing-dependencies)
+- [Installation](#installation)
+- [Getting Started](#getting-started)
+- [Token Storage](#token-storage)
+- [How to run test](#how-to-run-test)
+- [SDK API Reference](#sdk-api-reference)
+- [KindeSDK Methods](#kindesdk-methods)
+- [General Tips](#general-tips)
+
+## Support Versions
 
 We support both **Expo** and **React Native** versions 0.70 and higher.
 To use this package with older versions of **React Native**, please visit
 
 -   [react-native-sdk-0-5x _(Not support Expo)_](https://github.com/kinde-oss/react-native-sdk-0-5x)
 
-## Installing dependencies
+## Installing Dependencies
 
 You will need Node, the React Native command line interface, a JDK, Android Studio (for Android) and Xcode (for iOS).
 
@@ -708,7 +719,7 @@ _Note: Ensure you have already run `npm install` before_
 | additionalParameters            | object  | No          | {}                           | Additional parameters that will be passed in the authorization request                                            |
 | additionalParameters - audience | string  | No          |                              | The audience claim for the JWT                                                                                    |
 
-## KindeSDK methods
+## KindeSDK Methods
 
 | Property             | Description                                                                                       | Arguments                           | Usage                                                                                                                                                                                 | Sample output                                                                                                                                                                                                                |
 | -------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -725,7 +736,51 @@ _Note: Ensure you have already run `npm install` before_
 | getUserOrganizations | Gets an array of all organizations the user has access to                                         |                                     | await kinde.getUserOrganizations();                                                                                                                                                   | {"orgCodes":["org1​234","org5​678"]}                                                                                                                                                                                         |
 | isAuthenticated      | Return the boolean to demonstrate whether the user is authenticated or not.                       |                                     | await kinde.isAuthenticate                                                                                                                                                            | true or false                                                                                                                                                                                                                |
 
-## General tips
+## General Tips
+
+### Building Issues
+
+##### `'value'` is unavailable: introduced in iOS 12.0
+If you got the error `'value' is unavailable: introduced in iOS 12.0` when trying to build the app, you can follow the below steps to fix that:
+
+1. In your Xcode project navigator, select `Pods`
+2. Under Targets, select `React-Codegen`
+3. Set the window to `Build Settings`
+4. Under `Deployment`, set `iOS Deployment Target` to `12.4`
+5. Clean project and rebuild: `Product > Clean Build Folder, Product > Build`
+
+![screenshot](./assets/build-issue.png)
+
+##### Dependency `'androidx.browser:browser:1.6.0-beta01'` requires libraries and applications that depend on it to compile against version 34 or later of the Android APIs.
+
+The solution is add `androidXBrowser = "1.5.0"` in your project.
+
+
+```java
+// android/build.gradle
+buildscript {
+    ...
+    ext {
+        // ...
+        androidXBrowser = "1.5.0"
+        // ....
+    }
+    ...
+}
+```
+
+##### Duplicate class kotlin.collections.jdk8.CollectionsJDK8Kt found in modules jetified-kotlin-stdlib-1.8.10 (org.jetbrains.kotlin:kotlin-stdlib:1.8.10) and jetified-kotlin-stdlib-jdk8-1.7.22 (org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.22)
+
+The solution is add `org.jetbrains.kotlin:kotlin-bom:1.8.0` dependency in your project.
+```java
+// android/app/build.grade
+dependencies {
+    ...
+    implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.8.0"))
+    ...
+}
+```
+### Caching Issues
 
 Sometimes there will be issues related to caching when you develop React Native.
 There are some recommendations for cleaning the cache:
