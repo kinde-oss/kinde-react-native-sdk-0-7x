@@ -148,8 +148,13 @@ class KindeSDK extends runtime.BaseAPI {
     }
 
     /**
-     * It cleans up the local storage, and then opens a URL that will log the user out of the identity
-     * provider
+     * The `logout` function is an asynchronous function that performs cleanup tasks and then either
+     * revokes the user's authorization or redirects them to a logout endpoint.
+     * @param [isRevoke=false] - A boolean value indicating whether the logout should also revoke the
+     * user's authorization.
+     * @returns a boolean value. If the `isRevoke` parameter is `true`, it returns `true` if the revoke
+     * request is successful, and `false` if there is an error. If the `isRevoke` parameter is `false`,
+     * it returns `true` if the logout redirect is successful, and `false` if there is an error.
      */
     async logout(isRevoke = false) {
         await this.cleanUp();
@@ -414,10 +419,6 @@ class KindeSDK extends runtime.BaseAPI {
 
     get tokenEndpoint(): string {
         return `${this.issuer}/oauth2/token`;
-    }
-
-    get revokeEndpoint(): string {
-        return `${this.issuer}/oauth2/revoke`;
     }
 
     get logoutEndpoint(): string {
