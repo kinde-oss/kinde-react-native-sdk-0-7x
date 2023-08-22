@@ -31,7 +31,7 @@ import {
 class AuthorizationCode {
     /**
      * It opens the login page in the browser.
-     * @param {KindeSDK} kindSDK - KindeSDK - The SDK object that you created in the previous step.
+     * @param {KindeSDK} kindSDK - The KindeSDK instance
      * @param {boolean} [usePKCE=false] - boolean = false
      * @param {'login' | 'registration'} [startPage=login] - 'login' | 'registration' = 'login'
      * @param {AdditionalParameters} additionalParameters - AdditionalParameters = {}
@@ -44,13 +44,13 @@ class AuthorizationCode {
         additionalParameters: AdditionalParameters = {}
     ): Promise<TokenResponse | null> {
         const URLParsed = Url(kindeSDK.authorizationEndpoint, true);
-        URLParsed.query['client_id'] = kindeSDK.clientId;
-        URLParsed.query['redirect_uri'] = kindeSDK.redirectUri;
-        URLParsed.query['client_secret'] = kindeSDK.clientSecret;
-        URLParsed.query['grant_type'] = 'authorization_code';
-        URLParsed.query['scope'] = kindeSDK.scope;
+        const baseInfo = this.buildBaseAuthenticateURL(kindeSDK);
+
+        Object.keys(baseInfo).forEach((k) => {
+            URLParsed.query[k] = baseInfo[k];
+        });
+
         URLParsed.query['start_page'] = startPage;
-        URLParsed.query['response_type'] = 'code';
 
         const stateGenerated = generateRandomString();
         URLParsed.query['state'] = stateGenerated;
@@ -63,6 +63,19 @@ class AuthorizationCode {
             Storage.setCodeVerifier(challenge.codeVerifier);
         }
         return OpenWebInApp(URLParsed.toString(), kindeSDK);
+    }
+
+    buildBaseAuthenticateURL(
+        kindeSDK: KindeSDK
+    ): Record<string, string | undefined> {
+        return {
+            client_id: kindeSDK.clientId,
+            redirect_uri: kindeSDK.redirectUri,
+            client_secret: kindeSDK.clientSecret,
+            scope: kindeSDK.scope,
+            grant_type: 'authorization_code',
+            response_type: 'code'
+        };
     }
 }
 

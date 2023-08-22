@@ -53,3 +53,4 @@ export declare const addAdditionalParameters: (target: Record<string, string | u
 export declare const isExpoGo: boolean;
 export declare const OpenWebInApp: (url: string, kindeSDK: KindeSDK) => Promise<import("../types/KindeSDK").TokenResponse | null>;
 export declare const openWebBrowser: (url: string, redirectUri: string) => Promise<WebBrowser.WebBrowserRedirectResult | WebBrowser.WebBrowserResult | import("react-native-inappbrowser-reborn").BrowserResult>;
+export declare const convertObject2FormData: (obj: Record<string, any>) => FormData;

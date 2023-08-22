@@ -8,14 +8,26 @@ Provides endpoints to manage your Kinde Businesses
 We only support the recommended [Authorization Code Flow with PKCE](https://oauth.net/2/pkce/).
 For more information, please visit [https://kinde.com/docs](https://kinde.com/docs)
 
-## Support versions
+## Table of contents
+
+-   [Support Versions](#support-versions)
+-   [Installing Dependencies](#installing-dependencies)
+-   [Installation](#installation)
+-   [Getting Started](#getting-started)
+-   [Token Storage](#token-storage)
+-   [How to run test](#how-to-run-test)
+-   [SDK API Reference](#sdk-api-reference)
+-   [KindeSDK Methods](#kindesdk-methods)
+-   [General Tips](#general-tips)
+
+## Support Versions
 
 We support both **Expo** and **React Native** versions 0.70 and higher.
 To use this package with older versions of **React Native**, please visit
 
 -   [react-native-sdk-0-5x _(Not support Expo)_](https://github.com/kinde-oss/react-native-sdk-0-5x)
 
-## Installing dependencies
+## Installing Dependencies
 
 You will need Node, the React Native command line interface, a JDK, Android Studio (for Android) and Xcode (for iOS).
 
@@ -333,6 +345,8 @@ const handleSignIn = async () => {
 
 ### ~~Handle redirect~~ [Deprecated]
 
+**_Note_: Since version 1.1, handling redirection is no longer necessary because the SDK authenticates by starting a web browser inside your app rather than using an external one. Details regarding implementations can be found at: [Full code sample for the authentication](#full-code-sample-for-the-authentication)**
+
 After the user logs in to Kinde, it will be redirected to your app via a deep link, which includes some information (e.g., code) as parameters, and then you need to call the `getToken` method to receive a token from Kinde. The SDK will store the token on the keychain. Now, the user will be authenticated without logging in again.
 
 ##### ~~Handle redirect with React Native~~
@@ -443,6 +457,66 @@ const handleLogout = async () => {
     const loggedOut = client.logout();
     if (loggedOut) {
         // User was logged out
+    }
+};
+```
+
+We have also implemented an API for token revocation. Simply pass `true` as an argument in the `logout` function. This flag will assist in revoking the token without having to open the website within your apps.
+
+```javascript
+const handleLogout = async () => {
+    const loggedOut = client.logout(true);
+    if (loggedOut) {
+        // User was logged out
+    }
+};
+```
+
+### Full code sample for the authentication
+
+```javascript
+const checkAuthenticate = async () => {
+    // Using `isAuthenticated` to check if the user is authenticated or not
+    if (await client.isAuthenticated) {
+        // Need to implement, e.g: call an api, etc...
+    } else {
+        // Need to implement, e.g: redirect user to sign in, etc..
+    }
+};
+
+useEffect(() => {
+    checkAuthenticate();
+}, []);
+
+const handleSignIn = async () => {
+    const token = await client.login();
+
+    if (token) {
+        // Need to implement, e.g: call an api, etc...
+    }
+};
+
+const handleSignUp = async () => {
+    const token = await client.register();
+
+    if (token) {
+        // Need to implement, e.g: call an api, etc...
+    }
+};
+
+const handleLogout = async () => {
+    // With open web in your apps
+    const isLoggedOut = await client.logout();
+
+    if (isLoggedOut) {
+        // Need to implement, e.g: redirect user to login screen, etc...
+    }
+
+    // Without open web in your apps
+    const isLoggedOut = await client.logout(true);
+
+    if (isLoggedOut) {
+        // Need to implement, e.g: redirect user to login screen, etc...
     }
 };
 ```
@@ -768,13 +842,13 @@ _Note: Ensure you have already run `npm install` before_
 | additionalParameters            | object  | No          | {}                           | Additional parameters that will be passed in the authorization request                                            |
 | additionalParameters - audience | string  | No          |                              | The audience claim for the JWT                                                                                    |
 
-## KindeSDK methods
+## KindeSDK Methods
 
 | Property             | Description                                                                                       | Arguments                                                   | Usage                                                                                                                                                                                 | Sample output                                                                                                                                                                                                                |
 | -------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | login                | Constructs redirect url and sends user to Kinde to sign in                                        | {<br>org_code?: string<br>}                                 | await kinde.login(); or<br>await kinde.login({org_code: 'your organization code'}) // Allow org_code to be provided if a specific org is to be signed up into.                        | {<br>"access_token": "eyJhbGciOiJSUzI...",<br>"expires_in": 86400,<br>"id_token": "eyJhbGciOiJSU...",<br>"refresh_token": "yXI1bFQKbXKLD7AIU...",<br>"scope": "openid profile email offline",<br>"token_type": "bearer"<br>} |
 | register             | Constructs redirect url and sends user to Kinde to sign up                                        | {<br>org_code?: string<br>}                                 | await kinde.register(); or<br>await kinde.register({org_code: 'your organization code'}) // Allow org_code to be provided if a specific org is to be registered into.                 | {<br>"access_token": "eyJhbGciOiJSUzI...",<br>"expires_in": 86400,<br>"id_token": "eyJhbGciOiJSU...",<br>"refresh_token": "yXI1bFQKbXKLD7AIU...",<br>"scope": "openid profile email offline",<br>"token_type": "bearer"<br>} |
-| logout               | Logs the user out of Kinde                                                                        |                                                             | await kinde.logout();                                                                                                                                                                 | true or false                                                                                                                                                                                                                |
+| logout               | Logs the user out of Kinde                                                                        | isRevoke: boolean // default is false                       | await kinde.logout(); or <br> await kinde.logout(true);                                                                                                                               | true or false                                                                                                                                                                                                                |
 | getToken             | Returns the raw Access token from URL after logged from Kinde                                     | url?: string                                                | kinde.getToken(url); or<br>kinde.getToken(); // In this case, you have already authenticated before. Otherwise, an error will be thrown in here                                       | {<br>"access_token": "eyJhbGciOiJSUzI...",<br>"expires_in": 86400,<br>"id_token": "eyJhbGciOiJSU...",<br>"refresh_token": "yXI1bFQKbXKLD7AIU...",<br>"scope": "openid profile email offline",<br>"token_type": "bearer"<br>} |
 | createOrg            | Constructs redirect url and sends user to Kinde to sign up and create a new org for your business | {<br>org_name?: string<br>}                                 | await kinde.createOrg(); or<br>await kinde.createOrg({org_name: 'your organization name'}); // Allow org_name to be provided if you want a specific organization name when you create | {<br>"access_token": "eyJhbGciOiJSUzI...",<br>"expires_in": 86400,<br>"id_token": "eyJhbGciOiJSU...",<br>"refresh_token": "yXI1bFQKbXKLD7AIU...",<br>"scope": "openid profile email offline",<br>"token_type": "bearer"<br>} |
 | getClaim             | Gets a claim from an access or id token                                                           | claim: string;<br>tokenKey?: string                         | await kinde.getClaim('given_name', 'id_token');                                                                                                                                       | "David"                                                                                                                                                                                                                      |
@@ -789,7 +863,53 @@ _Note: Ensure you have already run `npm install` before_
 | getIntegerFlag       | Gets a integer feature flag from an access token                                                  | code: string,<br>{ defaultValue: any }                      | await kinde.getIntegerFlag("competitions_limit");                                                                                                                                     | 1                                                                                                                                                                                                                            |
 | isAuthenticated      | Return the boolean to demonstrate whether the user is authenticated or not.                       |                                                             | await kinde.isAuthenticate                                                                                                                                                            | true or false                                                                                                                                                                                                                |
 
-## General tips
+## General Tips
+
+### Building Issues
+
+##### `'value'` is unavailable: introduced in iOS 12.0
+
+If you got the error `'value' is unavailable: introduced in iOS 12.0` when trying to build the app, you can follow the below steps to fix that:
+
+1. In your Xcode project navigator, select `Pods`
+2. Under Targets, select `React-Codegen`
+3. Set the window to `Build Settings`
+4. Under `Deployment`, set `iOS Deployment Target` to `12.4`
+5. Clean project and rebuild: `Product > Clean Build Folder, Product > Build`
+
+![screenshot](./assets/build-issue.png)
+
+##### Dependency `'androidx.browser:browser:1.6.0-beta01'` requires libraries and applications that depend on it to compile against version 34 or later of the Android APIs.
+
+The solution is add `androidXBrowser = "1.5.0"` in your project.
+
+```java
+// android/build.gradle
+buildscript {
+    ...
+    ext {
+        // ...
+        androidXBrowser = "1.5.0"
+        // ....
+    }
+    ...
+}
+```
+
+##### Duplicate class kotlin.collections.jdk8.CollectionsJDK8Kt found in modules jetified-kotlin-stdlib-1.8.10 (org.jetbrains.kotlin:kotlin-stdlib:1.8.10) and jetified-kotlin-stdlib-jdk8-1.7.22 (org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.22)
+
+The solution is add `org.jetbrains.kotlin:kotlin-bom:1.8.0` dependency in your project.
+
+```java
+// android/app/build.grade
+dependencies {
+    ...
+    implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.8.0"))
+    ...
+}
+```
+
+### Caching Issues
 
 Sometimes there will be issues related to caching when you develop React Native.
 There are some recommendations for cleaning the cache:

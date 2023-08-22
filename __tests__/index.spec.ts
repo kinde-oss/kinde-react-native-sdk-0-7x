@@ -147,12 +147,25 @@ jest.mock(process.cwd() + '/src/SDK/Utils', () => ({
         }
         throw new Error('Not found web browser');
     }),
+
+    convertObject2FormData: jest.fn((obj: Record<string, any>) => {
+        const formData = new FormData();
+
+        Object.keys(obj).forEach((k) => {
+            formData.append(k, obj[k]);
+        });
+
+        return formData;
+    }),
+
     get isExpoGo() {
         return (
             Constants.executionEnvironment === ExecutionEnvironment.StoreClient
         );
     }
 }));
+
+jest.mock(process.cwd() + '/src/ApiClient');
 
 const dataDecoded = {
     azp: 'test@live',
@@ -262,6 +275,7 @@ describe('KindeSDK', () => {
             );
         });
     });
+
     describe('Redirect', () => {
         test('[RNStorage] Open authenticate endpoint', async () => {
             InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
@@ -270,10 +284,10 @@ describe('KindeSDK', () => {
             URLParsed.query['client_id'] = configuration.clientId;
             URLParsed.query['redirect_uri'] = configuration.redirectUri;
             URLParsed.query['client_secret'] = configuration.clientSecret;
-            URLParsed.query['grant_type'] = 'authorization_code';
             URLParsed.query['scope'] = configuration.scope;
-            URLParsed.query['start_page'] = 'login';
+            URLParsed.query['grant_type'] = 'authorization_code';
             URLParsed.query['response_type'] = 'code';
+            URLParsed.query['start_page'] = 'login';
             URLParsed.query['state'] = configuration.fakeState;
             URLParsed.query['code_challenge'] = configuration.fakeCodeChallenge;
             URLParsed.query['code_challenge_method'] = 'S256';
@@ -297,10 +311,10 @@ describe('KindeSDK', () => {
             URLParsed.query['client_id'] = configuration.clientId;
             URLParsed.query['redirect_uri'] = configuration.redirectUri;
             URLParsed.query['client_secret'] = configuration.clientSecret;
-            URLParsed.query['grant_type'] = 'authorization_code';
             URLParsed.query['scope'] = configuration.scope;
-            URLParsed.query['start_page'] = 'registration';
+            URLParsed.query['grant_type'] = 'authorization_code';
             URLParsed.query['response_type'] = 'code';
+            URLParsed.query['start_page'] = 'registration';
             URLParsed.query['state'] = configuration.fakeState;
             URLParsed.query['code_challenge'] = configuration.fakeCodeChallenge;
             URLParsed.query['code_challenge_method'] = 'S256';
@@ -373,10 +387,10 @@ describe('KindeSDK', () => {
             URLParsed.query['client_id'] = configuration.clientId;
             URLParsed.query['redirect_uri'] = configuration.redirectUri;
             URLParsed.query['client_secret'] = configuration.clientSecret;
-            URLParsed.query['grant_type'] = 'authorization_code';
             URLParsed.query['scope'] = configuration.scope;
-            URLParsed.query['start_page'] = 'registration';
+            URLParsed.query['grant_type'] = 'authorization_code';
             URLParsed.query['response_type'] = 'code';
+            URLParsed.query['start_page'] = 'registration';
             URLParsed.query['state'] = configuration.fakeState;
             URLParsed.query['is_create_org'] = true;
             URLParsed.query['code_challenge'] = configuration.fakeCodeChallenge;
@@ -442,10 +456,10 @@ describe('KindeSDK', () => {
             URLParsed.query['client_id'] = configuration.clientId;
             URLParsed.query['redirect_uri'] = configuration.redirectUri;
             URLParsed.query['client_secret'] = configuration.clientSecret;
-            URLParsed.query['grant_type'] = 'authorization_code';
             URLParsed.query['scope'] = configuration.scope;
-            URLParsed.query['start_page'] = 'login';
+            URLParsed.query['grant_type'] = 'authorization_code';
             URLParsed.query['response_type'] = 'code';
+            URLParsed.query['start_page'] = 'login';
             URLParsed.query['state'] = configuration.fakeState;
             URLParsed.query['code_challenge'] = configuration.fakeCodeChallenge;
             URLParsed.query['code_challenge_method'] = 'S256';
@@ -464,10 +478,10 @@ describe('KindeSDK', () => {
             URLParsed.query['client_id'] = configuration.clientId;
             URLParsed.query['redirect_uri'] = configuration.redirectUri;
             URLParsed.query['client_secret'] = configuration.clientSecret;
-            URLParsed.query['grant_type'] = 'authorization_code';
             URLParsed.query['scope'] = configuration.scope;
-            URLParsed.query['start_page'] = 'registration';
+            URLParsed.query['grant_type'] = 'authorization_code';
             URLParsed.query['response_type'] = 'code';
+            URLParsed.query['start_page'] = 'registration';
             URLParsed.query['state'] = configuration.fakeState;
             URLParsed.query['code_challenge'] = configuration.fakeCodeChallenge;
             URLParsed.query['code_challenge_method'] = 'S256';
@@ -531,10 +545,10 @@ describe('KindeSDK', () => {
             URLParsed.query['client_id'] = configuration.clientId;
             URLParsed.query['redirect_uri'] = configuration.redirectUri;
             URLParsed.query['client_secret'] = configuration.clientSecret;
-            URLParsed.query['grant_type'] = 'authorization_code';
             URLParsed.query['scope'] = configuration.scope;
-            URLParsed.query['start_page'] = 'registration';
+            URLParsed.query['grant_type'] = 'authorization_code';
             URLParsed.query['response_type'] = 'code';
+            URLParsed.query['start_page'] = 'registration';
             URLParsed.query['state'] = configuration.fakeState;
             URLParsed.query['is_create_org'] = true;
             URLParsed.query['code_challenge'] = configuration.fakeCodeChallenge;
@@ -588,6 +602,18 @@ describe('KindeSDK', () => {
 
             const token = await globalClient.login();
             expect(token).toEqual(null);
+        });
+
+        test('Logout Revoke Token', async () => {
+            global.fetch = jest.fn(() =>
+                Promise.resolve({
+                    json: () => Promise.resolve(fakeTokenResponse)
+                })
+            );
+
+            const rs = await globalClient.logout(true);
+
+            expect(rs).toEqual(true);
         });
     });
 

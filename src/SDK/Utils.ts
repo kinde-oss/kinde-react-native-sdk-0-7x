@@ -194,3 +194,13 @@ export const openWebBrowser = async (url: string, redirectUri: string) => {
     }
     throw new Error('Not found web browser');
 };
+
+export const convertObject2FormData = (obj: Record<string, any>) => {
+    const formData = new FormData();
+
+    Object.keys(obj).forEach((k) => {
+        formData.append(k, obj[k]);
+    });
+
+    return formData;
+};
