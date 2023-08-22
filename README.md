@@ -335,7 +335,7 @@ const handleSignUp = async () => {
 };
 
 const handleSignIn = async () => {
-  const token = client.login();
+  const token = await client.login();
   if (token) {
     // User was authenticated
   }

@@ -115,18 +115,20 @@ class KindeSDK extends runtime.BaseAPI {
     }
 
     /**
-     * This function registers an organization with additional parameters and authenticates it using an
-     * authorization code.
-     * @param {OrgAdditionalParams} additionalParameters - `additionalParameters` is an optional object
-     * parameter that can be passed to the `register` function. It is used to provide additional
-     * parameters that may be required for the registration process. These parameters can vary
-     * depending on the specific implementation of the registration process.
-     * @returns A Promise that resolves to void.
+     * The `register` function is an asynchronous function that registers a user by authenticating
+     * their authorization code and additional parameters.
+     * @param {OrgAdditionalParams} additionalParameters - The `additionalParameters` parameter is an
+     * optional object that can contain additional parameters for the registration process. It is of
+     * type `OrgAdditionalParams`, which is a custom type that you may have defined elsewhere in your
+     * code.
+     * @returns a Promise that resolves to either a TokenResponse object or null.
      */
-    register(
+    async register(
         additionalParameters: OrgAdditionalParams = {}
     ): Promise<TokenResponse | null> {
         checkAdditionalParameters(additionalParameters);
+        await this.cleanUp();
+
         const auth = new AuthorizationCode();
         return auth.authenticate(
             this,

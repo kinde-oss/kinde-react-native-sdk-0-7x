@@ -46,13 +46,13 @@ declare class KindeSDK extends runtime.BaseAPI {
      */
     login(additionalParameters?: Omit<OrgAdditionalParams, 'is_create_org'>): Promise<TokenResponse | null>;
     /**
-     * This function registers an organization with additional parameters and authenticates it using an
-     * authorization code.
-     * @param {OrgAdditionalParams} additionalParameters - `additionalParameters` is an optional object
-     * parameter that can be passed to the `register` function. It is used to provide additional
-     * parameters that may be required for the registration process. These parameters can vary
-     * depending on the specific implementation of the registration process.
-     * @returns A Promise that resolves to void.
+     * The `register` function is an asynchronous function that registers a user by authenticating
+     * their authorization code and additional parameters.
+     * @param {OrgAdditionalParams} additionalParameters - The `additionalParameters` parameter is an
+     * optional object that can contain additional parameters for the registration process. It is of
+     * type `OrgAdditionalParams`, which is a custom type that you may have defined elsewhere in your
+     * code.
+     * @returns a Promise that resolves to either a TokenResponse object or null.
      */
     register(additionalParameters?: OrgAdditionalParams): Promise<TokenResponse | null>;
     /**
@@ -62,8 +62,13 @@ declare class KindeSDK extends runtime.BaseAPI {
      */
     createOrg(additionalParameters?: Omit<OrgAdditionalParams, 'is_create_org'>): Promise<TokenResponse | null>;
     /**
-     * It cleans up the local storage, and then opens a URL that will log the user out of the identity
-     * provider
+     * The `logout` function is an asynchronous function that performs cleanup tasks and then either
+     * revokes the user's authorization or redirects them to a logout endpoint.
+     * @param [isRevoke=false] - A boolean value indicating whether the logout should also revoke the
+     * user's authorization.
+     * @returns a boolean value. If the `isRevoke` parameter is `true`, it returns `true` if the revoke
+     * request is successful, and `false` if there is an error. If the `isRevoke` parameter is `false`,
+     * it returns `true` if the logout redirect is successful, and `false` if there is an error.
      */
     logout(isRevoke?: boolean): Promise<boolean>;
     /**
@@ -164,7 +169,6 @@ declare class KindeSDK extends runtime.BaseAPI {
     get isAuthenticated(): Promise<boolean>;
     get authorizationEndpoint(): string;
     get tokenEndpoint(): string;
-    get revokeEndpoint(): string;
     get logoutEndpoint(): string;
 }
 export default KindeSDK;
