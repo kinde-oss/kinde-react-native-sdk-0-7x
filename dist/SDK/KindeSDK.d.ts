@@ -62,8 +62,13 @@ declare class KindeSDK extends runtime.BaseAPI {
      */
     createOrg(additionalParameters?: Omit<OrgAdditionalParams, 'is_create_org'>): Promise<TokenResponse | null>;
     /**
-     * It cleans up the local storage, and then opens a URL that will log the user out of the identity
-     * provider
+     * The `logout` function is an asynchronous function that performs cleanup tasks and then either
+     * revokes the user's authorization or redirects them to a logout endpoint.
+     * @param [isRevoke=false] - A boolean value indicating whether the logout should also revoke the
+     * user's authorization.
+     * @returns a boolean value. If the `isRevoke` parameter is `true`, it returns `true` if the revoke
+     * request is successful, and `false` if there is an error. If the `isRevoke` parameter is `false`,
+     * it returns `true` if the logout redirect is successful, and `false` if there is an error.
      */
     logout(isRevoke?: boolean): Promise<boolean>;
     /**
@@ -164,7 +169,6 @@ declare class KindeSDK extends runtime.BaseAPI {
     get isAuthenticated(): Promise<boolean>;
     get authorizationEndpoint(): string;
     get tokenEndpoint(): string;
-    get revokeEndpoint(): string;
     get logoutEndpoint(): string;
 }
 export default KindeSDK;

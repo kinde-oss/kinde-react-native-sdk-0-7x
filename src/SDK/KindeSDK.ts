@@ -332,6 +332,12 @@ class KindeSDK extends runtime.BaseAPI {
         tokenType: TokenType = TokenType.ACCESS_TOKEN
     ) {
         const claims = await this.getClaims(tokenType);
+
+        if (!claims.hasOwnProperty(keyName)) {
+            console.warn(
+                `The claimed value of "${keyName}" does not exist in your token`
+            );
+        }
         return claims[keyName];
     }
 
