@@ -82,31 +82,26 @@ dependencies {
 
 ```java
 ...
-
 import com.oblador.keychain.KeychainPackage;
 import com.proyecto26.inappbrowser.RNInAppBrowserPackage;
 ...
 
-public class MainActivity extends extends ReactActivity {
-  ...
-  @Override
-  protected List<ReactPackage> getPackages() {
-      return Arrays.<ReactPackage>asList(
-              new MainReactPackage(),
-              new KeychainPackage(),
-              new RNInAppBrowserPackage()
-      );
-  }
+public class MainApplication extends Application implements ReactApplication {
+    private final ReactNativeHost mReactNativeHost =
+      new ReactNativeHost(this) {
+        ...
+        @Override
+        protected List<ReactPackage> getPackages() {
+					...
+          List<ReactPackage> packages = new PackageList(this).getPackages();
+          packages.add(new KeychainPackage());
+          packages.add(new RNInAppBrowserPackage());
+					...
+          return packages;
+        }
+        ...
+      };
 
-  // or
-  @Override
-  protected List<ReactPackage> getPackages() {
-    @SuppressWarnings("UnnecessaryLocalVariable")
-    List<ReactPackage> packages = new PackageList(this).getPackages();
-    packages.add(new KeychainPackage());
-    packages.add(new RNInAppBrowserPackage());
-    return packages;
-  }
   ...
 }
 ...
@@ -124,7 +119,7 @@ brew install cocoapods
 cd ios && pod install
 ```
 
-If the `react-native-keychain` not linked, you need to install manually
+If the `react-native-keychain` and `react-native-inappbrowser-reborn` are not linked, install them.
 
 **Option: With CocoaPods (High recommended)**
 
