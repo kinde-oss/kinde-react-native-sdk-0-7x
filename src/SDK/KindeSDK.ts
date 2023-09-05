@@ -99,6 +99,7 @@ class KindeSDK extends runtime.BaseAPI {
      * The function takes an object as an argument, and if the object is empty, it will use the default
      * object
      * @param {AdditionalParameters} additionalParameters - AdditionalParameters = {}
+     * @param {AuthBrowserOptions} [authBrowserOptions] - Authentication browser options.
      * @returns A promise that resolves to void.
      */
     async login(
@@ -129,6 +130,7 @@ class KindeSDK extends runtime.BaseAPI {
      * parameter that can be passed to the `register` function. It is used to provide additional
      * parameters that may be required for the registration process. These parameters can vary
      * depending on the specific implementation of the registration process.
+     * @param {AuthBrowserOptions} [authBrowserOptions] - Authentication browser options.
      * @returns A Promise that resolves to void.
      */
     register(
@@ -149,6 +151,7 @@ class KindeSDK extends runtime.BaseAPI {
     /**
      * This function creates an organization with additional parameters.
      * @param additionalParameters
+     * @param {AuthBrowserOptions} [authBrowserOptions] - Authentication browser options.
      * @returns A promise that resolves to void.
      */
     createOrg(
@@ -166,11 +169,12 @@ class KindeSDK extends runtime.BaseAPI {
      * revokes the user's authorization or redirects them to a logout endpoint.
      * @param [isRevoke=false] - A boolean value indicating whether the logout should also revoke the
      * user's authorization.
+     * @param {AuthBrowserOptions} [authBrowserOptions] - Authentication browser options.
      * @returns a boolean value. If the `isRevoke` parameter is `true`, it returns `true` if the revoke
      * request is successful, and `false` if there is an error. If the `isRevoke` parameter is `false`,
      * it returns `true` if the logout redirect is successful, and `false` if there is an error.
      */
-    async logout(isRevoke = false) {
+    async logout(isRevoke = false, authBrowserOptions?: AuthBrowserOptions) {
         await this.cleanUp();
 
         if (isRevoke) {
@@ -196,7 +200,8 @@ class KindeSDK extends runtime.BaseAPI {
         URLParsed.query['redirect'] = this.logoutRedirectUri;
         const response = await openWebBrowser(
             URLParsed.toString(),
-            this.redirectUri
+            this.redirectUri,
+            authBrowserOptions || this.authBrowserOptions
         );
         return response.type === 'success';
     }
