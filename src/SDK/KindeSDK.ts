@@ -30,6 +30,7 @@ import {
     openWebBrowser
 } from './Utils';
 import * as runtime from '../ApiClient';
+import { AuthBrowserOptions } from '../types/Auth';
 
 /**
  * The KindeSDK module.
@@ -45,6 +46,7 @@ class KindeSDK extends runtime.BaseAPI {
     public scope: string;
     public clientSecret?: string;
     public additionalParameters: AdditionalParameters;
+    public authBrowserOptions?: AuthBrowserOptions;
 
     /**
      * The constructor function takes in a bunch of parameters and sets them to the class properties
@@ -56,6 +58,7 @@ class KindeSDK extends runtime.BaseAPI {
      * @param {string} [scope=openid profile email offline] - The scope of the authentication. This is
      * a space-separated list of scopes.
      * @param {AdditionalParameters} additionalParameters - AdditionalParameters = {}
+     * @param {AuthBrowserOptions} [authBrowserOptions] - Authentication browser options.
      */
     constructor(
         issuer: string,
@@ -63,7 +66,8 @@ class KindeSDK extends runtime.BaseAPI {
         clientId: string,
         logoutRedirectUri: string,
         scope: string = 'openid profile email offline',
-        additionalParameters: Pick<AdditionalParameters, 'audience'> = {}
+        additionalParameters: Pick<AdditionalParameters, 'audience'> = {},
+        authBrowserOptions?: AuthBrowserOptions
     ) {
         const configuration = new runtime.Configuration({
             basePath: issuer
@@ -87,6 +91,8 @@ class KindeSDK extends runtime.BaseAPI {
             checkAdditionalParameters(additionalParameters);
 
         this.scope = scope;
+
+        this.authBrowserOptions = authBrowserOptions;
     }
 
     /**
@@ -96,7 +102,8 @@ class KindeSDK extends runtime.BaseAPI {
      * @returns A promise that resolves to void.
      */
     async login(
-        additionalParameters: Omit<OrgAdditionalParams, 'is_create_org'> = {}
+        additionalParameters: Omit<OrgAdditionalParams, 'is_create_org'> = {},
+        authBrowserOptions?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
         checkAdditionalParameters(additionalParameters);
         await this.cleanUp();
@@ -110,7 +117,8 @@ class KindeSDK extends runtime.BaseAPI {
             this,
             true,
             'login',
-            additionalParametersMerged
+            additionalParametersMerged,
+            authBrowserOptions
         );
     }
 
@@ -124,7 +132,8 @@ class KindeSDK extends runtime.BaseAPI {
      * @returns A Promise that resolves to void.
      */
     register(
-        additionalParameters: OrgAdditionalParams = {}
+        additionalParameters: OrgAdditionalParams = {},
+        authBrowserOptions?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
         checkAdditionalParameters(additionalParameters);
         const auth = new AuthorizationCode();
@@ -132,7 +141,8 @@ class KindeSDK extends runtime.BaseAPI {
             this,
             true,
             'registration',
-            additionalParameters
+            additionalParameters,
+            authBrowserOptions
         );
     }
 
@@ -142,9 +152,13 @@ class KindeSDK extends runtime.BaseAPI {
      * @returns A promise that resolves to void.
      */
     createOrg(
-        additionalParameters: Omit<OrgAdditionalParams, 'is_create_org'> = {}
+        additionalParameters: Omit<OrgAdditionalParams, 'is_create_org'> = {},
+        authBrowserOptions?: AuthBrowserOptions
     ) {
-        return this.register({ is_create_org: true, ...additionalParameters });
+        return this.register(
+            { is_create_org: true, ...additionalParameters },
+            authBrowserOptions
+        );
     }
 
     /**

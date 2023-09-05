@@ -27,6 +27,7 @@ import {
     generateChallenge,
     generateRandomString
 } from '../Utils';
+import { AuthBrowserOptions } from '../../types/Auth';
 
 class AuthorizationCode {
     /**
@@ -41,7 +42,8 @@ class AuthorizationCode {
         kindeSDK: KindeSDK,
         usePKCE: boolean = false,
         startPage: 'login' | 'registration' = 'login',
-        additionalParameters: AdditionalParameters = {}
+        additionalParameters: AdditionalParameters = {},
+        options?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
         const URLParsed = Url(kindeSDK.authorizationEndpoint, true);
         const baseInfo = this.buildBaseAuthenticateURL(kindeSDK);
@@ -62,7 +64,7 @@ class AuthorizationCode {
             URLParsed.query['code_challenge_method'] = 'S256';
             Storage.setCodeVerifier(challenge.codeVerifier);
         }
-        return OpenWebInApp(URLParsed.toString(), kindeSDK);
+        return OpenWebInApp(URLParsed.toString(), kindeSDK, options);
     }
 
     buildBaseAuthenticateURL(
