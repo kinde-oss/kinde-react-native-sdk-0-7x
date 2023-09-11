@@ -18,6 +18,7 @@ import InAppBrowser from 'react-native-inappbrowser-reborn';
 import { InvalidTypeException } from '../common/exceptions/invalid-type.exception';
 import { PropertyRequiredException } from '../common/exceptions/property-required.exception';
 import { UnexpectedException } from '../common/exceptions/unexpected.exception';
+import { AuthBrowserOptions } from '../types/Auth';
 import { AdditionalParameters } from '../types/KindeSDK';
 import KindeSDK from './KindeSDK';
 import { AdditionalParametersAllow } from './constants';
@@ -158,9 +159,17 @@ export const addAdditionalParameters = (
 export const isExpoGo =
     Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
-export const OpenWebInApp = async (url: string, kindeSDK: KindeSDK) => {
+export const OpenWebInApp = async (
+    url: string,
+    kindeSDK: KindeSDK,
+    options?: AuthBrowserOptions
+) => {
     try {
-        const response = await openWebBrowser(url, kindeSDK.redirectUri);
+        const response = await openWebBrowser(
+            url,
+            kindeSDK.redirectUri,
+            options || kindeSDK.authBrowserOptions
+        );
         if (response.type === 'success' && response.url) {
             return kindeSDK.getToken(response.url);
         }
@@ -178,9 +187,13 @@ export const OpenWebInApp = async (url: string, kindeSDK: KindeSDK) => {
     }
 };
 
-export const openWebBrowser = async (url: string, redirectUri: string) => {
+export const openWebBrowser = async (
+    url: string,
+    redirectUri: string,
+    options?: AuthBrowserOptions
+) => {
     if (isExpoGo) {
-        return WebBrowser.openAuthSessionAsync(url, redirectUri);
+        return WebBrowser.openAuthSessionAsync(url, redirectUri, options);
     }
     if (InAppBrowser) {
         if (await InAppBrowser.isAvailable()) {
@@ -188,7 +201,8 @@ export const openWebBrowser = async (url: string, redirectUri: string) => {
                 ephemeralWebSession: false,
                 showTitle: false,
                 enableUrlBarHiding: true,
-                enableDefaultShare: false
+                enableDefaultShare: false,
+                ...options
             });
         }
     }
