@@ -17,7 +17,7 @@ import { AuthBrowserOptions } from '../types/Auth';
 /**
  * The KindeSDK module.
  * @module SDK/KindeSDK
- * @version 1.1.0
+ * @version 1.2.0
  */
 declare class KindeSDK extends runtime.BaseAPI {
     issuer: string;

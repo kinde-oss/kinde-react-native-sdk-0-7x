@@ -38,7 +38,7 @@ import { AuthBrowserOptions } from '../types/Auth';
 /**
  * The KindeSDK module.
  * @module SDK/KindeSDK
- * @version 1.1.0
+ * @version 1.2.0
  */
 
 class KindeSDK extends runtime.BaseAPI {
@@ -292,7 +292,7 @@ class KindeSDK extends runtime.BaseAPI {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'multipart/form-data',
-                    'Kinde-SDK': 'ReactNative/1.2.1'
+                    'Kinde-SDK': 'ReactNative/1.2.0'
                 },
                 body: formData
             });
