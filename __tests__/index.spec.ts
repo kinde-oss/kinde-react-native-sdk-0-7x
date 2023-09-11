@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-const { KindeSDK, ApiClient } = require(process.cwd() + '/src/index');
+const { KindeSDK } = require(process.cwd() + '/src/index');
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { openAuthSessionAsync } from 'expo-web-browser';
 import jwtDecode from 'jwt-decode';
@@ -748,54 +748,29 @@ describe('KindeSDK', () => {
             RNStorage.prototype.getItem = jest.fn().mockReturnValue({
                 password: JSON.stringify(fakeTokenResponse)
             });
-            expect(await globalClient.getClaim('iss')).toBe(
+
+            expect((await globalClient.getClaim('iss')).value).toBe(
                 fakePayloadFromDecodeToken.iss
             );
-        });
-
-        test('[ExpoStorage] Get claim via access token', async () => {
-            Constants.executionEnvironment = 'storeClient';
-
-            ExpoStorage.prototype.getItem = jest
-                .fn()
-                .mockReturnValue(JSON.stringify(fakeTokenResponse));
-            expect(await globalClient.getClaim('iss')).toBe(
-                fakePayloadFromDecodeToken.iss
-            );
+            expect((await globalClient.getClaim('iss')).name).toBe('iss');
         });
 
         test('[RNStorage] Get claim via id token', async () => {
             RNStorage.prototype.getItem = jest.fn().mockReturnValue({
                 password: JSON.stringify(fakeTokenResponse)
             });
-            expect(await globalClient.getClaim('azp', 'id_token')).toBe(
+
+            expect((await globalClient.getClaim('azp', 'id_token')).value).toBe(
                 fakePayloadFromDecodeToken.azp
             );
-        });
 
-        test('[ExpoStorage] Get claim via id token', async () => {
-            Constants.executionEnvironment = 'storeClient';
-            ExpoStorage.prototype.getItem = jest
-                .fn()
-                .mockReturnValue(JSON.stringify(fakeTokenResponse));
-            expect(await globalClient.getClaim('azp', 'id_token')).toBe(
-                fakePayloadFromDecodeToken.azp
+            expect((await globalClient.getClaim('azp', 'id_token')).name).toBe(
+                'azp'
             );
         });
 
         test('[RNStorage] Get permissions', async () => {
             RNStorage.prototype.getItem = jest.fn().mockReturnValue({
-                password: JSON.stringify(fakeTokenResponse)
-            });
-            expect(await globalClient.getPermissions()).toEqual({
-                orgCode: fakePayloadFromDecodeToken.org_code,
-                permissions: fakePayloadFromDecodeToken.permissions
-            });
-        });
-
-        test('[ExpoStorage] Get permissions', async () => {
-            Constants.executionEnvironment = 'storeClient';
-            ExpoStorage.prototype.getItem = jest.fn().mockReturnValue({
                 password: JSON.stringify(fakeTokenResponse)
             });
             expect(await globalClient.getPermissions()).toEqual({
@@ -814,30 +789,8 @@ describe('KindeSDK', () => {
             });
         });
 
-        test('[ExpoStorage] Get existed permission', async () => {
-            Constants.executionEnvironment = 'storeClient';
-            ExpoStorage.prototype.getItem = jest.fn().mockReturnValue({
-                password: JSON.stringify(fakeTokenResponse)
-            });
-            expect(await globalClient.getPermission('read:profile')).toEqual({
-                orgCode: fakePayloadFromDecodeToken.org_code,
-                isGranted: true
-            });
-        });
-
         test('[RNStorage] Get non-existed permission', async () => {
             RNStorage.prototype.getItem = jest.fn().mockReturnValue({
-                password: JSON.stringify(fakeTokenResponse)
-            });
-            expect(await globalClient.getPermission('write:profile')).toEqual({
-                orgCode: fakePayloadFromDecodeToken.org_code,
-                isGranted: false
-            });
-        });
-
-        test('[ExpoStorage] Get non-existed permission', async () => {
-            Constants.executionEnvironment = 'storeClient';
-            ExpoStorage.prototype.getItem = jest.fn().mockReturnValue({
                 password: JSON.stringify(fakeTokenResponse)
             });
             expect(await globalClient.getPermission('write:profile')).toEqual({
@@ -855,28 +808,8 @@ describe('KindeSDK', () => {
             });
         });
 
-        test('[ExpoStorage] Get organization', async () => {
-            Constants.executionEnvironment = 'storeClient';
-            ExpoStorage.prototype.getItem = jest.fn().mockReturnValue({
-                password: JSON.stringify(fakeTokenResponse)
-            });
-            expect(await globalClient.getOrganization()).toEqual({
-                orgCode: fakePayloadFromDecodeToken.org_code
-            });
-        });
-
         test('[RNStorage] Get organizations', async () => {
             RNStorage.prototype.getItem = jest.fn().mockReturnValue({
-                password: JSON.stringify(fakeTokenResponse)
-            });
-            expect(await globalClient.getUserOrganizations()).toEqual({
-                orgCodes: fakePayloadFromDecodeToken.org_codes
-            });
-        });
-
-        test('[ExpoStorage] Get organizations', async () => {
-            Constants.executionEnvironment = 'storeClient';
-            ExpoStorage.prototype.getItem = jest.fn().mockReturnValue({
                 password: JSON.stringify(fakeTokenResponse)
             });
             expect(await globalClient.getUserOrganizations()).toEqual({
@@ -891,12 +824,226 @@ describe('KindeSDK', () => {
             expect(await globalClient.getUserDetails()).toEqual(fakeUserDetail);
         });
 
+        test('[ExpoStorage] Get claim via access token', async () => {
+            Constants.executionEnvironment = 'storeClient';
+
+            ExpoStorage.prototype.getItem = jest
+                .fn()
+                .mockReturnValue(JSON.stringify(fakeTokenResponse));
+
+            expect((await globalClient.getClaim('iss')).value).toBe(
+                fakePayloadFromDecodeToken.iss
+            );
+
+            expect((await globalClient.getClaim('iss')).name).toBe('iss');
+        });
+
+        test('[ExpoStorage] Get claim via id token', async () => {
+            Constants.executionEnvironment = 'storeClient';
+            ExpoStorage.prototype.getItem = jest
+                .fn()
+                .mockReturnValue(JSON.stringify(fakeTokenResponse));
+
+            expect((await globalClient.getClaim('azp', 'id_token')).value).toBe(
+                fakePayloadFromDecodeToken.azp
+            );
+
+            expect((await globalClient.getClaim('azp', 'id_token')).name).toBe(
+                'azp'
+            );
+        });
+
+        test('[ExpoStorage] Get permissions', async () => {
+            Constants.executionEnvironment = 'storeClient';
+            ExpoStorage.prototype.getItem = jest.fn().mockReturnValue({
+                password: JSON.stringify(fakeTokenResponse)
+            });
+            expect(await globalClient.getPermissions()).toEqual({
+                orgCode: fakePayloadFromDecodeToken.org_code,
+                permissions: fakePayloadFromDecodeToken.permissions
+            });
+        });
+
+        test('[ExpoStorage] Get existed permission', async () => {
+            Constants.executionEnvironment = 'storeClient';
+            ExpoStorage.prototype.getItem = jest.fn().mockReturnValue({
+                password: JSON.stringify(fakeTokenResponse)
+            });
+            expect(await globalClient.getPermission('read:profile')).toEqual({
+                orgCode: fakePayloadFromDecodeToken.org_code,
+                isGranted: true
+            });
+        });
+
+        test('[ExpoStorage] Get non-existed permission', async () => {
+            Constants.executionEnvironment = 'storeClient';
+            ExpoStorage.prototype.getItem = jest.fn().mockReturnValue({
+                password: JSON.stringify(fakeTokenResponse)
+            });
+            expect(await globalClient.getPermission('write:profile')).toEqual({
+                orgCode: fakePayloadFromDecodeToken.org_code,
+                isGranted: false
+            });
+        });
+
+        test('[ExpoStorage] Get organization', async () => {
+            Constants.executionEnvironment = 'storeClient';
+            ExpoStorage.prototype.getItem = jest.fn().mockReturnValue({
+                password: JSON.stringify(fakeTokenResponse)
+            });
+            expect(await globalClient.getOrganization()).toEqual({
+                orgCode: fakePayloadFromDecodeToken.org_code
+            });
+        });
+
+        test('[ExpoStorage] Get organizations', async () => {
+            Constants.executionEnvironment = 'storeClient';
+            ExpoStorage.prototype.getItem = jest.fn().mockReturnValue({
+                password: JSON.stringify(fakeTokenResponse)
+            });
+            expect(await globalClient.getUserOrganizations()).toEqual({
+                orgCodes: fakePayloadFromDecodeToken.org_codes
+            });
+        });
+
         test('[ExpoStorage] Get User Details', async () => {
             Constants.executionEnvironment = 'storeClient';
             ExpoStorage.prototype.getItem = jest.fn().mockReturnValue({
                 password: JSON.stringify(fakeTokenResponse)
             });
             expect(await globalClient.getUserDetails()).toEqual(fakeUserDetail);
+        });
+    });
+
+    describe('Get Boolean Flag', () => {
+        test('[RNStorage] Get Value', async () => {
+            RNStorage.prototype.getItem = jest.fn().mockReturnValue({
+                password: JSON.stringify(fakeTokenResponse)
+            });
+
+            expect(
+                await globalClient.getBooleanFlag('is_dark_mode', true)
+            ).toEqual(true);
+        });
+
+        test('[RNStorage] Throw an error in the case no default value provided', async () => {
+            RNStorage.prototype.getItem = jest.fn().mockReturnValue({
+                password: JSON.stringify(fakeTokenResponse)
+            });
+
+            await expect(
+                globalClient.getBooleanFlag('is_dark_mode')
+            ).rejects.toThrow(
+                "This flag 'is_dark_mode' was not found, and no default value has been provided"
+            );
+        });
+
+        test('[ExpoStorage] Get Value', async () => {
+            Constants.executionEnvironment = 'storeClient';
+            ExpoStorage.prototype.getItem = jest.fn().mockReturnValue({
+                password: JSON.stringify(fakeTokenResponse)
+            });
+
+            expect(
+                await globalClient.getBooleanFlag('is_dark_mode', true)
+            ).toEqual(true);
+        });
+
+        test('[ExpoStorage] Throw an error in the case no default value provided', async () => {
+            Constants.executionEnvironment = 'storeClient';
+            ExpoStorage.prototype.getItem = jest.fn().mockReturnValue({
+                password: JSON.stringify(fakeTokenResponse)
+            });
+
+            await expect(
+                globalClient.getBooleanFlag('is_dark_mode')
+            ).rejects.toThrow(
+                "This flag 'is_dark_mode' was not found, and no default value has been provided"
+            );
+        });
+    });
+
+    describe('Get Integer Flag', () => {
+        test('[RNStorage] Get Value', async () => {
+            RNStorage.prototype.getItem = jest.fn().mockReturnValue({
+                password: JSON.stringify(fakeTokenResponse)
+            });
+
+            expect(await globalClient.getIntegerFlag('limit', 1)).toEqual(1);
+        });
+
+        test('[RNStorage] Throw an error in the case no default value provided', async () => {
+            RNStorage.prototype.getItem = jest.fn().mockReturnValue({
+                password: JSON.stringify(fakeTokenResponse)
+            });
+
+            await expect(globalClient.getIntegerFlag('limit')).rejects.toThrow(
+                "This flag 'limit' was not found, and no default value has been provided"
+            );
+        });
+
+        test('[ExpoStorage] Get Value', async () => {
+            Constants.executionEnvironment = 'storeClient';
+            ExpoStorage.prototype.getItem = jest.fn().mockReturnValue({
+                password: JSON.stringify(fakeTokenResponse)
+            });
+
+            expect(await globalClient.getIntegerFlag('limit', 1)).toEqual(1);
+        });
+
+        test('[ExpoStorage] Throw an error in the case no default value provided', async () => {
+            Constants.executionEnvironment = 'storeClient';
+            ExpoStorage.prototype.getItem = jest.fn().mockReturnValue({
+                password: JSON.stringify(fakeTokenResponse)
+            });
+
+            await expect(globalClient.getIntegerFlag('limit')).rejects.toThrow(
+                "This flag 'limit' was not found, and no default value has been provided"
+            );
+        });
+    });
+
+    describe('Get String Flag', () => {
+        test('[RNStorage] Get Value', async () => {
+            RNStorage.prototype.getItem = jest.fn().mockReturnValue({
+                password: JSON.stringify(fakeTokenResponse)
+            });
+
+            expect(await globalClient.getStringFlag('theme', 'blue')).toEqual(
+                'blue'
+            );
+        });
+
+        test('[RNStorage] Throw an error in the case no default value provided', async () => {
+            RNStorage.prototype.getItem = jest.fn().mockReturnValue({
+                password: JSON.stringify(fakeTokenResponse)
+            });
+
+            await expect(globalClient.getStringFlag('theme')).rejects.toThrow(
+                "This flag 'theme' was not found, and no default value has been provided"
+            );
+        });
+
+        test('[ExpoStorage] Get Value', async () => {
+            Constants.executionEnvironment = 'storeClient';
+            ExpoStorage.prototype.getItem = jest.fn().mockReturnValue({
+                password: JSON.stringify(fakeTokenResponse)
+            });
+
+            expect(await globalClient.getStringFlag('theme', 'blue')).toEqual(
+                'blue'
+            );
+        });
+
+        test('[ExpoStorage] Throw an error in the case no default value provided', async () => {
+            Constants.executionEnvironment = 'storeClient';
+            ExpoStorage.prototype.getItem = jest.fn().mockReturnValue({
+                password: JSON.stringify(fakeTokenResponse)
+            });
+
+            await expect(globalClient.getStringFlag('theme')).rejects.toThrow(
+                "This flag 'theme' was not found, and no default value has been provided"
+            );
         });
     });
 });

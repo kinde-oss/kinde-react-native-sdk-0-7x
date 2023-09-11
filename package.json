@@ -1,6 +1,6 @@
 {
     "name": "@kinde-oss/react-native-sdk-0-7x",
-    "version": "1.1.5",
+    "version": "1.2.1",
     "description": "Kinde React Native SDK for authentication",
     "license": "MIT",
     "homepage": "https://kinde.com",
@@ -42,8 +42,8 @@
         "expo-secure-store": "^12.1.1",
         "jwt-decode": "^3.1.2",
         "qs": "^6.11.0",
-        "react-native-keychain": "^8.0.0",
         "react-native-inappbrowser-reborn": "^3.7.0",
+        "react-native-keychain": ">= 8.0",
         "superagent": "^7.0.2",
         "url-parse": "^1.5.10"
     },

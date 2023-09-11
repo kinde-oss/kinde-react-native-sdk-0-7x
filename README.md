@@ -10,51 +10,59 @@ The Kinde SDK for React Native SDK 0.7x.
 
 1. Clone the repository to your machine:
 
-   ```bash
-   git clone https://github.com/kinde-oss/kinde-react-native-sdk-0-7x
-   ```
+    ```bash
+    git clone https://github.com/kinde-oss/kinde-react-native-sdk-0-7x
+    ```
 
 2. Go into the project:
 
-   ```bash
-   cd kinde-react-native-sdk-0-7x
-   ```
+    ```bash
+    cd kinde-react-native-sdk-0-7x
+    ```
 
 3. Install the dependencies:
 
-   ```bash
-   npm install
-   ```
+    ```bash
+    npm install
+    ```
 
 ### How to build
+
 Implement your modifications and then execute the below command to compile the SDK:
+
 ```bash
 npm run build
 ```
 
 ### How to add the SDK into an already existing project
+
 1. Go to the project's root directory, then execute the below command:
-   ```bash
-   npm pack <path-to-sdk-folder>
-   // e.g
-   npm pack ~/Documents/Projects/kinde-react-native-sdk-0-7x
-   ```
+    ```bash
+    npm pack <path-to-sdk-folder>
+    // e.g
+    npm pack ~/Documents/Projects/kinde-react-native-sdk-0-7x
+    ```
 2. Update the `package.json` file
-  ```json
-  {
-    ...
-    "dependencies": {
-      "@kinde-oss/react-native-sdk-0-7x": "file:kinde-oss-react-native-sdk-0-7x-<version>.tgz",
-      ...
-    }
+
+```json
+{
+  ...
+  "dependencies": {
+    "@kinde-oss/react-native-sdk-0-7x": "file:kinde-oss-react-native-sdk-0-7x-<version>.tgz",
     ...
   }
-  ```
+  ...
+}
+```
+
 ### How to test
+
 To test the SDK, you just need to run the command:
+
 ```bash
 npm run test
 ```
+
 ## Documentation
 
 For details on integrating this SDK into your project, head over to the [Kinde docs](https://kinde.com/docs/) and see the [React Native SDK 0.7x](https://kinde.com/docs/developer-tools/react-native-sdk/) doc 👍🏼.
