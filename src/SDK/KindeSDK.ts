@@ -30,6 +30,7 @@ import {
     openWebBrowser
 } from './Utils';
 import * as runtime from '../ApiClient';
+import { AuthBrowserOptions } from '../types/Auth';
 
 /**
  * The KindeSDK module.
@@ -45,6 +46,7 @@ class KindeSDK extends runtime.BaseAPI {
     public scope: string;
     public clientSecret?: string;
     public additionalParameters: AdditionalParameters;
+    public authBrowserOptions?: AuthBrowserOptions;
 
     /**
      * The constructor function takes in a bunch of parameters and sets them to the class properties
@@ -56,6 +58,7 @@ class KindeSDK extends runtime.BaseAPI {
      * @param {string} [scope=openid profile email offline] - The scope of the authentication. This is
      * a space-separated list of scopes.
      * @param {AdditionalParameters} additionalParameters - AdditionalParameters = {}
+     * @param {AuthBrowserOptions} [authBrowserOptions] - Authentication browser options.
      */
     constructor(
         issuer: string,
@@ -63,7 +66,8 @@ class KindeSDK extends runtime.BaseAPI {
         clientId: string,
         logoutRedirectUri: string,
         scope: string = 'openid profile email offline',
-        additionalParameters: Pick<AdditionalParameters, 'audience'> = {}
+        additionalParameters: Pick<AdditionalParameters, 'audience'> = {},
+        authBrowserOptions?: AuthBrowserOptions
     ) {
         const configuration = new runtime.Configuration({
             basePath: issuer
@@ -87,16 +91,20 @@ class KindeSDK extends runtime.BaseAPI {
             checkAdditionalParameters(additionalParameters);
 
         this.scope = scope;
+
+        this.authBrowserOptions = authBrowserOptions;
     }
 
     /**
      * The function takes an object as an argument, and if the object is empty, it will use the default
      * object
      * @param {AdditionalParameters} additionalParameters - AdditionalParameters = {}
+     * @param {AuthBrowserOptions} [authBrowserOptions] - Authentication browser options.
      * @returns A promise that resolves to void.
      */
     async login(
-        additionalParameters: Omit<OrgAdditionalParams, 'is_create_org'> = {}
+        additionalParameters: Omit<OrgAdditionalParams, 'is_create_org'> = {},
+        authBrowserOptions?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
         checkAdditionalParameters(additionalParameters);
         await this.cleanUp();
@@ -110,7 +118,8 @@ class KindeSDK extends runtime.BaseAPI {
             this,
             true,
             'login',
-            additionalParametersMerged
+            additionalParametersMerged,
+            authBrowserOptions
         );
     }
 
@@ -121,10 +130,12 @@ class KindeSDK extends runtime.BaseAPI {
      * optional object that can contain additional parameters for the registration process. It is of
      * type `OrgAdditionalParams`, which is a custom type that you may have defined elsewhere in your
      * code.
+     * @param {AuthBrowserOptions} [authBrowserOptions] - Authentication browser options.
      * @returns a Promise that resolves to either a TokenResponse object or null.
      */
     async register(
-        additionalParameters: OrgAdditionalParams = {}
+        additionalParameters: OrgAdditionalParams = {},
+        authBrowserOptions?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
         checkAdditionalParameters(additionalParameters);
         await this.cleanUp();
@@ -134,19 +145,25 @@ class KindeSDK extends runtime.BaseAPI {
             this,
             true,
             'registration',
-            additionalParameters
+            additionalParameters,
+            authBrowserOptions
         );
     }
 
     /**
      * This function creates an organization with additional parameters.
      * @param additionalParameters
+     * @param {AuthBrowserOptions} [authBrowserOptions] - Authentication browser options.
      * @returns A promise that resolves to void.
      */
     createOrg(
-        additionalParameters: Omit<OrgAdditionalParams, 'is_create_org'> = {}
+        additionalParameters: Omit<OrgAdditionalParams, 'is_create_org'> = {},
+        authBrowserOptions?: AuthBrowserOptions
     ) {
-        return this.register({ is_create_org: true, ...additionalParameters });
+        return this.register(
+            { is_create_org: true, ...additionalParameters },
+            authBrowserOptions
+        );
     }
 
     /**
@@ -154,11 +171,12 @@ class KindeSDK extends runtime.BaseAPI {
      * revokes the user's authorization or redirects them to a logout endpoint.
      * @param [isRevoke=false] - A boolean value indicating whether the logout should also revoke the
      * user's authorization.
+     * @param {AuthBrowserOptions} [authBrowserOptions] - Authentication browser options.
      * @returns a boolean value. If the `isRevoke` parameter is `true`, it returns `true` if the revoke
      * request is successful, and `false` if there is an error. If the `isRevoke` parameter is `false`,
      * it returns `true` if the logout redirect is successful, and `false` if there is an error.
      */
-    async logout(isRevoke = false) {
+    async logout(isRevoke = false, authBrowserOptions?: AuthBrowserOptions) {
         await this.cleanUp();
 
         if (isRevoke) {
@@ -184,7 +202,8 @@ class KindeSDK extends runtime.BaseAPI {
         URLParsed.query['redirect'] = this.logoutRedirectUri;
         const response = await openWebBrowser(
             URLParsed.toString(),
-            this.redirectUri
+            this.redirectUri,
+            authBrowserOptions || this.authBrowserOptions
         );
         return response.type === 'success';
     }
@@ -334,6 +353,12 @@ class KindeSDK extends runtime.BaseAPI {
         tokenType: TokenType = TokenType.ACCESS_TOKEN
     ) {
         const claims = await this.getClaims(tokenType);
+
+        if (!claims.hasOwnProperty(keyName)) {
+            console.warn(
+                `The claimed value of "${keyName}" does not exist in your token`
+            );
+        }
         return claims[keyName];
     }
 
