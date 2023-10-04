@@ -20,7 +20,7 @@ import {
 } from '../../types/KindeSDK';
 import { TokenType } from '../Enums/TokenType.enum';
 import BaseStore from './Base';
-import { isExpoGo } from '../Utils';
+import { isExpo } from '../Utils';
 
 /**
  * The Storage SDK module.
@@ -34,7 +34,7 @@ class Storage extends BaseStore {
     }
 
     async getStorage() {
-        if (isExpoGo) {
+        if (isExpo) {
             const builder = await import('./ExpoStorage');
             return new builder.default();
         }
