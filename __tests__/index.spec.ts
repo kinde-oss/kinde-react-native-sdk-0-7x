@@ -128,10 +128,10 @@ jest.mock(process.cwd() + '/src/SDK/Utils', () => ({
         }
     }),
     openWebBrowser: jest.fn(async (url: string, redirectUri: string) => {
-        const isExpoGo =
+        const isExpo =
             Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
-        if (isExpoGo) {
+        if (isExpo) {
             return openAuthSessionAsync(url, redirectUri);
         }
 
@@ -158,7 +158,7 @@ jest.mock(process.cwd() + '/src/SDK/Utils', () => ({
         return formData;
     }),
 
-    get isExpoGo() {
+    get isExpo() {
         return (
             Constants.executionEnvironment === ExecutionEnvironment.StoreClient
         );

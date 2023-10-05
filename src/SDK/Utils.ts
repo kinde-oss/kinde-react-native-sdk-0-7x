@@ -156,8 +156,7 @@ export const addAdditionalParameters = (
     return target;
 };
 
-export const isExpoGo =
-    Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+export const isExpo = Constants.executionEnvironment !== undefined;
 
 export const OpenWebInApp = async (
     url: string,
@@ -192,7 +191,7 @@ export const openWebBrowser = async (
     redirectUri: string,
     options?: AuthBrowserOptions
 ) => {
-    if (isExpoGo) {
+    if (isExpo) {
         return WebBrowser.openAuthSessionAsync(url, redirectUri, options);
     }
     if (InAppBrowser) {
