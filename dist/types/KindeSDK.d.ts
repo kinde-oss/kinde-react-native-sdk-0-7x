@@ -13,7 +13,7 @@
 /**
  * The Types SDK module.
  * @module SDK/Types
- * @version 1.2.0
+ * @version 1.2.1
  */
 export type AdditionalParameters = {
     audience?: string;
