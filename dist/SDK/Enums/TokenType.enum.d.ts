@@ -13,7 +13,7 @@
 /**
  * The Enums SDK module.
  * @module SDK/Enums
- * @version 1.2.0
+ * @version 1.2.1
  */
 export declare enum TokenType {
     ACCESS_TOKEN = "access_token",

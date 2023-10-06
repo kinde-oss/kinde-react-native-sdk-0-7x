@@ -14,7 +14,7 @@
 /**
  * The Oauth SDK module.
  * @module SDK/Oauth
- * @version 1.2.0
+ * @version 1.2.1
  */
 class BaseStore {
     private data: Map<string, string>;

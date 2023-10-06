@@ -14,7 +14,7 @@ import * as KeyChain from 'react-native-keychain';
 /**
  * The Storage SDK module.
  * @module SDK/Storage
- * @version 1.2.0
+ * @version 1.2.1
  */
 export default class RNStorage {
     getItem(): Promise<false | KeyChain.UserCredentials>;
