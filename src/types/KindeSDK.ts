@@ -14,7 +14,7 @@
 /**
  * The Types SDK module.
  * @module SDK/Types
- * @version 1.2.1
+ * @version 1.2.2
  */
 
 export type AdditionalParameters = {
