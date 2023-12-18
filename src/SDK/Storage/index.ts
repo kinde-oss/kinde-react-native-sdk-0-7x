@@ -25,7 +25,7 @@ import { isExpo } from '../Utils';
 /**
  * The Storage SDK module.
  * @module SDK/Storage
- * @version 1.2.1
+ * @version 1.2.2
  */
 
 class Storage extends BaseStore {

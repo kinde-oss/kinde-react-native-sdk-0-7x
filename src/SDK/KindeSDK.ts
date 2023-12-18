@@ -38,7 +38,7 @@ import { AuthBrowserOptions } from '../types/Auth';
 /**
  * The KindeSDK module.
  * @module SDK/KindeSDK
- * @version 1.2.1
+ * @version 1.2.2
  */
 
 class KindeSDK extends runtime.BaseAPI {
@@ -258,24 +258,16 @@ class KindeSDK extends runtime.BaseAPI {
 
     /**
      * This function refreshes an access token using a refresh token.
-     * @param {TokenResponse} [token] - The `token` parameter is an optional parameter of type
-     * `TokenResponse`. It represents the token that needs to be refreshed. If this parameter is not
-     * provided, the function will try to retrieve the token from the storage using the
-     * `Storage.getToken()` method.
+     * @param {string} [refreshToken] - The refresh token value.
      * @returns The `useRefreshToken` function is returning the result of calling the `fetchToken`
      * function with a `FormData` object containing the necessary parameters for refreshing an access
      * token.
      */
-    async useRefreshToken(token: TokenResponse | null = null) {
-        const newToken = token || (await Storage.getToken());
-        if (!newToken) {
-            throw new UnAuthenticatedException();
-        }
-
+    async useRefreshToken(refreshToken: string) {
         const formData = new FormData();
         formData.append('client_id', this.clientId);
         formData.append('grant_type', 'refresh_token');
-        formData.append('refresh_token', newToken?.refresh_token);
+        formData.append('refresh_token', refreshToken);
         return this.fetchToken(formData);
     }
 
@@ -292,7 +284,7 @@ class KindeSDK extends runtime.BaseAPI {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'multipart/form-data',
-                    'Kinde-SDK': 'ReactNative/1.2.1'
+                    'Kinde-SDK': 'ReactNative/1.2.2'
                 },
                 body: formData
             });
@@ -564,8 +556,15 @@ class KindeSDK extends runtime.BaseAPI {
                 return true;
             }
 
+            const token = await Storage.getToken();
+            const refreshToken = token?.refresh_token;
+
+            if (!refreshToken) {
+                return false;
+            }
+
             try {
-                const token = await this.useRefreshToken();
+                const token = await this.useRefreshToken(refreshToken);
                 return (token?.expires_in || 0) > 0;
             } catch (_) {
                 return false;

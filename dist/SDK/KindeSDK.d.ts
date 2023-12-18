@@ -17,7 +17,7 @@ import { AuthBrowserOptions } from '../types/Auth';
 /**
  * The KindeSDK module.
  * @module SDK/KindeSDK
- * @version 1.2.1
+ * @version 1.2.2
  */
 declare class KindeSDK extends runtime.BaseAPI {
     issuer: string;
@@ -89,15 +89,12 @@ declare class KindeSDK extends runtime.BaseAPI {
     getToken(url?: string): Promise<TokenResponse>;
     /**
      * This function refreshes an access token using a refresh token.
-     * @param {TokenResponse} [token] - The `token` parameter is an optional parameter of type
-     * `TokenResponse`. It represents the token that needs to be refreshed. If this parameter is not
-     * provided, the function will try to retrieve the token from the storage using the
-     * `Storage.getToken()` method.
+     * @param {string} [refreshToken] - The refresh token value.
      * @returns The `useRefreshToken` function is returning the result of calling the `fetchToken`
      * function with a `FormData` object containing the necessary parameters for refreshing an access
      * token.
      */
-    useRefreshToken(token?: TokenResponse | null): Promise<TokenResponse>;
+    useRefreshToken(refreshToken: string): Promise<TokenResponse>;
     /**
      * This function fetches a token from a server using a POST request with form data and stores it in
      * local storage.

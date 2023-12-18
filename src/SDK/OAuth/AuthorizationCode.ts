@@ -14,7 +14,7 @@
 /**
  * The Oauth SDK module.
  * @module SDK/Oauth
- * @version 1.2.1
+ * @version 1.2.2
  */
 
 import Url from 'url-parse';
