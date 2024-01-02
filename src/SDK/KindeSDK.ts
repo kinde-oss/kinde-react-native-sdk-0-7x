@@ -144,11 +144,15 @@ class KindeSDK extends runtime.BaseAPI {
         await this.cleanUp();
 
         const auth = new AuthorizationCode();
+        const additionalParametersMerged = {
+            ...this.additionalParameters,
+            ...additionalParameters
+        };
         return auth.authenticate(
             this,
             true,
             'registration',
-            additionalParameters,
+            additionalParametersMerged,
             authBrowserOptions
         );
     }
