@@ -201,6 +201,8 @@ export const openWebBrowser = async (
                 showTitle: false,
                 enableUrlBarHiding: true,
                 enableDefaultShare: false,
+                forceCloseOnRedirection: false,
+                showInRecents: true,
                 ...options
             });
         }
