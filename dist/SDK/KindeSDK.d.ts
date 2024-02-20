@@ -96,6 +96,13 @@ declare class KindeSDK extends runtime.BaseAPI {
      */
     useRefreshToken(refreshToken: string): Promise<TokenResponse>;
     /**
+     * This function refreshes the access token using the current refresh token
+     * in storage and updates the storage with new tokens.
+     * @returns A Promise that resolves to `TokenResponse` if attempted refresh
+     * succeeds or `null` in the event the attempted token refresh fails.
+     */
+    forceTokenRefresh(): Promise<TokenResponse | null>;
+    /**
      * This function fetches a token from a server using a POST request with form data and stores it in
      * local storage.
      * @param {FormData} formData - FormData object containing the data to be sent in the request body.
