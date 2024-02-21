@@ -1,0 +1,21 @@
+name: run-tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+
+        uses: actions/setup-node@v4
+      - name: Install dependencies
+        run: npm install # `npm ci` won't work since lock-files are in .gitignore
+
+      - name: Run tests
+        run: npm test
