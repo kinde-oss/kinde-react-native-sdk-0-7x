@@ -19,10 +19,6 @@ const fakeTokenResponse = {
     expires_in: 86400 // 1 day
 };
 
-function FormDataMock() {
-    this.append = jest.fn();
-}
-
 jest.mock('react-native-keychain', () => ({
     setGenericPassword: jest.fn().mockResolvedValue(),
     getGenericPassword: jest.fn().mockResolvedValue(),
@@ -56,8 +52,6 @@ jest.mock('react-native-inappbrowser-reborn', () => ({
         type: ''
     })
 }));
-
-global.FormData = FormDataMock;
 
 const configuration = {
     issuer: 'https://myhost.kinde.com',
