@@ -20,8 +20,15 @@ const fakeTokenResponse = {
 };
 
 function FormDataMock() {
-    this.append = jest.fn();
+    this[Symbol.for('state')] = [] as Array<{
+        name: string;
+        value: string;
+    }>;
 }
+
+FormDataMock.prototype.append = function (key: string, value: string) {
+    this[Symbol.for('state')].push({ key, value });
+};
 
 jest.mock('react-native-keychain', () => ({
     setGenericPassword: jest.fn().mockResolvedValue(),
