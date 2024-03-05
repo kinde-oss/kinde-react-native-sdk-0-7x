@@ -20,8 +20,15 @@ const fakeTokenResponse = {
 };
 
 function FormDataMock() {
-    this.append = jest.fn();
+    this[Symbol.for('state')] = [] as Array<{
+        name: string;
+        value: string;
+    }>;
 }
+
+FormDataMock.prototype.append = function (key: string, value: string) {
+    this[Symbol.for('state')].push({ key, value });
+};
 
 jest.mock('react-native-keychain', () => ({
     setGenericPassword: jest.fn().mockResolvedValue(),
@@ -1044,6 +1051,127 @@ describe('KindeSDK', () => {
             await expect(globalClient.getStringFlag('theme')).rejects.toThrow(
                 "This flag 'theme' was not found, and no default value has been provided"
             );
+        });
+    });
+
+    describe('forceTokenRefresh', () => {
+        test(`[RNStorage] Throws an error if no refresh token found in storage`, async () => {
+            RNStorage.prototype.getItem = jest.fn().mockReturnValue({
+                password: JSON.stringify({ refresh_token: undefined })
+            });
+            await expect(globalClient.forceTokenRefresh()).rejects.toThrow(
+                'No refresh token available to perform token refresh.'
+            );
+        });
+
+        test(`[ExpoStorage] Throws an error if no refresh token found in storage`, async () => {
+            Constants.executionEnvironment = 'storeClient';
+            ExpoStorage.prototype.getItem = jest
+                .fn()
+                .mockReturnValue(JSON.stringify({ refresh_token: undefined }));
+
+            await expect(globalClient.forceTokenRefresh()).rejects.toThrow(
+                'No refresh token available to perform token refresh.'
+            );
+        });
+
+        test('[RNStorage] Stores newly fetched tokens in storage', async () => {
+            let storage = {
+                username: 'kinde',
+                password: JSON.stringify(fakeTokenResponse)
+            };
+            RNStorage.prototype.getItem = jest.fn(() => storage);
+            RNStorage.prototype.setItem = jest.fn((value: unknown) => {
+                storage.password = JSON.stringify(value);
+            });
+
+            const formData = new FormData();
+            const { refresh_token } = JSON.parse(storage.password);
+            formData.append('client_id', configuration.clientId);
+            formData.append('grant_type', 'refresh_token');
+            formData.append('refresh_token', refresh_token);
+
+            const newTokensResponse = {
+                ...fakeTokenResponse,
+                access_token: 'this_is_new_access_token',
+                refresh_token: 'this_is_new_refresh_token',
+                id_token: 'this_is_new_id_token'
+            };
+            global.fetch = jest.fn(() =>
+                Promise.resolve({
+                    json: () => Promise.resolve(newTokensResponse)
+                })
+            );
+
+            await globalClient.forceTokenRefresh();
+            expect(global.fetch).toHaveBeenCalled();
+            expect(global.fetch.mock.calls[0][1].body).toEqual(formData);
+            expect(storage.password).toBe(JSON.stringify(newTokensResponse));
+        });
+
+        test('[ExpoStorage] Stores newly fetched tokens in storage', async () => {
+            let storage = { ...fakeTokenResponse };
+            Constants.executionEnvironment = 'storeClient';
+            ExpoStorage.prototype.getItem = jest.fn(() =>
+                JSON.stringify(storage)
+            );
+            ExpoStorage.prototype.setItem = jest.fn((value: unknown) => {
+                storage = { ...value };
+            });
+
+            const formData = new FormData();
+            const { refresh_token } = storage;
+            formData.append('client_id', configuration.clientId);
+            formData.append('grant_type', 'refresh_token');
+            formData.append('refresh_token', refresh_token);
+
+            const newTokensResponse = {
+                ...fakeTokenResponse,
+                access_token: 'this_is_new_access_token',
+                refresh_token: 'this_is_new_refresh_token',
+                id_token: 'this_is_new_id_token'
+            };
+            global.fetch = jest.fn(() =>
+                Promise.resolve({
+                    json: () => Promise.resolve(newTokensResponse)
+                })
+            );
+
+            await globalClient.forceTokenRefresh();
+            expect(global.fetch).toHaveBeenCalled();
+            expect(global.fetch.mock.calls[0][1].body).toEqual(formData);
+            expect(storage).toEqual(newTokensResponse);
+        });
+
+        test(`[RNStorage] returns "null" in the event network call rejects`, async () => {
+            RNStorage.prototype.getItem = jest.fn().mockReturnValue({
+                password: JSON.stringify(fakeTokenResponse)
+            });
+            global.fetch = jest.fn(() =>
+                Promise.resolve({
+                    json: () => Promise.resolve({ error: 'error' })
+                })
+            );
+
+            const response = await globalClient.forceTokenRefresh();
+            expect(response).toBe(null);
+            expect(global.fetch).toHaveBeenCalled();
+        });
+
+        test(`[ExpoStorage] returns "null" in the event network call rejects`, async () => {
+            Constants.executionEnvironment = 'storeClient';
+            ExpoStorage.prototype.getItem = jest
+                .fn()
+                .mockReturnValue(JSON.stringify(fakeTokenResponse));
+            global.fetch = jest.fn(() =>
+                Promise.resolve({
+                    json: () => Promise.resolve({ error: 'error' })
+                })
+            );
+
+            const response = await globalClient.forceTokenRefresh();
+            expect(response).toBe(null);
+            expect(global.fetch).toHaveBeenCalled();
         });
     });
 });
