@@ -113,17 +113,17 @@ export const checkAdditionalParameters = (
     const keyExists = Object.keys(
         additionalParameters
     ) as AdditionalParametersKeys[];
+
     if (keyExists.length) {
         const keysAllow = Object.keys(
             AdditionalParametersAllow
         ) as AdditionalParametersKeys[];
+
         for (const key of keyExists) {
-            if (!keysAllow.includes(key)) {
-                throw new UnexpectedException(key);
-            }
             if (
+                keysAllow.includes(key) &&
                 typeof additionalParameters[key] !==
-                AdditionalParametersAllow[key]
+                    AdditionalParametersAllow[key]
             ) {
                 throw new InvalidTypeException(
                     key,
