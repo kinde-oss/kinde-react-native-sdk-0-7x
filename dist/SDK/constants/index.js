@@ -1,1 +1,0 @@
-Object.defineProperty(exports,"__esModule",{value:true});exports.FLAG_TYPE=exports.AdditionalParametersAllow=void 0;var AdditionalParametersAllow=exports.AdditionalParametersAllow={audience:'string',is_create_org:'boolean',org_code:'string',org_name:'string'};var FLAG_TYPE=exports.FLAG_TYPE={s:'string',i:'number',b:'boolean'};

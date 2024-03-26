@@ -14,15 +14,16 @@
 import crypto, { LibWordArray } from 'crypto-js';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
-import InAppBrowser from 'react-native-inappbrowser-reborn';
+import { Linking } from 'react-native';
+// import InAppBrowser from 'react-native-inappbrowser-reborn';
 import { InvalidTypeException } from '../common/exceptions/invalid-type.exception';
 import { PropertyRequiredException } from '../common/exceptions/property-required.exception';
 import { UnexpectedException } from '../common/exceptions/unexpected.exception';
 import { AuthBrowserOptions } from '../types/Auth';
-import { AdditionalParameters } from '../types/KindeSDK';
+import { AdditionalParameters, TokenResponse } from '../types/KindeSDK';
 import KindeSDK from './KindeSDK';
 import { AdditionalParametersAllow } from './constants';
-
+import { authorize } from 'react-native-app-auth';
 /**
  * The Utils SDK module.
  * @module SDK/Utils
@@ -123,6 +124,7 @@ export const checkAdditionalParameters = (
             }
             if (
                 typeof additionalParameters[key] !==
+                // @ts-ignore
                 AdditionalParametersAllow[key]
             ) {
                 throw new InvalidTypeException(
@@ -162,24 +164,38 @@ export const OpenWebInApp = async (
     url: string,
     kindeSDK: KindeSDK,
     options?: AuthBrowserOptions
-) => {
+): Promise<TokenResponse | null> => {
     try {
         const response = await openWebBrowser(
             url,
             kindeSDK.redirectUri,
-            options || kindeSDK.authBrowserOptions
+            options || kindeSDK.authBrowserOptions,
+            kindeSDK.clientId
         );
-        if (response.type === 'success' && response.url) {
-            return kindeSDK.getToken(response.url);
+        if (!response) {
+            return null;
         }
-        console.error(
-            'Something wrong when trying to authenticating. Reason: ',
-            response.type
-        );
-        return null;
+        return {
+            access_token: response.access_token,
+            refresh_token: response.refresh_token,
+            id_token: response.id_token,
+            scope: response.scope,
+            token_type: response.token_type,
+            expires_in: response.expires_in
+            // Add other required properties here
+        };
+        //response.accessToken;
+        // if (response.type === 'success' && response.url) {
+        //     return kindeSDK.getToken(response.url);
+        // }
+        // console.error(
+        //     'Something wrong when trying to authenticating. Reason 1: ',
+        //     response.type
+        // );
+        // return null;
     } catch (error: any) {
         console.error(
-            'Something wrong when trying to authenticating. Reason: ',
+            'Something wrong when trying to authenticating. Reason 2: ',
             error.message
         );
         return null;
@@ -189,25 +205,46 @@ export const OpenWebInApp = async (
 export const openWebBrowser = async (
     url: string,
     redirectUri: string,
-    options?: AuthBrowserOptions
-) => {
-    if (isExpo) {
-        return WebBrowser.openAuthSessionAsync(url, redirectUri, options);
-    }
-    if (InAppBrowser) {
-        if (await InAppBrowser.isAvailable()) {
-            return InAppBrowser.openAuth(url, redirectUri, {
-                ephemeralWebSession: false,
-                showTitle: false,
-                enableUrlBarHiding: true,
-                enableDefaultShare: false,
-                forceCloseOnRedirection: false,
-                showInRecents: true,
-                ...options
-            });
-        }
-    }
-    throw new Error('Not found web browser');
+    options?: AuthBrowserOptions,
+    clientId?: string
+): Promise<null | TokenResponse> => {
+    console.log('isExpo', isExpo);
+
+    const config = {
+        issuer: url,
+        clientId: clientId!,
+        redirectUrl: redirectUri,
+        scopes: ['openid profile email offline']
+    };
+
+    const result = await authorize(config);
+    return {
+        id_token: result.idToken,
+        scope: 'openid profile email offline',
+        access_token: result.accessToken,
+        refresh_token: result.refreshToken,
+        token_type: 'Bearer',
+        expires_in: 3600
+    };
+
+    // if (isExpo) {
+    //     return WebBrowser.openAuthSessionAsync(url, redirectUri, options);
+    // }
+    // if (InAppBrowser) {
+    //     if (await InAppBrowser.isAvailable()) {
+    //         return InAppBrowser.openAuth(url, redirectUri, {
+    //             ephemeralWebSession: false,
+    //             showTitle: false,
+    //             enableUrlBarHiding: true,
+    //             enableDefaultShare: false,
+    //             forceCloseOnRedirection: false,
+    //             showInRecents: true,
+    //             ...options
+    //         });
+    //     }
+    // }
+    // return Linking.openURL(url) // .catch(err => console.error("Couldn't load page", err));
+    // throw new Error(`Not found web browser 123 ${!!isExpo}`);
 };
 
 export const convertObject2FormData = (obj: Record<string, any>) => {

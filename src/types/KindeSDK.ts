@@ -22,6 +22,9 @@ export type AdditionalParameters = {
     is_create_org?: boolean;
     org_code?: string;
     org_name?: string;
+    connection_id?: string;
+    login_hint?: string;
+    lang?: string;
 };
 
 export type OrgAdditionalParams = Omit<AdditionalParameters, 'audience'>;

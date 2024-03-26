@@ -212,7 +212,7 @@ class KindeSDK extends runtime.BaseAPI {
             this.redirectUri,
             authBrowserOptions || this.authBrowserOptions
         );
-        return response.type === 'success';
+        return !!response?.access_token;
     }
 
     /**
