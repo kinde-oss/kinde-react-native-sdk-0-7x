@@ -92,3 +92,5 @@ buck-out/
 
 # Jest
 .jest/
+
+dist

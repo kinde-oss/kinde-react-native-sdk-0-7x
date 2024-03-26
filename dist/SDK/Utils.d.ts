@@ -50,6 +50,6 @@ export declare const checkAdditionalParameters: (additionalParameters?: Addition
  */
 export declare const addAdditionalParameters: (target: Record<string, string | undefined>, additionalParameters?: AdditionalParameters) => Record<string, string | undefined>;
 export declare const isExpo: boolean;
-export declare const OpenWebInApp: (url: string, kindeSDK: KindeSDK, options?: AuthBrowserOptions) => TokenResponse;
+export declare const OpenWebInApp: (url: string, kindeSDK: KindeSDK, options?: AuthBrowserOptions) => Promise<TokenResponse | null>;
 export declare const openWebBrowser: (url: string, redirectUri: string, options?: AuthBrowserOptions, clientId?: string) => Promise<null | TokenResponse>;
 export declare const convertObject2FormData: (obj: Record<string, any>) => FormData;
