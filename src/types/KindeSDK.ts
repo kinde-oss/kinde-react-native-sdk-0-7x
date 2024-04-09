@@ -74,3 +74,14 @@ export type FeatureFlag = {
     v?: FeatureFlagValue; // v -> value
     t?: FeatureFlagType; // t -> type, s -> string, b -> boolean, i -> integer
 };
+
+export type LoginAdditionalParameters = Omit<
+    OrgAdditionalParams,
+    'is_create_org'
+> & {
+    [key: string]: unknown;
+};
+
+export type RegisterAdditionalParameters = OrgAdditionalParams & {
+    [key: string]: unknown;
+};
