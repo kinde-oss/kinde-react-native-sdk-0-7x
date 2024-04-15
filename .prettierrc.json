@@ -3,6 +3,5 @@
     "trailingComma": "none",
     "bracketSpacing": true,
     "tabWidth": 4,
-    "requireConfig": false,
     "useTabs": false
 }

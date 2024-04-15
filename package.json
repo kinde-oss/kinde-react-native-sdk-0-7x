@@ -15,7 +15,9 @@
         "build:types": "tsc --emitDeclarationOnly",
         "build:js": "babel src --out-dir dist --extensions \".js,.ts\"",
         "prepare": "npm run build && husky install",
-        "test": "jest"
+        "test": "jest",
+        "lint": "eslint . && prettier --check .",
+        "lint:fix": "eslint --fix . && prettier --write ."
     },
     "author": {
         "name": "Kinde",
