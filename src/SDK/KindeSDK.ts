@@ -188,9 +188,13 @@ class KindeSDK extends runtime.BaseAPI {
         await this.cleanUp();
 
         if (isRevoke) {
-            const payload = new AuthorizationCode().buildBaseAuthenticateURL(
-                this
-            );
+            const payload = new URLSearchParams({
+                client_id: this.clientId,
+                redirect_uri: this.redirectUri,
+                client_secret: this.clientSecret || '',
+                scope: this.scope,
+                grant_type: 'authorization_code'
+            });
 
             try {
                 await this.request({
@@ -206,10 +210,10 @@ class KindeSDK extends runtime.BaseAPI {
             }
         }
 
-        const URLParsed = Url(this.logoutEndpoint, true);
-        URLParsed.query['redirect'] = this.logoutRedirectUri;
         const response = await openWebBrowser(
-            URLParsed.toString(),
+            this.logoutEndpoint +
+                '?' +
+                new URLSearchParams({ redirect: this.logoutRedirectUri }),
             this.redirectUri,
             authBrowserOptions || this.authBrowserOptions
         );
@@ -235,10 +239,13 @@ class KindeSDK extends runtime.BaseAPI {
 
         checkNotNull(url, 'URL');
 
-        const URLParsed = Url(String(url), true);
-        const { code, error, error_description } = URLParsed.query;
+        const params = new URL(url!).searchParams;
+
+        const code = params.get('code');
+        const error = params.get('error');
+        const errorDescription = params.get('error_description');
         if (error) {
-            const msg = error_description ?? error;
+            const msg = errorDescription ?? error;
             throw new UnAuthenticatedException(msg);
         }
         checkNotNull(code, 'code');
