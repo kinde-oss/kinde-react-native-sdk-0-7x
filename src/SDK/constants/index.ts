@@ -4,7 +4,10 @@ export const AdditionalParametersAllow = {
     audience: 'string',
     is_create_org: 'boolean',
     org_code: 'string',
-    org_name: 'string'
+    org_name: 'string',
+    connection_id: 'string',
+    lang: 'string',
+    login_hint: 'string'
 };
 
 export const FLAG_TYPE: Record<FeatureFlagType, string> = {
