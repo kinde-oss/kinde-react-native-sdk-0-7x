@@ -287,20 +287,22 @@ describe('KindeSDK', () => {
         test('[RNStorage] Open authenticate endpoint', async () => {
             InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
             await globalClient.login();
-            const URLParsed = Url(`${configuration.issuer}/oauth2/auth`, true);
-            URLParsed.query['client_id'] = configuration.clientId;
-            URLParsed.query['redirect_uri'] = configuration.redirectUri;
-            URLParsed.query['client_secret'] = configuration.clientSecret;
-            URLParsed.query['scope'] = configuration.scope;
-            URLParsed.query['grant_type'] = 'authorization_code';
-            URLParsed.query['response_type'] = 'code';
-            URLParsed.query['start_page'] = 'login';
-            URLParsed.query['state'] = configuration.fakeState;
-            URLParsed.query['code_challenge'] = configuration.fakeCodeChallenge;
-            URLParsed.query['code_challenge_method'] = 'S256';
+
+            const urlParmams = new URLSearchParams({
+                client_id: configuration.clientId,
+                redirect_uri: configuration.redirectUri,
+                client_secret: configuration.clientSecret || '',
+                scope: configuration.scope,
+                grant_type: 'authorization_code',
+                response_type: 'code',
+                start_page: 'login',
+                state: configuration.fakeState,
+                code_challenge: configuration.fakeCodeChallenge,
+                code_challenge_method: 'S256'
+            }).toString();
 
             expect(InAppBrowser.openAuth).toHaveBeenCalledWith(
-                URLParsed.toString(),
+                `${configuration.issuer}/oauth2/auth?${urlParmams}`,
                 globalClient.redirectUri,
                 {
                     enableDefaultShare: false,
@@ -314,19 +316,36 @@ describe('KindeSDK', () => {
         test('[RNStorage] Open registration endpoint', async () => {
             InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
             await globalClient.register();
-            const URLParsed = Url(configuration.authorizationEndpoint, true);
-            URLParsed.query['client_id'] = configuration.clientId;
-            URLParsed.query['redirect_uri'] = configuration.redirectUri;
-            URLParsed.query['client_secret'] = configuration.clientSecret;
-            URLParsed.query['scope'] = configuration.scope;
-            URLParsed.query['grant_type'] = 'authorization_code';
-            URLParsed.query['response_type'] = 'code';
-            URLParsed.query['start_page'] = 'registration';
-            URLParsed.query['state'] = configuration.fakeState;
-            URLParsed.query['code_challenge'] = configuration.fakeCodeChallenge;
-            URLParsed.query['code_challenge_method'] = 'S256';
+
+            console.log(
+                new URLSearchParams({
+                    client_id: configuration.clientId || '',
+                    redirect_uri: configuration.redirectUri || '',
+                    client_secret: configuration.clientSecret || '',
+                    scope: configuration.scope || '',
+                    grant_type: 'authorization_code',
+                    response_type: 'code',
+                    start_page: 'registration',
+                    state: configuration.fakeState || '',
+                    code_challenge: configuration.fakeCodeChallenge || '',
+                    code_challenge_method: 'S256'
+                }).toString()
+            );
             expect(InAppBrowser.openAuth).toHaveBeenCalledWith(
-                URLParsed.toString(),
+                configuration.authorizationEndpoint +
+                    '?' +
+                    new URLSearchParams({
+                        client_id: configuration.clientId || '',
+                        redirect_uri: configuration.redirectUri || '',
+                        client_secret: configuration.clientSecret || '',
+                        scope: configuration.scope || '',
+                        grant_type: 'authorization_code',
+                        response_type: 'code',
+                        start_page: 'registration',
+                        state: configuration.fakeState || '',
+                        code_challenge: configuration.fakeCodeChallenge || '',
+                        code_challenge_method: 'S256'
+                    }).toString(),
                 globalClient.redirectUri,
                 {
                     enableDefaultShare: false,
@@ -340,10 +359,10 @@ describe('KindeSDK', () => {
         test('[RNStorage] Logout', async () => {
             InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
             await globalClient.logout();
-            const URLParsed = Url(configuration.logoutEndpoint, true);
-            URLParsed.query['redirect'] = configuration.logoutRedirectUri;
             expect(InAppBrowser.openAuth).toHaveBeenCalledWith(
-                URLParsed.toString(),
+                `${configuration.logoutEndpoint}?${new URLSearchParams({
+                    redirect: configuration.logoutRedirectUri
+                }).toString()}`,
                 globalClient.redirectUri,
                 {
                     enableDefaultShare: false,
@@ -390,20 +409,23 @@ describe('KindeSDK', () => {
         test('[RNStorage] Create Organization', async () => {
             InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
             await globalClient.createOrg();
-            const URLParsed = Url(configuration.authorizationEndpoint, true);
-            URLParsed.query['client_id'] = configuration.clientId;
-            URLParsed.query['redirect_uri'] = configuration.redirectUri;
-            URLParsed.query['client_secret'] = configuration.clientSecret;
-            URLParsed.query['scope'] = configuration.scope;
-            URLParsed.query['grant_type'] = 'authorization_code';
-            URLParsed.query['response_type'] = 'code';
-            URLParsed.query['start_page'] = 'registration';
-            URLParsed.query['state'] = configuration.fakeState;
-            URLParsed.query['is_create_org'] = true;
-            URLParsed.query['code_challenge'] = configuration.fakeCodeChallenge;
-            URLParsed.query['code_challenge_method'] = 'S256';
+
+            const urlParsed = new URLSearchParams({
+                client_id: configuration.clientId || '',
+                redirect_uri: configuration.redirectUri || '',
+                client_secret: configuration.clientSecret || '',
+                scope: configuration.scope || '',
+                grant_type: 'authorization_code',
+                response_type: 'code',
+                start_page: 'registration',
+                state: configuration.fakeState || '',
+                is_create_org: true,
+                code_challenge: configuration.fakeCodeChallenge || '',
+                code_challenge_method: 'S256'
+            }).toString();
+
             expect(InAppBrowser.openAuth).toHaveBeenCalledWith(
-                URLParsed.toString(),
+                `${configuration.authorizationEndpoint}?${urlParsed}`,
                 globalClient.redirectUri,
                 {
                     enableDefaultShare: false,
@@ -459,20 +481,22 @@ describe('KindeSDK', () => {
             Constants.executionEnvironment = 'storeClient';
 
             await globalClient.login();
-            const URLParsed = Url(`${configuration.issuer}/oauth2/auth`, true);
-            URLParsed.query['client_id'] = configuration.clientId;
-            URLParsed.query['redirect_uri'] = configuration.redirectUri;
-            URLParsed.query['client_secret'] = configuration.clientSecret;
-            URLParsed.query['scope'] = configuration.scope;
-            URLParsed.query['grant_type'] = 'authorization_code';
-            URLParsed.query['response_type'] = 'code';
-            URLParsed.query['start_page'] = 'login';
-            URLParsed.query['state'] = configuration.fakeState;
-            URLParsed.query['code_challenge'] = configuration.fakeCodeChallenge;
-            URLParsed.query['code_challenge_method'] = 'S256';
+
+            const urlParsed = new URLSearchParams({
+                client_id: configuration.clientId || '',
+                redirect_uri: configuration.redirectUri || '',
+                client_secret: configuration.clientSecret || '',
+                scope: configuration.scope || '',
+                grant_type: 'authorization_code',
+                response_type: 'code',
+                start_page: 'login',
+                state: configuration.fakeState || '',
+                code_challenge: configuration.fakeCodeChallenge || '',
+                code_challenge_method: 'S256'
+            }).toString();
 
             expect(openAuthSessionAsync).toHaveBeenCalledWith(
-                URLParsed.toString(),
+                `${configuration.issuer}/oauth2/auth?${urlParsed}`,
                 globalClient.redirectUri
             );
         });
@@ -481,20 +505,22 @@ describe('KindeSDK', () => {
             Constants.executionEnvironment = 'storeClient';
 
             await globalClient.register();
-            const URLParsed = Url(configuration.authorizationEndpoint, true);
-            URLParsed.query['client_id'] = configuration.clientId;
-            URLParsed.query['redirect_uri'] = configuration.redirectUri;
-            URLParsed.query['client_secret'] = configuration.clientSecret;
-            URLParsed.query['scope'] = configuration.scope;
-            URLParsed.query['grant_type'] = 'authorization_code';
-            URLParsed.query['response_type'] = 'code';
-            URLParsed.query['start_page'] = 'registration';
-            URLParsed.query['state'] = configuration.fakeState;
-            URLParsed.query['code_challenge'] = configuration.fakeCodeChallenge;
-            URLParsed.query['code_challenge_method'] = 'S256';
+
+            const urlParsed = new URLSearchParams({
+                client_id: configuration.clientId || '',
+                redirect_uri: configuration.redirectUri || '',
+                client_secret: configuration.clientSecret || '',
+                scope: configuration.scope || '',
+                grant_type: 'authorization_code',
+                response_type: 'code',
+                start_page: 'registration',
+                state: configuration.fakeState || '',
+                code_challenge: configuration.fakeCodeChallenge || '',
+                code_challenge_method: 'S256'
+            }).toString();
 
             expect(openAuthSessionAsync).toHaveBeenCalledWith(
-                URLParsed.toString(),
+                `${configuration.authorizationEndpoint}?${urlParsed}`,
                 globalClient.redirectUri
             );
         });
@@ -503,11 +529,11 @@ describe('KindeSDK', () => {
             Constants.executionEnvironment = 'storeClient';
 
             await globalClient.logout();
-            const URLParsed = Url(configuration.logoutEndpoint, true);
-            URLParsed.query['redirect'] = configuration.logoutRedirectUri;
 
             expect(openAuthSessionAsync).toHaveBeenCalledWith(
-                URLParsed.toString(),
+                `${configuration.logoutEndpoint}?${new URLSearchParams({
+                    redirect: configuration.logoutRedirectUri
+                }).toString()}`,
                 globalClient.redirectUri
             );
         });
@@ -548,21 +574,23 @@ describe('KindeSDK', () => {
         test('[ExpoStorage] Create Organization', async () => {
             Constants.executionEnvironment = 'storeClient';
             await globalClient.createOrg();
-            const URLParsed = Url(configuration.authorizationEndpoint, true);
-            URLParsed.query['client_id'] = configuration.clientId;
-            URLParsed.query['redirect_uri'] = configuration.redirectUri;
-            URLParsed.query['client_secret'] = configuration.clientSecret;
-            URLParsed.query['scope'] = configuration.scope;
-            URLParsed.query['grant_type'] = 'authorization_code';
-            URLParsed.query['response_type'] = 'code';
-            URLParsed.query['start_page'] = 'registration';
-            URLParsed.query['state'] = configuration.fakeState;
-            URLParsed.query['is_create_org'] = true;
-            URLParsed.query['code_challenge'] = configuration.fakeCodeChallenge;
-            URLParsed.query['code_challenge_method'] = 'S256';
+
+            const urlParsed = new URLSearchParams({
+                client_id: configuration.clientId || '',
+                redirect_uri: configuration.redirectUri || '',
+                client_secret: configuration.clientSecret || '',
+                scope: configuration.scope || '',
+                grant_type: 'authorization_code',
+                response_type: 'code',
+                start_page: 'registration',
+                state: configuration.fakeState || '',
+                is_create_org: true,
+                code_challenge: configuration.fakeCodeChallenge || '',
+                code_challenge_method: 'S256'
+            }).toString();
 
             expect(openAuthSessionAsync).toHaveBeenCalledWith(
-                URLParsed.toString(),
+                `${configuration.authorizationEndpoint}?${urlParsed}`,
                 globalClient.redirectUri
             );
         });

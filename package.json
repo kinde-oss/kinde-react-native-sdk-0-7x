@@ -43,11 +43,8 @@
         "expo-web-browser": "12.8.2",
         "expo-secure-store": "^12.1.1",
         "jwt-decode": "^3.1.2",
-        "qs": "^6.11.0",
         "react-native-inappbrowser-reborn": "^3.7.0",
-        "react-native-keychain": ">= 8.0",
-        "superagent": "^7.0.2",
-        "url-parse": "^1.5.10"
+        "react-native-keychain": ">= 8.0"
     },
     "devDependencies": {
         "@babel/cli": "^7.0.0",

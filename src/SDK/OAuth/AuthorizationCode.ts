@@ -17,13 +17,11 @@
  * @version 1.2.2
  */
 
-import Url from 'url-parse';
 import { AdditionalParameters, TokenResponse } from '../../types/KindeSDK';
 import KindeSDK from '../KindeSDK';
 import Storage from '../Storage';
 import {
     OpenWebInApp,
-    addAdditionalParameters,
     generateChallenge,
     generateRandomString
 } from '../Utils';
@@ -45,39 +43,37 @@ class AuthorizationCode {
         additionalParameters: AdditionalParameters = {},
         options?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
-        const URLParsed = Url(kindeSDK.authorizationEndpoint, true);
-        const baseInfo = this.buildBaseAuthenticateURL(kindeSDK);
-
-        Object.keys(baseInfo).forEach((k) => {
-            URLParsed.query[k] = baseInfo[k];
-        });
-
-        URLParsed.query['start_page'] = startPage;
-
         const stateGenerated = generateRandomString();
-        URLParsed.query['state'] = stateGenerated;
-        addAdditionalParameters(URLParsed.query, additionalParameters);
         Storage.setState(stateGenerated);
-        if (usePKCE) {
-            const challenge = generateChallenge();
-            URLParsed.query['code_challenge'] = challenge.codeChallenge;
-            URLParsed.query['code_challenge_method'] = 'S256';
-            Storage.setCodeVerifier(challenge.codeVerifier);
-        }
-        return OpenWebInApp(URLParsed.toString(), kindeSDK, options);
-    }
 
-    buildBaseAuthenticateURL(
-        kindeSDK: KindeSDK
-    ): Record<string, string | undefined> {
-        return {
+        let pkce;
+        if (usePKCE) {
+            const { codeChallenge, codeVerifier } = generateChallenge();
+            Storage.setCodeVerifier(codeVerifier);
+            pkce = {
+                code_challenge: codeChallenge,
+                code_challenge_method: 'S256'
+            };
+        }
+
+        const urlParams = new URLSearchParams({
             client_id: kindeSDK.clientId,
             redirect_uri: kindeSDK.redirectUri,
-            client_secret: kindeSDK.clientSecret,
+            client_secret: kindeSDK.clientSecret || '',
             scope: kindeSDK.scope,
             grant_type: 'authorization_code',
-            response_type: 'code'
-        };
+            response_type: 'code',
+            start_page: startPage,
+            state: stateGenerated,
+            ...(additionalParameters as Record<string, string>),
+            ...pkce
+        }).toString();
+
+        return OpenWebInApp(
+            `${kindeSDK.authorizationEndpoint}?${urlParams}`,
+            kindeSDK,
+            options
+        );
     }
 }
 
