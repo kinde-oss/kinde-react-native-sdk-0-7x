@@ -210,8 +210,12 @@ export const openWebBrowser = async (
     if (isExpo) {
         if (Platform.OS === 'android') {
             // Use custom tabs for Android
-            const { preferredBrowserPackage } = await WebBrowser.getCustomTabsSupportingBrowsersAsync();
-            return WebBrowser.openAuthSessionAsync(url, redirectUri, { browserPackage: preferredBrowserPackage, ...options });
+            const { preferredBrowserPackage } =
+                await WebBrowser.getCustomTabsSupportingBrowsersAsync();
+            return WebBrowser.openAuthSessionAsync(url, redirectUri, {
+                browserPackage: preferredBrowserPackage,
+                ...options
+            });
         } else {
             return WebBrowser.openAuthSessionAsync(url, redirectUri, options);
         }
