@@ -205,7 +205,10 @@ class KindeSDK extends runtime.BaseAPI {
                 });
                 return true;
             } catch (error: any) {
-                console.error(error.message);
+                console.error(
+                    'Something went wrong when trying to revoke token',
+                    error.message
+                );
                 return false;
             }
         }
