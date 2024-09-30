@@ -180,14 +180,14 @@ export const OpenWebInApp = async (
         if (response.type === 'success' && response.url) {
             return kindeSDK.getToken(response.url);
         }
-        console.error(
+        console.warn(
             'Something wrong when trying to authenticate. Reason: ',
             response.type
         );
         return null;
     } catch (error: any) {
         console.error(
-            'Something wrong when trying to authenticate. Reason: ',
+            'Something wrong when trying to authenticate.',
             error.message
         );
         return null;
