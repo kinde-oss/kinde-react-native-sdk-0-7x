@@ -39,7 +39,7 @@
     "dependencies": {
         "@babel/runtime": "^7.19.4",
         "crypto-js": "3.3.0",
-        "expo-constants": "^14.2.1",
+        "expo-constants": "^17.0.0",
         "expo-modules-core": "^1.2.6",
         "expo-web-browser": "12.8.2",
         "expo-secure-store": "^12.1.1",
