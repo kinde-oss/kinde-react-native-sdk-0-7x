@@ -23,7 +23,9 @@ import Storage from '../Storage';
 import {
     OpenWebInApp,
     isAdditionalParameters,
-    additionalParametersToLoginMethodParams
+    additionalParametersToLoginMethodParams,
+    generateChallenge,
+    generateRandomString
 } from '../Utils';
 import { AuthBrowserOptions } from '../../types/Auth';
 import {
@@ -55,27 +57,35 @@ class AuthorizationCode {
                 additionalParametersToLoginMethodParams(additionalParameters);
         }
 
+        const { codeChallenge, codeVerifier } = generateChallenge();
+        const nonce = generateRandomString();
+        const state = generateRandomString();
+        const params = {
+            ...(additionalParameters as LoginMethodParams),
+            prompt:
+                startPage === 'login'
+                    ? IssuerRouteTypes.login
+                    : IssuerRouteTypes.register,
+            clientId: kindeSDK.clientId,
+            redirectURL: kindeSDK.redirectUri,
+            scope: kindeSDK.scope.split(' ') as Scopes[],
+            codeChallenge,
+            nonce,
+            state
+        };
+
         const authUrl = await generateAuthUrl(
             kindeSDK.issuer,
             startPage === 'login'
                 ? IssuerRouteTypes.login
                 : IssuerRouteTypes.register,
-            {
-                ...(additionalParameters as LoginMethodParams),
-                prompt:
-                    startPage === 'login'
-                        ? IssuerRouteTypes.login
-                        : IssuerRouteTypes.register,
-                clientId: kindeSDK.clientId,
-                redirectURL: kindeSDK.redirectUri,
-                scope: kindeSDK.scope.split(' ') as Scopes[]
-            }
+            params
         );
 
-        Storage.setState(authUrl.state);
-        Storage.setCodeVerifier(authUrl.codeVerifier);
-        Storage.setNonce(authUrl.nonce);
-        Storage.setCodeChallenge(authUrl.codeChallenge);
+        Storage.setState(state);
+        Storage.setCodeVerifier(codeVerifier);
+        Storage.setNonce(nonce);
+        Storage.setCodeChallenge(codeChallenge);
 
         return OpenWebInApp(authUrl.url.toString(), kindeSDK, options);
     }
