@@ -84,7 +84,7 @@ class Storage extends BaseStore {
     }
 
     setState(newState: string): void {
-        return this.setItem('state', this.convertString(newState));
+        this.setItem('state', this.convertString(newState));
     }
 
     getCodeVerifier() {
@@ -92,10 +92,7 @@ class Storage extends BaseStore {
     }
 
     setCodeVerifier(newCodeVerifier: string): void {
-        return this.setItem(
-            'codeVerifier',
-            this.convertString(newCodeVerifier)
-        );
+        this.setItem('codeVerifier', this.convertString(newCodeVerifier));
     }
 
     getNonce() {
@@ -103,7 +100,7 @@ class Storage extends BaseStore {
     }
 
     setNonce(newNonce: string): void {
-        return this.setItem('nonce', this.convertString(newNonce));
+        this.setItem('nonce', this.convertString(newNonce));
     }
 
     getCodeChallenge() {
@@ -111,10 +108,7 @@ class Storage extends BaseStore {
     }
 
     setCodeChallenge(newCodeChallenge: string): void {
-        return this.setItem(
-            'codeChallenge',
-            this.convertString(newCodeChallenge)
-        );
+        this.setItem('codeChallenge', this.convertString(newCodeChallenge));
     }
 
     async clearAll() {
