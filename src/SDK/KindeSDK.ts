@@ -12,13 +12,11 @@
  */
 
 import jwt_decode from 'jwt-decode';
-import Url from 'url-parse';
 import { UnAuthenticatedException } from '../common/exceptions/unauthenticated.exception';
 import { UnexpectedException } from '../common/exceptions/unexpected.exception';
 import {
     AdditionalParameters,
     FeatureFlag,
-    LoginAdditionalParameters,
     OptionalFlag,
     OrgAdditionalParams,
     RegisterAdditionalParameters,
@@ -36,6 +34,7 @@ import {
 import * as runtime from '../ApiClient';
 import { FLAG_TYPE } from './constants';
 import { AuthBrowserOptions } from '../types/Auth';
+import { LoginMethodParams } from '@kinde/js-utils';
 
 /**
  * The KindeSDK module.
@@ -108,7 +107,7 @@ class KindeSDK extends runtime.BaseAPI {
      * @returns A promise that resolves to void.
      */
     async login(
-        additionalParameters: LoginAdditionalParameters = {},
+        additionalParameters: LoginMethodParams | AdditionalParameters = {},
         authBrowserOptions?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
         checkAdditionalParameters(additionalParameters);
@@ -120,7 +119,6 @@ class KindeSDK extends runtime.BaseAPI {
         };
         return auth.authenticate(
             this,
-            true,
             'login',
             additionalParametersMerged,
             authBrowserOptions
@@ -151,7 +149,6 @@ class KindeSDK extends runtime.BaseAPI {
         };
         return auth.authenticate(
             this,
-            true,
             'registration',
             additionalParametersMerged,
             authBrowserOptions

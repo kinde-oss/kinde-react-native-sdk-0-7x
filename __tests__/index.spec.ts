@@ -83,6 +83,8 @@ jest.mock(process.cwd() + '/src/SDK/Utils', () => ({
     generateRandomString: jest
         .fn()
         .mockReturnValue('uUj8nEDL-jxeDbS_si86i7UsFmG5ewf0axDu96pdHGc'),
+    isAdditionalParameters: jest.fn().mockReturnValue(true),
+    additionalParametersToLoginMethodParams: jest.fn().mockReturnValue({}),
     checkNotNull: jest.fn((reference, name) => {
         if (reference === null || reference === undefined) {
             throw new Error(`${name} cannot be empty`);

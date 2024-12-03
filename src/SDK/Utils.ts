@@ -20,6 +20,7 @@ import { AuthBrowserOptions } from '../types/Auth';
 import { AdditionalParameters } from '../types/KindeSDK';
 import KindeSDK from './KindeSDK';
 import { AdditionalParametersAllow } from './constants';
+import { LoginMethodParams } from '@kinde/js-utils';
 
 /**
  * The Utils SDK module.
@@ -224,4 +225,32 @@ export const convertObject2FormData = (obj: Record<string, any>) => {
     });
 
     return formData;
+};
+
+export const isAdditionalParameters = (
+    additionalParameters: AdditionalParameters | LoginMethodParams
+): boolean => {
+    return (
+        Object(additionalParameters).hasOwnProperty('audience') ||
+        Object(additionalParameters).hasOwnProperty('is_create_org') ||
+        Object(additionalParameters).hasOwnProperty('org_code') ||
+        Object(additionalParameters).hasOwnProperty('org_name') ||
+        Object(additionalParameters).hasOwnProperty('connection_id') ||
+        Object(additionalParameters).hasOwnProperty('lang') ||
+        Object(additionalParameters).hasOwnProperty('login_hint')
+    );
+};
+
+export const additionalParametersToLoginMethodParams = (
+    additionalParameters: AdditionalParameters
+): Partial<LoginMethodParams> => {
+    return {
+        audience: additionalParameters.audience,
+        isCreateOrg: additionalParameters.is_create_org,
+        orgCode: additionalParameters.org_code,
+        orgName: additionalParameters.org_name,
+        connectionId: additionalParameters.connection_id,
+        lang: additionalParameters.lang,
+        loginHint: additionalParameters.login_hint
+    };
 };
