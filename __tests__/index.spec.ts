@@ -8,6 +8,14 @@ import RNStorage from '../src/SDK/Storage/RNStorage';
 import { openWebBrowser } from '../src/SDK/Utils';
 import Storage from '../src/SDK/Storage';
 
+const crypto = require('crypto');
+
+Object.defineProperty(globalThis, 'crypto', {
+    value: {
+        getRandomValues: (arr) => crypto.randomBytes(arr.length)
+    }
+});
+
 const fakeTokenResponse = {
     access_token: 'this_is_access_token',
     refresh_token: 'this_is_refresh_token',
