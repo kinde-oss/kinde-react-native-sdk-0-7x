@@ -12,10 +12,7 @@
  */
 
 import crypto, { LibWordArray } from 'crypto-js';
-import Constants, { ExecutionEnvironment } from 'expo-constants';
-import * as WebBrowser from 'expo-web-browser';
 import InAppBrowser from 'react-native-inappbrowser-reborn';
-import { Platform } from 'react-native'; // Added import for Platform
 import { InvalidTypeException } from '../common/exceptions/invalid-type.exception';
 import { PropertyRequiredException } from '../common/exceptions/property-required.exception';
 import { UnexpectedException } from '../common/exceptions/unexpected.exception';
@@ -157,8 +154,6 @@ export const addAdditionalParameters = (
     return target;
 };
 
-export const isExpo = Constants.executionEnvironment !== undefined;
-
 /**
  * Opens a web browser or in-app browser for authentication.
  * @param {string} url - The URL to open.
@@ -207,31 +202,16 @@ export const openWebBrowser = async (
     redirectUri: string,
     options?: AuthBrowserOptions
 ) => {
-    if (isExpo) {
-        if (Platform.OS === 'android') {
-            // Use custom tabs for Android
-            const { preferredBrowserPackage } =
-                await WebBrowser.getCustomTabsSupportingBrowsersAsync();
-            return WebBrowser.openAuthSessionAsync(url, redirectUri, {
-                browserPackage: preferredBrowserPackage,
-                ...options
-            });
-        } else {
-            return WebBrowser.openAuthSessionAsync(url, redirectUri, options);
-        }
-    }
-    if (InAppBrowser) {
-        if (await InAppBrowser.isAvailable()) {
-            return InAppBrowser.openAuth(url, redirectUri, {
-                ephemeralWebSession: false,
-                showTitle: false,
-                enableUrlBarHiding: true,
-                enableDefaultShare: false,
-                forceCloseOnRedirection: false,
-                showInRecents: true,
-                ...options
-            });
-        }
+    if (await InAppBrowser.isAvailable()) {
+        return InAppBrowser.openAuth(url, redirectUri, {
+            ephemeralWebSession: false,
+            showTitle: false,
+            enableUrlBarHiding: true,
+            enableDefaultShare: false,
+            forceCloseOnRedirection: false,
+            showInRecents: true,
+            ...options
+        });
     }
     throw new Error('Not found web browser');
 };
