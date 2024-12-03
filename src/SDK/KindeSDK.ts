@@ -147,6 +147,7 @@ class KindeSDK extends runtime.BaseAPI {
             ...this.additionalParameters,
             ...additionalParameters
         };
+
         return auth.authenticate(
             this,
             'registration',

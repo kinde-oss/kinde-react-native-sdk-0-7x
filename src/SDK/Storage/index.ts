@@ -98,6 +98,25 @@ class Storage extends BaseStore {
         );
     }
 
+    getNonce() {
+        return this.getItem('nonce');
+    }
+
+    setNonce(newNonce: string): void {
+        return this.setItem('nonce', this.convertString(newNonce));
+    }
+
+    getCodeChallenge() {
+        return this.getItem('codeChallenge');
+    }
+
+    setCodeChallenge(newCodeChallenge: string): void {
+        return this.setItem(
+            'codeChallenge',
+            this.convertString(newCodeChallenge)
+        );
+    }
+
     async clearAll() {
         this.clear();
         const storage = await this.getStorage();

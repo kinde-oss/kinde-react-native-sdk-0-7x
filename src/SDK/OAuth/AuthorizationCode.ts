@@ -74,6 +74,8 @@ class AuthorizationCode {
 
         Storage.setState(authUrl.state);
         Storage.setCodeVerifier(authUrl.codeVerifier);
+        Storage.setNonce(authUrl.nonce);
+        Storage.setCodeChallenge(authUrl.codeChallenge);
 
         return OpenWebInApp(authUrl.url.toString(), kindeSDK, options);
     }
