@@ -231,13 +231,28 @@ export const isAdditionalParameters = (
     additionalParameters: AdditionalParameters | LoginMethodParams
 ): boolean => {
     return (
-        Object(additionalParameters).hasOwnProperty('audience') ||
-        Object(additionalParameters).hasOwnProperty('is_create_org') ||
-        Object(additionalParameters).hasOwnProperty('org_code') ||
-        Object(additionalParameters).hasOwnProperty('org_name') ||
-        Object(additionalParameters).hasOwnProperty('connection_id') ||
-        Object(additionalParameters).hasOwnProperty('lang') ||
-        Object(additionalParameters).hasOwnProperty('login_hint')
+        Object.prototype.hasOwnProperty.call(
+            additionalParameters,
+            'audience'
+        ) ||
+        Object.prototype.hasOwnProperty.call(
+            additionalParameters,
+            'is_create_org'
+        ) ||
+        Object.prototype.hasOwnProperty.call(
+            additionalParameters,
+            'org_code'
+        ) ||
+        Object.prototype.hasOwnProperty.call(
+            additionalParameters,
+            'org_name'
+        ) ||
+        Object.prototype.hasOwnProperty.call(
+            additionalParameters,
+            'connection_id'
+        ) ||
+        Object.prototype.hasOwnProperty.call(additionalParameters, 'lang') ||
+        Object.prototype.hasOwnProperty.call(additionalParameters, 'login_hint')
     );
 };
 
