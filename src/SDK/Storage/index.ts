@@ -20,7 +20,6 @@ import {
 } from '../../types/KindeSDK';
 import { TokenType } from '../Enums/TokenType.enum';
 import BaseStore from './Base';
-import { isExpo } from '../Utils';
 
 /**
  * The Storage SDK module.
@@ -34,10 +33,6 @@ class Storage extends BaseStore {
     }
 
     async getStorage() {
-        if (isExpo) {
-            const builder = await import('./ExpoStorage');
-            return new builder.default();
-        }
         const builder = await import('./RNStorage');
         return new builder.default();
     }
