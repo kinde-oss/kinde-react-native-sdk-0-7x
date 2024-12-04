@@ -19,11 +19,16 @@
 
 export type AdditionalParameters = {
     audience?: string;
+    /** @deprecated use isCreateOrg field instead */
     is_create_org?: boolean;
+    /** @deprecated use orgCode field instead */
     org_code?: string;
+    /** @deprecated use orgName field instead */
     org_name?: string;
+    /** @deprecated use connectionId field instead */
     connection_id?: string;
     lang?: string;
+    /** @deprecated use loginHint field instead */
     login_hint?: string;
 };
 
