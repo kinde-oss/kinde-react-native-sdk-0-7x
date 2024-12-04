@@ -2,6 +2,8 @@
 
 The Kinde SDK for React Native SDK 0.7x.
 
+You can also use the React Native 0.7x starter kit [here](https://github.com/kinde-starter-kits/kinde-react-native-starter-kit-0-7x).
+
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com) [![Kinde Docs](https://img.shields.io/badge/Kinde-Docs-eee?style=flat-square)](https://kinde.com/docs/developer-tools) [![Kinde Community](https://img.shields.io/badge/Kinde-Community-eee?style=flat-square)](https://thekindecommunity.slack.com)
 
 ## Development
