@@ -46,7 +46,7 @@ class KindeSDK extends runtime.BaseAPI {
      * @param {string} logoutRedirectUri - The URL to redirect to after logout.
      * @param {string} [scope=openid profile email offline] - The scope of the authentication. This is
      * a space-separated list of scopes.
-     * @param {Pick<Partial<LoginMethodParams> | AdditionalParameters, 'audience'>} additionalParameters - AdditionalParameters = {}
+     * @param {Omit<Partial<LoginMethodParams> | AdditionalParameters, 'audience'>} additionalParameters - AdditionalParameters = {}
      * @param {AuthBrowserOptions} [authBrowserOptions] - Authentication browser options.
      */
     constructor(
@@ -55,7 +55,7 @@ class KindeSDK extends runtime.BaseAPI {
         clientId: string,
         logoutRedirectUri: string,
         scope: string = 'openid profile email offline',
-        additionalParameters: Pick<
+        additionalParameters: Omit<
             Partial<LoginMethodParams> | AdditionalParameters,
             'audience'
         > = {},
