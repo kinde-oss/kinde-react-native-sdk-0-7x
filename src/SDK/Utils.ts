@@ -233,10 +233,6 @@ export const isAdditionalParameters = (
     return (
         Object.prototype.hasOwnProperty.call(
             additionalParameters,
-            'audience'
-        ) ||
-        Object.prototype.hasOwnProperty.call(
-            additionalParameters,
             'is_create_org'
         ) ||
         Object.prototype.hasOwnProperty.call(
@@ -251,7 +247,6 @@ export const isAdditionalParameters = (
             additionalParameters,
             'connection_id'
         ) ||
-        Object.prototype.hasOwnProperty.call(additionalParameters, 'lang') ||
         Object.prototype.hasOwnProperty.call(additionalParameters, 'login_hint')
     );
 };

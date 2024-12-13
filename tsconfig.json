@@ -10,7 +10,8 @@
         "skipLibCheck": true,
         "outDir": "./dist",
         "lib": ["es2016"],
-        "types": ["react-native"]
+        "types": ["react-native"],
+        "resolveJsonModule": true
     },
     "include": ["src"],
     "exclude": ["dist", "node_modules", "**/__tests__/*", "**/test/*"]
