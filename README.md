@@ -60,7 +60,7 @@ npm run build
 To test the SDK, you just need to run the command:
 
 ```bash
-npm run test
+npm run test;
 ```
 
 ## Documentation
