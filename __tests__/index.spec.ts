@@ -6,6 +6,26 @@ import InAppBrowser from 'react-native-inappbrowser-reborn';
 import Url from 'url-parse';
 import RNStorage from '../src/SDK/Storage/RNStorage';
 import { openWebBrowser } from '../src/SDK/Utils';
+import Storage from '../src/SDK/Storage';
+
+const crypto = require('crypto');
+
+Object.defineProperty(globalThis, 'crypto', {
+    value: {
+        getRandomValues: (arr) => crypto.randomBytes(arr.length),
+        subtle: {
+            digest: (algorithm, data) => {
+                return new Promise((resolve) => {
+                    const hash = crypto.createHash(
+                        algorithm.replace('-', '').toLowerCase()
+                    );
+                    hash.update(Buffer.from(data));
+                    resolve(hash.digest());
+                });
+            }
+        }
+    }
+});
 
 const fakeTokenResponse = {
     access_token: 'this_is_access_token',
@@ -83,6 +103,11 @@ jest.mock(process.cwd() + '/src/SDK/Utils', () => ({
     generateRandomString: jest
         .fn()
         .mockReturnValue('uUj8nEDL-jxeDbS_si86i7UsFmG5ewf0axDu96pdHGc'),
+    isAdditionalParameters: jest.requireActual(process.cwd() + '/src/SDK/Utils')
+        .isAdditionalParameters,
+    additionalParametersToLoginMethodParams: jest.requireActual(
+        process.cwd() + '/src/SDK/Utils'
+    ).additionalParametersToLoginMethodParams,
     checkNotNull: jest.fn((reference, name) => {
         if (reference === null || reference === undefined) {
             throw new Error(`${name} cannot be empty`);
@@ -239,21 +264,27 @@ describe('KindeSDK', () => {
             InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
             await globalClient.login();
 
-            const urlParmams = new URLSearchParams({
-                client_id: configuration.clientId,
-                redirect_uri: configuration.redirectUri,
-                client_secret: configuration.clientSecret || '',
-                scope: configuration.scope,
-                grant_type: 'authorization_code',
+            const state = Storage.getState();
+            const codeVerifier = Storage.getCodeVerifier();
+            const codeChallenge = Storage.getCodeChallenge();
+            const nonce = Storage.getNonce();
+
+            const urlParsed = new URLSearchParams({
+                client_id: configuration.clientId || '',
                 response_type: 'code',
                 start_page: 'login',
-                state: configuration.fakeState,
-                code_challenge: configuration.fakeCodeChallenge,
+                redirect_uri: configuration.redirectUri || '',
+                audience: '',
+                scope: configuration.scope || '',
+                prompt: 'login',
+                state: state,
+                nonce: nonce,
+                code_challenge: codeChallenge,
                 code_challenge_method: 'S256'
             }).toString();
 
             expect(InAppBrowser.openAuth).toHaveBeenCalledWith(
-                `${configuration.issuer}/oauth2/auth?${urlParmams}`,
+                `${configuration.issuer}/oauth2/auth?${urlParsed}`,
                 globalClient.redirectUri,
                 {
                     enableDefaultShare: false,
@@ -268,35 +299,29 @@ describe('KindeSDK', () => {
             InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
             await globalClient.register();
 
-            console.log(
-                new URLSearchParams({
-                    client_id: configuration.clientId || '',
-                    redirect_uri: configuration.redirectUri || '',
-                    client_secret: configuration.clientSecret || '',
-                    scope: configuration.scope || '',
-                    grant_type: 'authorization_code',
-                    response_type: 'code',
-                    start_page: 'registration',
-                    state: configuration.fakeState || '',
-                    code_challenge: configuration.fakeCodeChallenge || '',
-                    code_challenge_method: 'S256'
-                }).toString()
-            );
+            const state = Storage.getState();
+            const codeVerifier = Storage.getCodeVerifier();
+            const codeChallenge = Storage.getCodeChallenge();
+            const nonce = Storage.getNonce();
+
+            const urlParsed = new URLSearchParams({
+                client_id: configuration.clientId || '',
+                response_type: 'code',
+                start_page: 'registration',
+                redirect_uri: configuration.redirectUri || '',
+                audience: '',
+                scope: configuration.scope || '',
+                prompt: 'registration',
+                state: state,
+                nonce: nonce,
+                code_challenge: codeChallenge,
+                code_challenge_method: 'S256'
+            }).toString();
+
             expect(InAppBrowser.openAuth).toHaveBeenCalledWith(
                 configuration.authorizationEndpoint +
                     '?' +
-                    new URLSearchParams({
-                        client_id: configuration.clientId || '',
-                        redirect_uri: configuration.redirectUri || '',
-                        client_secret: configuration.clientSecret || '',
-                        scope: configuration.scope || '',
-                        grant_type: 'authorization_code',
-                        response_type: 'code',
-                        start_page: 'registration',
-                        state: configuration.fakeState || '',
-                        code_challenge: configuration.fakeCodeChallenge || '',
-                        code_challenge_method: 'S256'
-                    }).toString(),
+                    urlParsed.toString(),
                 globalClient.redirectUri,
                 {
                     enableDefaultShare: false,
@@ -361,17 +386,23 @@ describe('KindeSDK', () => {
             InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
             await globalClient.createOrg();
 
+            const state = Storage.getState();
+            const codeVerifier = Storage.getCodeVerifier();
+            const codeChallenge = Storage.getCodeChallenge();
+            const nonce = Storage.getNonce();
+
             const urlParsed = new URLSearchParams({
                 client_id: configuration.clientId || '',
-                redirect_uri: configuration.redirectUri || '',
-                client_secret: configuration.clientSecret || '',
-                scope: configuration.scope || '',
-                grant_type: 'authorization_code',
                 response_type: 'code',
                 start_page: 'registration',
-                state: configuration.fakeState || '',
                 is_create_org: true,
-                code_challenge: configuration.fakeCodeChallenge || '',
+                redirect_uri: configuration.redirectUri || '',
+                audience: '',
+                scope: configuration.scope || '',
+                prompt: 'registration',
+                state: state,
+                nonce: nonce,
+                code_challenge: codeChallenge,
                 code_challenge_method: 'S256'
             }).toString();
 
