@@ -13,6 +13,7 @@ import {
     generateAuthUrl,
     IssuerRouteTypes,
     LoginMethodParams,
+    PromptTypes,
     sanitizeUrl,
     Scopes
 } from '@kinde/js-utils';
@@ -28,7 +29,7 @@ class AuthorizationCode {
      */
     async authenticate(
         kindeSDK: KindeSDK,
-        startPage: 'login' | 'registration' = 'login',
+        startPage: 'login' | 'registration' | 'none' = 'login',
         additionalParameters: LoginMethodParams | AdditionalParameters,
         options?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
@@ -38,14 +39,24 @@ class AuthorizationCode {
                 additionalParametersToLoginMethodParams(additionalParameters);
         }
 
+        let prompt: PromptTypes;
+        switch (startPage) {
+            case 'login':
+                prompt = PromptTypes.login;
+                break;
+            case 'registration':
+                prompt = PromptTypes.create;
+                break;
+            case 'none':
+                prompt = PromptTypes.none;
+                break;
+        }
+
         const { codeChallenge, codeVerifier, state } = generateChallenge();
         const nonce = generateRandomString();
         const params = {
             ...(additionalParameters as LoginMethodParams),
-            prompt:
-                startPage === 'login'
-                    ? IssuerRouteTypes.login
-                    : IssuerRouteTypes.register,
+            prompt: prompt,
             clientId: kindeSDK.clientId,
             redirectURL: kindeSDK.redirectUri,
             scope: kindeSDK.scope.split(' ') as Scopes[],
