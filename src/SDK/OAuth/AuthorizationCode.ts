@@ -29,7 +29,7 @@ class AuthorizationCode {
      */
     async authenticate(
         kindeSDK: KindeSDK,
-        startPage: 'login' | 'registration' | 'none' = 'login',
+        startPage: 'login' | 'registration' | 'none',
         additionalParameters: LoginMethodParams | AdditionalParameters,
         options?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
@@ -56,7 +56,7 @@ class AuthorizationCode {
         const nonce = generateRandomString();
         const params = {
             ...(additionalParameters as LoginMethodParams),
-            prompt: prompt,
+            prompt,
             clientId: kindeSDK.clientId,
             redirectURL: kindeSDK.redirectUri,
             scope: kindeSDK.scope.split(' ') as Scopes[],
