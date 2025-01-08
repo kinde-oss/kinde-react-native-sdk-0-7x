@@ -23,7 +23,7 @@ class AuthorizationCode {
      * It opens the login page in the browser.
      * @param {KindeSDK} kindSDK - The KindeSDK instance
      * @param {boolean} [usePKCE=false] - boolean = false
-     * @param {'login' | 'registration'} [startPage=login] - 'login' | 'registration' = 'login'
+     * @param {'login' | 'registration' | 'none'} startPage - The start page type
      * @param {AdditionalParameters} additionalParameters - AdditionalParameters = {}
      * @returns A promise that resolves when the URL is opened.
      */
