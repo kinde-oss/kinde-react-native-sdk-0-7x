@@ -13,6 +13,7 @@ import {
     generateAuthUrl,
     IssuerRouteTypes,
     LoginMethodParams,
+    PromptTypes,
     sanitizeUrl,
     Scopes
 } from '@kinde/js-utils';
@@ -22,13 +23,13 @@ class AuthorizationCode {
      * It opens the login page in the browser.
      * @param {KindeSDK} kindSDK - The KindeSDK instance
      * @param {boolean} [usePKCE=false] - boolean = false
-     * @param {'login' | 'registration'} [startPage=login] - 'login' | 'registration' = 'login'
+     * @param {'login' | 'registration' | 'none'} startPage - The start page type
      * @param {AdditionalParameters} additionalParameters - AdditionalParameters = {}
      * @returns A promise that resolves when the URL is opened.
      */
     async authenticate(
         kindeSDK: KindeSDK,
-        startPage: 'login' | 'registration' = 'login',
+        startPage: 'login' | 'registration' | 'none',
         additionalParameters: LoginMethodParams | AdditionalParameters,
         options?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
@@ -38,14 +39,24 @@ class AuthorizationCode {
                 additionalParametersToLoginMethodParams(additionalParameters);
         }
 
+        let prompt: PromptTypes;
+        switch (startPage) {
+            case 'login':
+                prompt = PromptTypes.login;
+                break;
+            case 'registration':
+                prompt = PromptTypes.create;
+                break;
+            case 'none':
+                prompt = PromptTypes.none;
+                break;
+        }
+
         const { codeChallenge, codeVerifier, state } = generateChallenge();
         const nonce = generateRandomString();
         const params = {
             ...(additionalParameters as LoginMethodParams),
-            prompt:
-                startPage === 'login'
-                    ? IssuerRouteTypes.login
-                    : IssuerRouteTypes.register,
+            prompt,
             clientId: kindeSDK.clientId,
             redirectURL: kindeSDK.redirectUri,
             scope: kindeSDK.scope.split(' ') as Scopes[],
