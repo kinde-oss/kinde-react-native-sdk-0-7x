@@ -39,7 +39,7 @@
     ],
     "dependencies": {
         "@babel/runtime": "^7.19.4",
-        "@kinde/js-utils": "^0.6.0",
+        "@kinde/js-utils": "^0.7.3",
         "crypto-js": "3.3.0",
         "jwt-decode": "^3.1.2",
         "react-native-inappbrowser-reborn": ">= 3.7",
