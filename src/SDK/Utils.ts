@@ -1,4 +1,4 @@
-import crypto, { LibWordArray } from 'crypto-js';
+import CryptoJS from 'crypto-js';
 import InAppBrowser from 'react-native-inappbrowser-reborn';
 import { InvalidTypeException } from '../common/exceptions/invalid-type.exception';
 import { PropertyRequiredException } from '../common/exceptions/property-required.exception';
@@ -8,13 +8,14 @@ import { AdditionalParameters } from '../types/KindeSDK';
 import KindeSDK from './KindeSDK';
 import { AdditionalParametersAllow } from './constants';
 import { LoginMethodParams } from '@kinde/js-utils';
+import { generateSecureRandom } from 'react-native-securerandom';
 
 /**
- * It takes a string or a LibWordArray and returns a string
- * @param {string | LibWordArray} str - The string to encode.
+ * It takes a string or a WordArray and returns a string
+ * @param {string | CryptoJS.lib.WordArray} str - The string to encode.
  * @returns A string
  */
-function base64URLEncode(str: string | LibWordArray): string {
+function base64URLEncode(str: string | CryptoJS.lib.WordArray): string {
     return str
         .toString()
         .replace(/\+/g, '-')
@@ -23,12 +24,12 @@ function base64URLEncode(str: string | LibWordArray): string {
 }
 
 /**
- * It takes a string or a LibWordArray and returns a string
- * @param {string | LibWordArray} buffer - The string or word array to hash.
+ * It takes a string or a WordArray and returns a string
+ * @param {string | CryptoJS.lib.WordArray} buffer - The string or word array to hash.
  * @returns A string
  */
-function sha256(buffer: string | LibWordArray): string {
-    return crypto.SHA256(buffer).toString(crypto.enc.Base64);
+function sha256(buffer: string | CryptoJS.lib.WordArray): string {
+    return CryptoJS.SHA256(buffer).toString(CryptoJS.enc.Base64);
 }
 
 /**
@@ -36,21 +37,24 @@ function sha256(buffer: string | LibWordArray): string {
  * @param {number} [byteLength=32] - The number of bytes to generate. Defaults to 32.
  * @returns A random string of 32 bytes.
  */
-export function generateRandomString(byteLength: number = 32): string {
-    return base64URLEncode(crypto.lib.WordArray.random(byteLength));
+export async function generateRandomString(
+    byteLength: number = 32
+): Promise<string> {
+    const secureRandomString = await generateSecureRandom(byteLength);
+    return base64URLEncode(CryptoJS.lib.WordArray.create(secureRandomString));
 }
 
 /**
  * It generates a random string, hashes it, and then base64 encodes it
  * @returns An object with three properties: state, codeVerifier, and codeChallenge.
  */
-export function generateChallenge(): {
+export async function generateChallenge(): Promise<{
     state: string;
     codeVerifier: string;
     codeChallenge: string;
-} {
-    const state = generateRandomString();
-    const codeVerifier = generateRandomString();
+}> {
+    const state = await generateRandomString();
+    const codeVerifier = await generateRandomString();
     const codeChallenge = base64URLEncode(sha256(codeVerifier));
     return {
         state,

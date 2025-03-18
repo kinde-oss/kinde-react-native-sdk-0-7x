@@ -52,8 +52,9 @@ class AuthorizationCode {
                 break;
         }
 
-        const { codeChallenge, codeVerifier, state } = generateChallenge();
-        const nonce = generateRandomString();
+        const { codeChallenge, codeVerifier, state } =
+            await generateChallenge();
+        const nonce = await generateRandomString();
         const params = {
             ...(additionalParameters as LoginMethodParams),
             prompt,
