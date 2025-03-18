@@ -44,7 +44,7 @@
         "jwt-decode": "^3.1.2",
         "react-native-inappbrowser-reborn": ">= 3.7",
         "react-native-keychain": ">= 8.0",
-        "react-native-randombytes": "^3.6.1",
+        "react-native-securerandom": "^1.0.1",
         "url-parse": "^1.5.10"
     },
     "devDependencies": {
