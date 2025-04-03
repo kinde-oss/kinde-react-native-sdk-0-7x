@@ -19,7 +19,8 @@
         "test": "jest",
         "lint": "eslint . && prettier --check .",
         "lint:fix": "eslint --fix . && prettier --write .",
-        "release": "release-it"
+        "release": "release-it",
+        "postinstall": "patch-package"
     },
     "author": {
         "name": "Kinde",
@@ -42,9 +43,9 @@
         "@kinde/js-utils": "^0.7.3",
         "crypto-js": "^4.2.0",
         "jwt-decode": "^3.1.2",
+        "react-native-get-random-values": "^1.11.0",
         "react-native-inappbrowser-reborn": ">= 3.7",
         "react-native-keychain": ">= 8.0",
-        "react-native-securerandom": "^1.0.1",
         "url-parse": "^1.5.10"
     },
     "devDependencies": {
@@ -73,6 +74,7 @@
         "@types/crypto-js": "^4.2.2",
         "@types/node": "^18.11.7",
         "@types/react-native": "^0.70.6",
+        "@types/react-native-get-random-values": "^1.8.2",
         "@types/url-parse": "^1.4.8",
         "babel-core": "^7.0.0-bridge.0",
         "babel-jest": "29.5.0",
@@ -82,6 +84,7 @@
         "jest": "29.5.0",
         "lint-staged": "^13.0.3",
         "metro-react-native-babel-preset": "^0.73.3",
+        "patch-package": "^8.0.0",
         "prettier": "^2.7.1",
         "react": "18.1.0",
         "react-native": "0.70.8",
@@ -125,7 +128,7 @@
         ],
         "cacheDirectory": ".jest/cache",
         "transformIgnorePatterns": [
-            "/node_modules/(?!(@react-native|react-native|react-native-securerandom)/).*/"
+            "/node_modules/(?!(@react-native|react-native)/).*/"
         ]
     },
     "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"

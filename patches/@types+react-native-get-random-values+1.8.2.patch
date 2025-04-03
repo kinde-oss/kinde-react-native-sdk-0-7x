@@ -1,0 +1,13 @@
+diff --git a/node_modules/@types/react-native-get-random-values/index.d.ts b/node_modules/@types/react-native-get-random-values/index.d.ts
+index 0793242..7e22262 100644
+--- a/node_modules/@types/react-native-get-random-values/index.d.ts
++++ b/node_modules/@types/react-native-get-random-values/index.d.ts
+@@ -9,6 +9,7 @@ export type TypedIntArray =
+ 
+ declare global {
+     interface crypto {
+-        getRandomValues<T extends TypedIntArray>(array: T): T | null;
++        getRandomValues<T extends ArrayBufferView | null>(array: T): T;
+     }
++    const crypto: Crypto;
+ }
