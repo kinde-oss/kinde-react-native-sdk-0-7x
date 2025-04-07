@@ -96,7 +96,8 @@
     "peerDependencies": {
         "react-native": ">= 0.70",
         "react-native-inappbrowser-reborn": ">= 3.7",
-        "react-native-keychain": ">= 8.0"
+        "react-native-keychain": ">= 8.0",
+        "react-native-get-random-values": ">= 1.10"
     },
     "files": [
         "dist"
