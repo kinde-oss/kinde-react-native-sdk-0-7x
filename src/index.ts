@@ -67,6 +67,7 @@ export {
     Storage
 };
 
+export * from './SDK/KindeProvider';
 export * from './SDK/Enums';
 export * from './SDK/Utils';
 export * from './types/KindeSDK';
