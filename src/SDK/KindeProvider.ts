@@ -2,13 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { Storage, TokenResponse } from '..';
 import { version } from '../../package.json';
 
-export const KindeProvider = () => {
+export interface KindeProviderProps {
+    kindeIssuer: string;
+    clientId: string;
+}
+
+export const useKindeProvider = ({
+    kindeIssuer,
+    clientId
+}: KindeProviderProps) => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     const fetchToken = async (formData: FormData): Promise<TokenResponse> => {
         return new Promise(async (resolve, reject) => {
-            const response = await fetch(`your_kinde_issuer/oauth2/token`, {
-                // replace `your_kinde_issuer` with kinde domain
+            const response = await fetch(`${kindeIssuer}/oauth2/token`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'multipart/form-data',
@@ -30,7 +37,7 @@ export const KindeProvider = () => {
 
     const useRefreshToken = async (refreshToken: string) => {
         const formData = new FormData();
-        formData.append('client_id', 'your_client_id'); // replace `your_client_id` with kinde client id
+        formData.append('client_id', clientId);
         formData.append('grant_type', 'refresh_token');
         formData.append('refresh_token', refreshToken);
         return fetchToken(formData);
@@ -62,10 +69,14 @@ export const KindeProvider = () => {
             if (storedToken && expiry > currentTime) {
                 setIsLoggedIn(true);
                 const refreshTime = (expiry - 10) * 1000;
-                setTimeout(
-                    () => forceTokenRefresh(),
-                    refreshTime - new Date().getTime()
-                );
+                // Schedule refresh 10 seconds before expiry
+                const timeUntilRefresh = expiry - currentTime - 10000;
+                if (timeUntilRefresh > 0) {
+                    setTimeout(() => forceTokenRefresh(), timeUntilRefresh);
+                } else {
+                    // Less than 10 seconds until expiry, refresh now
+                    await forceTokenRefresh();
+                }
             } else {
                 // Token expired, try refreshing
                 await forceTokenRefresh();
@@ -74,5 +85,5 @@ export const KindeProvider = () => {
             console.error('Error checking token:', error);
         }
     };
-    return { checkToken };
+    return { checkToken, isLoggedIn };
 };
