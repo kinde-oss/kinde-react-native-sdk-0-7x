@@ -15,7 +15,7 @@ export const useKindeProvider = ({
 
     useEffect(() => {
         checkToken();
-    }, []);
+    }, [kindeIssuer, clientId]);
 
     const fetchToken = async (formData: FormData): Promise<TokenResponse> => {
         return new Promise(async (resolve, reject) => {
@@ -65,6 +65,7 @@ export const useKindeProvider = ({
                 error instanceof Error ? error.message : String(error)
             );
             // Consider logging out the user here since refresh failed
+            await logout();
             return null;
         }
     };
@@ -103,5 +104,11 @@ export const useKindeProvider = ({
             console.error('Error during logout:', error);
         }
     };
-    return { checkToken, isLoggedIn, logout };
+    return {
+        isLoggedIn,
+        checkToken,
+        forceTokenRefresh,
+        setIsLoggedIn,
+        logout
+    };
 };
