@@ -13,6 +13,10 @@ export const useKindeProvider = ({
 }: KindeProviderProps) => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+    useEffect(() => {
+        checkToken();
+    }, []);
+
     const fetchToken = async (formData: FormData): Promise<TokenResponse> => {
         return new Promise(async (resolve, reject) => {
             const response = await fetch(`${kindeIssuer}/oauth2/token`, {
@@ -72,7 +76,6 @@ export const useKindeProvider = ({
             const currentTime = new Date().getTime();
             if (storedToken && expiry > currentTime) {
                 setIsLoggedIn(true);
-                const refreshTime = (expiry - 10) * 1000;
                 // Schedule refresh 10 seconds before expiry
                 const timeUntilRefresh = expiry - currentTime - 10000;
                 if (timeUntilRefresh > 0) {
@@ -83,11 +86,22 @@ export const useKindeProvider = ({
                 }
             } else {
                 // Token expired, try refreshing
-                await forceTokenRefresh();
+                const refreshResult = await forceTokenRefresh();
+                setIsLoggedIn(!!refreshResult);
             }
         } catch (error) {
             console.error('Error checking token:', error);
+            setIsLoggedIn(false);
         }
     };
-    return { checkToken, isLoggedIn };
+
+    const logout = async () => {
+        try {
+            await Storage.clearAll();
+            setIsLoggedIn(false);
+        } catch (error) {
+            console.error('Error during logout:', error);
+        }
+    };
+    return { checkToken, isLoggedIn, logout };
 };
