@@ -56,7 +56,11 @@ export const useKindeProvider = ({
             await Storage.setToken(response as unknown as string);
             return response;
         } catch (error) {
-            console.error('Failed to refresh token:', error);
+            console.error(
+                'Failed to refresh token:',
+                error instanceof Error ? error.message : String(error)
+            );
+            // Consider logging out the user here since refresh failed
             return null;
         }
     };
