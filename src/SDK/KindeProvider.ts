@@ -1,114 +1,67 @@
-import React, { useState, useEffect } from 'react';
-import { Storage, TokenResponse } from '..';
-import { version } from '../../package.json';
+import { useState } from 'react';
+import { KindeSDK, Storage } from '..';
 
 export interface KindeProviderProps {
-    kindeIssuer: string;
+    issuerUrl: string;
     clientId: string;
+    redirectUri: string;
+    logoutRedirectUri: string;
 }
 
 export const useKindeProvider = ({
-    kindeIssuer,
-    clientId
+    issuerUrl,
+    clientId,
+    redirectUri,
+    logoutRedirectUri
 }: KindeProviderProps) => {
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-    useEffect(() => {
-        checkToken();
-    }, [kindeIssuer, clientId]);
+    const authSdk = new KindeSDK(
+        issuerUrl,
+        redirectUri,
+        clientId,
+        logoutRedirectUri
+    );
 
-    const fetchToken = async (formData: FormData): Promise<TokenResponse> => {
-        return new Promise(async (resolve, reject) => {
-            const response = await fetch(`${kindeIssuer}/oauth2/token`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                    'Kinde-SDK': `ReactNative/${version}`
-                },
-                body: formData
-            });
-
-            const dataResponse = await response.json();
-            if (dataResponse.error) {
-                reject(dataResponse);
-                return;
-            }
-
-            await Storage.setToken(dataResponse);
-            resolve(dataResponse);
-        });
-    };
-
-    const useRefreshToken = async (refreshToken: string) => {
-        const formData = new FormData();
-        formData.append('client_id', clientId);
-        formData.append('grant_type', 'refresh_token');
-        formData.append('refresh_token', refreshToken);
-        return fetchToken(formData);
-    };
-
-    const forceTokenRefresh = async (): Promise<TokenResponse | null> => {
-        const currentToken = await Storage.getToken();
-        if (!currentToken || !currentToken.refresh_token) {
-            throw new Error(
-                'No refresh token available to perform token refresh.'
-            );
-        }
-
+    const verifyToken = async () => {
         try {
-            const response = await useRefreshToken(currentToken.refresh_token);
-            await Storage.setToken(response as unknown as string);
-            return response;
-        } catch (error) {
-            console.error(
-                'Failed to refresh token:',
-                error instanceof Error ? error.message : String(error)
-            );
-            // Consider logging out the user here since refresh failed
-            await logout();
-            return null;
-        }
-    };
+            const savedToken = await Storage.getToken();
+            const tokenExpiry = await Storage.getExpiredAt();
+            const currentTime = Math.floor(Date.now() / 1000);
+            const remainingTime = tokenExpiry - currentTime;
 
-    const checkToken = async () => {
-        try {
-            const storedToken = await Storage.getToken();
-            const expiry = await Storage.getExpiredAt();
-            const currentTime = new Date().getTime();
-            if (storedToken && expiry > currentTime) {
-                setIsLoggedIn(true);
-                // Schedule refresh 10 seconds before expiry
-                const timeUntilRefresh = expiry - currentTime - 10000;
-                if (timeUntilRefresh > 0) {
-                    setTimeout(() => forceTokenRefresh(), timeUntilRefresh);
-                } else {
-                    // Less than 10 seconds until expiry, refresh now
-                    await forceTokenRefresh();
-                }
+            if (savedToken && remainingTime > 10) {
+                const refreshThreshold = remainingTime - 10;
+                const refreshTimeInMs = refreshThreshold * 1000;
+                setIsAuthenticated(true);
+                setTimeout(() => authSdk.forceTokenRefresh(), refreshTimeInMs);
             } else {
-                // Token expired, try refreshing
-                const refreshResult = await forceTokenRefresh();
-                setIsLoggedIn(!!refreshResult);
+                const refreshSuccess = await authSdk.forceTokenRefresh();
+                if (!refreshSuccess) {
+                    await handleLogout();
+                    setIsAuthenticated(false);
+                } else {
+                    setIsAuthenticated(true);
+                }
             }
         } catch (error) {
-            console.error('Error checking token:', error);
-            setIsLoggedIn(false);
+            console.error('Error verifying token:', error);
+            await handleLogout();
+            setIsAuthenticated(false);
         }
     };
 
-    const logout = async () => {
+    const handleLogout = async () => {
         try {
             await Storage.clearAll();
-            setIsLoggedIn(false);
+            setIsAuthenticated(false);
         } catch (error) {
             console.error('Error during logout:', error);
         }
     };
+
     return {
-        isLoggedIn,
-        checkToken,
-        forceTokenRefresh,
-        setIsLoggedIn,
-        logout
+        isAuthenticated,
+        verifyToken
     };
 };
