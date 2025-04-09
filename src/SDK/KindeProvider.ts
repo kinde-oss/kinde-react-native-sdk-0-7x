@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { KindeSDK, Storage } from '..';
 
 export interface KindeProviderProps {
@@ -16,11 +16,9 @@ export const useKindeProvider = ({
 }: KindeProviderProps) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-    const authSdk = new KindeSDK(
-        issuerUrl,
-        redirectUri,
-        clientId,
-        logoutRedirectUri
+    const authSdk = useMemo(
+        () => new KindeSDK(issuerUrl, redirectUri, clientId, logoutRedirectUri),
+        [issuerUrl, clientId, redirectUri, logoutRedirectUri]
     );
 
     const verifyToken = async () => {
@@ -39,7 +37,6 @@ export const useKindeProvider = ({
                 const refreshSuccess = await authSdk.forceTokenRefresh();
                 if (!refreshSuccess) {
                     await handleLogout();
-                    setIsAuthenticated(false);
                 } else {
                     setIsAuthenticated(true);
                 }
