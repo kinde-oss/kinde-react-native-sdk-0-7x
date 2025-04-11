@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { KindeSDK, Storage } from '..';
+import { setRefreshTimer } from '@kinde/js-utils';
 
 export interface KindeProviderProps {
     issuerUrl: string;
@@ -29,10 +30,8 @@ export const useKindeProvider = ({
             const remainingTime = tokenExpiry - currentTime;
 
             if (savedToken && remainingTime > 10) {
-                const refreshThreshold = remainingTime - 10;
-                const refreshTimeInMs = refreshThreshold * 1000;
                 setIsAuthenticated(true);
-                setTimeout(() => authSdk.forceTokenRefresh(), refreshTimeInMs);
+                setRefreshTimer(tokenExpiry, authSdk.forceTokenRefresh);
             } else {
                 const refreshSuccess = await authSdk.forceTokenRefresh();
                 if (!refreshSuccess) {
