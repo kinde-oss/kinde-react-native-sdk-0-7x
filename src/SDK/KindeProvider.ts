@@ -58,6 +58,7 @@ export const useKindeProvider = ({
 
     return {
         isAuthenticated,
-        verifyToken
+        verifyToken,
+        authSdk
     };
 };
