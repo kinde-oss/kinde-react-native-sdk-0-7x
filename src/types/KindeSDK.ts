@@ -1,5 +1,5 @@
 export type AdditionalParameters = {
-    audience?: string;
+    audience?: string | string[];
     /** @deprecated use isCreateOrg field instead */
     is_create_org?: boolean;
     /** @deprecated use orgCode field instead */
@@ -11,6 +11,7 @@ export type AdditionalParameters = {
     lang?: string;
     /** @deprecated use loginHint field instead */
     login_hint?: string;
+    plan_interest?: string;
 };
 
 export type OrgAdditionalParams = Omit<AdditionalParameters, 'audience'>;

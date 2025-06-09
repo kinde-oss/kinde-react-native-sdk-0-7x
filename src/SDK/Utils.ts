@@ -242,6 +242,7 @@ export const additionalParametersToLoginMethodParams = (
         orgName: additionalParameters.org_name,
         connectionId: additionalParameters.connection_id,
         lang: additionalParameters.lang,
-        loginHint: additionalParameters.login_hint
+        loginHint: additionalParameters.login_hint,
+        planInterest: additionalParameters.plan_interest
     };
 };

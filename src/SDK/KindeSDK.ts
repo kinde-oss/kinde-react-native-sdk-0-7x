@@ -22,7 +22,14 @@ import {
 import * as runtime from '../ApiClient';
 import { FLAG_TYPE } from './constants';
 import { AuthBrowserOptions } from '../types/Auth';
-import { LoginMethodParams } from '@kinde/js-utils';
+import {
+    LoginMethodParams,
+    generatePortalUrl,
+    MemoryStorage,
+    setActiveStorage,
+    StorageKeys,
+    PortalPage
+} from '@kinde/js-utils';
 import { version } from '../../package.json';
 
 class KindeSDK extends runtime.BaseAPI {
@@ -31,9 +38,8 @@ class KindeSDK extends runtime.BaseAPI {
     public clientId: string;
     public logoutRedirectUri: string;
     public scope: string;
-    public additionalParameters: Pick<
-        Partial<LoginMethodParams> | AdditionalParameters,
-        'audience'
+    public additionalParameters: Partial<
+        Pick<Partial<LoginMethodParams> | AdditionalParameters, 'audience'>
     >;
     public authBrowserOptions?: AuthBrowserOptions;
 
@@ -604,6 +610,36 @@ class KindeSDK extends runtime.BaseAPI {
                 return false;
             }
         })();
+    }
+
+    /**
+     * Creates a portal URL for the user to access the Kinde portal.
+     * @param {string} domain - The domain to use for the portal URL.
+     * @param {string} returnUrl - The URL to return to after leaving the portal.
+     * @param {PortalPage} [subNav] - Optional sub-navigation path in the portal.
+     * @returns A promise that resolves to an object containing the portal URL.
+     * @throws Error if no active session is found.
+     */
+    async createPortalUrl(
+        domain: string,
+        returnUrl: string,
+        subNav?: PortalPage
+    ): Promise<{ url: URL }> {
+        const token = await Storage.getTokenType(TokenType.ACCESS_TOKEN);
+
+        if (!token) {
+            throw new Error('No active session found.');
+        }
+
+        const storage = new MemoryStorage();
+        await storage.setSessionItem(StorageKeys.accessToken, token);
+        setActiveStorage(storage);
+
+        return await generatePortalUrl({
+            domain,
+            returnUrl,
+            subNav
+        });
     }
 
     get authorizationEndpoint(): string {
