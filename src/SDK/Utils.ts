@@ -248,6 +248,7 @@ export const additionalParametersToLoginMethodParams = (
         connectionId: additionalParameters.connection_id,
         lang: additionalParameters.lang,
         loginHint: additionalParameters.login_hint,
-        planInterest: additionalParameters.plan_interest
+        planInterest: additionalParameters.plan_interest,
+        pricingTableKey: additionalParameters.pricing_table_key
     };
 };

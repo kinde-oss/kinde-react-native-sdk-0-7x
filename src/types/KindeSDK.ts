@@ -12,6 +12,7 @@ export type AdditionalParameters = {
     /** @deprecated use loginHint field instead */
     login_hint?: string;
     plan_interest?: string;
+    pricing_table_key?: string;
 };
 
 export type OrgAdditionalParams = Omit<AdditionalParameters, 'audience'>;
