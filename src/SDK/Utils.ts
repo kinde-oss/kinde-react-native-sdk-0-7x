@@ -39,6 +39,7 @@ function sha256(buffer: string | CryptoJS.lib.WordArray): string {
  */
 export function generateRandomString(byteLength: number = 32): string {
     const randomBytes = new Uint8Array(byteLength);
+    // @ts-ignore
     const cryptoBytes = crypto.getRandomValues(randomBytes);
     return base64URLEncode(CryptoJS.lib.WordArray.create(cryptoBytes));
 }
