@@ -41,8 +41,9 @@
         "@babel/runtime": "^7.19.4",
         "@kinde/js-utils": "^0.11.0",
         "crypto-js": "^4.2.0",
+        "expo-secure-store": "^15.0.7",
         "jwt-decode": "^3.1.2",
-        "react-native-get-random-values": "^1.11.0",
+        "react-native-get-random-values": ">= 1.10",
         "react-native-inappbrowser-reborn": ">= 3.7",
         "react-native-keychain": ">= 8.0",
         "url-parse": "^1.5.10"

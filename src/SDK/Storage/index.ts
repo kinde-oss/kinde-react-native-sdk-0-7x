@@ -14,8 +14,18 @@ class Storage extends BaseStore {
     }
 
     async getStorage() {
-        const builder = await import('./RNStorage');
-        return new builder.default();
+        // Check if we're in an Expo environment
+        try {
+            // Try to import expo-secure-store to detect Expo environment
+            await import('expo-secure-store');
+            // If successful, we're in Expo - use ExpoStorage
+            const builder = await import('./ExpoStorage');
+            return new builder.default();
+        } catch (error) {
+            // Fall back to RNStorage if not in Expo environment
+            const builder = await import('./RNStorage');
+            return new builder.default();
+        }
     }
 
     async getToken(): Promise<TokenResponse | null> {
