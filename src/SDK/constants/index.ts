@@ -7,7 +7,9 @@ export const AdditionalParametersAllow = {
     org_name: 'string',
     connection_id: 'string',
     lang: 'string',
-    login_hint: 'string'
+    login_hint: 'string',
+    plan_interest: 'string',
+    pricing_table_key: 'string'
 };
 
 export const FLAG_TYPE: Record<FeatureFlagType, string> = {

@@ -239,13 +239,20 @@ export const isAdditionalParameters = (
 export const additionalParametersToLoginMethodParams = (
     additionalParameters: AdditionalParameters
 ): Partial<LoginMethodParams> => {
+    const audienceParam = additionalParameters.audience
+        ? Array.isArray(additionalParameters.audience)
+            ? additionalParameters.audience.join(',')
+            : additionalParameters.audience
+        : undefined;
     return {
-        audience: additionalParameters.audience,
+        audience: audienceParam,
         isCreateOrg: additionalParameters.is_create_org,
         orgCode: additionalParameters.org_code,
         orgName: additionalParameters.org_name,
         connectionId: additionalParameters.connection_id,
         lang: additionalParameters.lang,
-        loginHint: additionalParameters.login_hint
+        loginHint: additionalParameters.login_hint,
+        planInterest: additionalParameters.plan_interest,
+        pricingTableKey: additionalParameters.pricing_table_key
     };
 };
