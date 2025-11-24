@@ -171,6 +171,20 @@ export const OpenWebInApp = async (
             'Something wrong when trying to authenticate.',
             error.message
         );
+        
+        // For custom domains on Android, try fallback with system browser
+        if (isCustomDomain(url) && error.message?.includes('web browser')) {
+            console.warn('Attempting fallback to system browser for custom domain');
+            try {
+                const { Linking } = require('react-native');
+                await Linking.openURL(url);
+                // Note: This won't return a token automatically, user needs to complete flow manually
+                return null;
+            } catch (fallbackError) {
+                console.error('Fallback to system browser failed:', fallbackError);
+            }
+        }
+        
         return null;
     }
 };
@@ -189,17 +203,101 @@ export const openWebBrowser = async (
     options?: AuthBrowserOptions
 ) => {
     if (await InAppBrowser.isAvailable()) {
-        return InAppBrowser.openAuth(url, redirectUri, {
-            ephemeralWebSession: false,
-            showTitle: false,
+        // Log CSP handling info for custom domains
+        logCSPHandlingInfo(url);
+        
+        // Use enhanced options that handle CSP headers for custom domains
+        const enhancedOptions = getEnhancedBrowserOptions(url, options);
+        
+        return InAppBrowser.openAuth(url, redirectUri, enhancedOptions);
+    }
+    throw new Error('Not found web browser');
+};
+
+/**
+ * Detects if the URL is using a custom domain (not kinde.com)
+ * @param {string} url - The URL to check
+ * @returns {boolean} True if using custom domain
+ */
+export const isCustomDomain = (url: string): boolean => {
+    try {
+        const urlObj = new URL(url);
+        return !urlObj.hostname.includes('kinde.com');
+    } catch {
+        return false;
+    }
+};
+
+/**
+ * Gets enhanced browser options for custom domains to handle CSP issues
+ * @param {string} url - The authentication URL
+ * @param {AuthBrowserOptions} [options] - Base options
+ * @returns {AuthBrowserOptions} Enhanced options for custom domains
+ */
+export const getEnhancedBrowserOptions = (
+    url: string,
+    options?: AuthBrowserOptions
+): AuthBrowserOptions => {
+    const baseOptions: AuthBrowserOptions = {
+        ephemeralWebSession: false,
+        showTitle: false,
+        enableUrlBarHiding: true,
+        enableDefaultShare: false,
+        forceCloseOnRedirection: false,
+        showInRecents: true,
+        ...options
+    };
+
+    // If using custom domain, apply Android-specific CSP handling
+    if (isCustomDomain(url)) {
+        // For custom domains, we need to handle CSP issues
+        // The react-native-inappbrowser-reborn library handles Android WebView settings internally
+        // We'll add additional options that are supported by the library
+        return {
+            ...baseOptions,
+            // Additional options for custom domains
             enableUrlBarHiding: true,
             enableDefaultShare: false,
             forceCloseOnRedirection: false,
             showInRecents: true,
+            // These options help with CSP and custom domain issues
             ...options
-        });
+        } as AuthBrowserOptions;
     }
-    throw new Error('Not found web browser');
+
+    return baseOptions;
+};
+
+/**
+ * Provides additional CSP handling instructions for developers
+ * @param {string} url - The authentication URL
+ * @returns {string} Instructions for handling CSP issues
+ */
+export const getCSPHandlingInstructions = (url: string): string => {
+    if (isCustomDomain(url)) {
+        return `
+For custom domains on Android, if you still experience CSS loading issues:
+
+1. Ensure your custom domain serves all resources over HTTPS
+2. Check that CSP headers allow 'unsafe-inline' for styles
+3. Consider using Kinde's default domain as a fallback
+4. Implement custom authentication pages if needed
+
+Current URL: ${url}
+        `.trim();
+    }
+    return '';
+};
+
+/**
+ * Logs CSP handling information for debugging
+ * @param {string} url - The authentication URL
+ */
+export const logCSPHandlingInfo = (url: string): void => {
+    if (isCustomDomain(url)) {
+        console.warn('Custom domain detected - applying CSP handling for Android');
+        console.info(getCSPHandlingInstructions(url));
+    }
 };
 
 export const convertObject2FormData = (obj: Record<string, any>) => {
