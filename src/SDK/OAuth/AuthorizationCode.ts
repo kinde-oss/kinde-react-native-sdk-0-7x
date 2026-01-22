@@ -232,9 +232,10 @@ class AuthorizationCode {
                 return null;
             }
 
-            // Fallback path (no in-app browser): open the auth URL in the system browser and
-            // wait for redirect back. This helps keep apps working even if AppAuth native
-            // integration isn't complete.
+            // Fallback path: This triggers when react-native-app-auth throws a non-cancellation
+            // error (e.g., native module not linked, ASWebAuthenticationSession unavailable, etc.).
+            // Opens the auth URL in the system browser and waits for the redirect back via Linking.
+            // This helps keep apps working even if AppAuth native integration isn't complete.
             try {
                 const normalizedParams: LoginMethodParams =
                     isAdditionalParameters(additionalParameters)

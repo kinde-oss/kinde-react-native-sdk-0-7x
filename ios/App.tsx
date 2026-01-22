@@ -2,11 +2,14 @@ import { useMemo, useState } from 'react';
 import { SafeAreaView, Button, Text, View, ScrollView } from 'react-native';
 import KindeSDK from '../src/SDK/KindeSDK';
 
-// Update these before running the iOS sample.
-// The scheme (before ://) must match CFBundleURLSchemes in ios/KindeSDKRN/Info.plist.
+// ⚠️ IMPORTANT: Update these values before running the iOS sample!
+// 1. Set your Kinde domain (e.g., https://yourapp.kinde.com)
+// 2. Set your Kinde client ID from the Kinde dashboard
+// 3. The redirect URI scheme (before ://) must match CFBundleURLSchemes in ios/KindeSDKRN/Info.plist
+// 4. Add both redirect URIs to your Kinde application's "Allowed callback URLs"
 const kindeConfig = {
-    domain: 'https://restlessbeings.kinde.com',
-    clientId: '99e72778521946ce9b8576d4adfe30a9',
+    domain: 'https://YOUR_SUBDOMAIN.kinde.com',
+    clientId: 'YOUR_CLIENT_ID',
     redirectUri: 'com.kindesdkrn://kinde_callback',
     logoutRedirectUri: 'com.kindesdkrn://kinde_logout',
     scope: 'openid profile email offline'

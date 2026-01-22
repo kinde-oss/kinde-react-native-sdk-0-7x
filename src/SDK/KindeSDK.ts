@@ -222,6 +222,9 @@ class KindeSDK extends runtime.BaseAPI {
 
         if (typeof (Linking as any).addEventListener !== 'function') {
             // Without URL event listeners, we cannot reliably detect logout completion.
+            console.warn(
+                'Linking.addEventListener is not available; logout redirect detection is not supported in this environment.'
+            );
             return false;
         }
 

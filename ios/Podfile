@@ -14,6 +14,9 @@ flipper_config = ENV['ENABLE_FLIPPER'] == '1' ? FlipperConfiguration.enabled : F
 # environments (CocoaPods ends up downloading an HTML error page).
 # We intercept the Podfile DSL `pod` call so RN's `use_react_native!` uses our iOS-local podspec
 # that points at archives.boost.io.
+#
+# NOTE: This monkey-patch should be revisited when upgrading React Native versions, as newer RN
+# may use different Boost sources or versions. Remove if no longer needed.
 KINDESDKRN_BOOST_PODSPEC = File.join(__dir__, 'boost.podspec')
 
 module ::Pod
