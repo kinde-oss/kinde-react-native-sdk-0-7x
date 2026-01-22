@@ -181,6 +181,10 @@ class AuthorizationCode {
         const androidAllowCustomBrowsers: AndroidCustomBrowser[] | undefined =
             options?.androidAllowCustomBrowsers?.filter(isAndroidCustomBrowser);
 
+        // Clear any stale PKCE verifier from a previous auth attempt before starting a new flow.
+        // This ensures we don't accidentally use an old verifier if something goes wrong.
+        Storage.setCodeVerifier('');
+
         try {
             const result = await authorize({
                 clientId: kindeSDK.clientId,
