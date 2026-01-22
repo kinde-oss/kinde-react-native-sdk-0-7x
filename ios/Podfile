@@ -1,0 +1,72 @@
+require_relative '../node_modules/react-native/scripts/react_native_pods'
+require_relative '../node_modules/@react-native-community/cli-platform-ios/native_modules'
+
+platform :ios, '12.4'
+
+install! 'cocoapods', :deterministic_uuids => false
+
+# Flipper is optional (debugging tool) and is not required for validating login/logout.
+# Some newer Xcode toolchains can fail to build Flipper; default to disabled.
+# To enable, run with ENABLE_FLIPPER=1.
+flipper_config = ENV['ENABLE_FLIPPER'] == '1' ? FlipperConfiguration.enabled : FlipperConfiguration.disabled
+
+# Workaround: React Native 0.70 fetches `boost` from boostorg.jfrog.io, which can be blocked in some
+# environments (CocoaPods ends up downloading an HTML error page).
+# We intercept the Podfile DSL `pod` call so RN's `use_react_native!` uses our iOS-local podspec
+# that points at archives.boost.io.
+KINDESDKRN_BOOST_PODSPEC = File.join(__dir__, 'boost.podspec')
+
+module ::Pod
+  class Podfile
+    module DSL
+      unless method_defined?(:__kinde_original_pod)
+        alias __kinde_original_pod pod
+      end
+
+      def pod(name = nil, *requirements)
+        if name == 'boost' && requirements.last.is_a?(Hash) && requirements.last[:podspec]
+          requirements[-1] = requirements[-1].merge(:podspec => KINDESDKRN_BOOST_PODSPEC)
+        end
+
+        __kinde_original_pod(name, *requirements)
+      end
+    end
+  end
+end
+
+target 'KindeSDKRN' do
+  config = use_native_modules!
+
+  use_react_native!(
+    :path => config[:reactNativePath],
+    :hermes_enabled => true,
+    :fabric_enabled => false,
+    :flipper_configuration => flipper_config,
+    :app_path => "#{Pod::Config.instance.installation_root}/.."
+  )
+
+  target 'KindeSDKRNTests' do
+    inherit! :complete
+  end
+
+  post_install do |installer|
+    react_native_post_install(installer)
+    __apply_Xcode_12_5_M1_post_install_workaround(installer)
+
+    # Xcode toolchains with newer libc++ remove std::unary_function in C++17 mode.
+    # Boost 1.76 (used by RN 0.70) still references it in some headers.
+    # This macro re-enables the removed std::unary_function/binary_function shims in libc++.
+    cxx17_unary_function_compat = '-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION'
+    installer.pods_project.targets.each do |t|
+      t.build_configurations.each do |config|
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.4'
+        flags = config.build_settings['OTHER_CPLUSPLUSFLAGS']
+        flags = '$(inherited)' if flags.nil?
+        flags = flags.join(' ') if flags.is_a?(Array)
+        unless flags.include?(cxx17_unary_function_compat)
+          config.build_settings['OTHER_CPLUSPLUSFLAGS'] = "#{flags} #{cxx17_unary_function_compat}".strip
+        end
+      end
+    end
+  end
+end

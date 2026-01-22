@@ -10,7 +10,9 @@
 #import "AppDelegate.h"
 
 #import <React/RCTBundleURLProvider.h>
+#import <React/RCTLinkingManager.h>
 #import <React/RCTRootView.h>
+#import <objc/message.h>
 
 @implementation AppDelegate
 
@@ -18,7 +20,30 @@
 {
   NSURL *jsCodeLocation;
 
-  jsCodeLocation = [[RCTBundleURLProvider sharedSettings] jsBundleURLForBundleRoot:@"index" fallbackResource:nil];
+  #if DEBUG
+    RCTBundleURLProvider *provider = [RCTBundleURLProvider sharedSettings];
+
+    // RN versions differ on whether `jsBundleURLForBundleRoot:fallbackResource:` exists.
+    SEL sel = @selector(jsBundleURLForBundleRoot:fallbackResource:);
+    if ([provider respondsToSelector:sel]) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
+      jsCodeLocation = (NSURL *)[provider performSelector:sel withObject:@"ios/index" withObject:nil];
+#pragma clang diagnostic pop
+    } else {
+      jsCodeLocation = [provider jsBundleURLForBundleRoot:@"ios/index"];
+    }
+
+    // Extra safety: ensure we always pass a non-nil bundle URL to RCTRootView in Debug.
+    if (jsCodeLocation == nil) {
+      jsCodeLocation = [provider jsBundleURLForBundleRoot:@"index"];
+    }
+    if (jsCodeLocation == nil) {
+      jsCodeLocation = [NSURL URLWithString:@"http://127.0.0.1:8081/ios/index.bundle?platform=ios&dev=true&minify=false"];
+    }
+  #else
+    jsCodeLocation = [[NSBundle mainBundle] URLForResource:@"main" withExtension:@"jsbundle"];
+  #endif
 
   RCTRootView *rootView = [[RCTRootView alloc] initWithBundleURL:jsCodeLocation
                                                       moduleName:@"KindeSDKRN"
@@ -32,6 +57,32 @@
   self.window.rootViewController = rootViewController;
   [self.window makeKeyAndVisible];
   return YES;
+}
+
+- (BOOL)application:(UIApplication *)application
+            openURL:(NSURL *)url
+            options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options
+{
+  if (self.authorizationFlowManagerDelegate != nil &&
+      [self.authorizationFlowManagerDelegate resumeExternalUserAgentFlowWithURL:url]) {
+    return YES;
+  }
+  return [RCTLinkingManager application:application openURL:url options:options];
+}
+
+- (BOOL)application:(UIApplication *)application
+continueUserActivity:(NSUserActivity *)userActivity
+ restorationHandler:(void (^)(NSArray<id<UIUserActivityRestoring>> * _Nullable))restorationHandler
+{
+  if ([userActivity.activityType isEqualToString:NSUserActivityTypeBrowsingWeb]) {
+    if (self.authorizationFlowManagerDelegate != nil &&
+        [self.authorizationFlowManagerDelegate resumeExternalUserAgentFlowWithURL:userActivity.webpageURL]) {
+      return YES;
+    }
+  }
+  return [RCTLinkingManager application:application
+                   continueUserActivity:userActivity
+                     restorationHandler:restorationHandler];
 }
 
 @end

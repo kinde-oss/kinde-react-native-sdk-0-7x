@@ -9,8 +9,11 @@
 
 #import <UIKit/UIKit.h>
 
-@interface AppDelegate : UIResponder <UIApplicationDelegate>
+#import <react-native-app-auth/RNAppAuthAuthorizationFlowManager.h>
+
+@interface AppDelegate : UIResponder <UIApplicationDelegate, RNAppAuthAuthorizationFlowManager>
 
 @property (nonatomic, strong) UIWindow *window;
+@property (nonatomic, weak) id<RNAppAuthAuthorizationFlowManagerDelegate> authorizationFlowManagerDelegate;
 
 @end
