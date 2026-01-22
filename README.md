@@ -8,6 +8,10 @@ You can also use the React Native 0.7x starter kit [here](https://github.com/ki
 
 ## Development
 
+### iOS sample
+
+To run the included iOS sample app (CocoaPods/Bundler/Ruby setup and run steps), see: [ios/README.md](ios/README.md)
+
 ### Initial set up
 
 1. Clone the repository to your machine:

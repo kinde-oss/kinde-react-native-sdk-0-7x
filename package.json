@@ -43,8 +43,8 @@
         "crypto-js": "^4.2.0",
         "jwt-decode": "^3.1.2",
         "react-native-get-random-values": "^1.11.0",
-        "react-native-inappbrowser-reborn": ">= 3.7",
-        "react-native-keychain": ">= 8.0",
+        "react-native-app-auth": "^8.0.0",
+        "react-native-keychain": "^8.0.0",
         "url-parse": "^1.5.10"
     },
     "devDependencies": {
@@ -94,7 +94,7 @@
     "peerDependencies": {
         "react-native": ">= 0.70",
         "react-native-get-random-values": ">= 1.10",
-        "react-native-inappbrowser-reborn": ">= 3.7",
+        "react-native-app-auth": ">= 8.0",
         "react-native-keychain": ">= 8.0"
     },
     "files": [

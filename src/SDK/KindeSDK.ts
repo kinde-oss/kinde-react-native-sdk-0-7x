@@ -16,12 +16,12 @@ import Storage from './Storage';
 import {
     checkAdditionalParameters,
     checkNotNull,
-    convertObject2FormData,
-    openWebBrowser
+    convertObject2FormData
 } from './Utils';
 import * as runtime from '../ApiClient';
 import { FLAG_TYPE } from './constants';
 import { AuthBrowserOptions } from '../types/Auth';
+import { Linking } from 'react-native';
 import {
     LoginMethodParams,
     generatePortalUrl,
@@ -113,11 +113,12 @@ class KindeSDK extends runtime.BaseAPI {
             ...this.additionalParameters,
             ...additionalParameters
         };
+        const optionsMerged = authBrowserOptions || this.authBrowserOptions;
         return auth.authenticate(
             this,
             'login',
             additionalParametersMerged,
-            authBrowserOptions
+            optionsMerged
         );
     }
 
@@ -146,11 +147,13 @@ class KindeSDK extends runtime.BaseAPI {
             ...additionalParameters
         };
 
+        const optionsMerged = authBrowserOptions || this.authBrowserOptions;
+
         return auth.authenticate(
             this,
             'registration',
             additionalParametersMerged,
-            authBrowserOptions
+            optionsMerged
         );
     }
 
@@ -210,14 +213,80 @@ class KindeSDK extends runtime.BaseAPI {
             }
         }
 
+        // Kinde logout is the canonical way to clear the Kinde server session.
+        // Keep parity with the previous SDK behavior by using /logout?redirect=... as primary.
         const URLParsed = Url(this.logoutEndpoint, true);
         URLParsed.query['redirect'] = this.logoutRedirectUri;
-        const response = await openWebBrowser(
-            URLParsed.toString(),
-            this.redirectUri,
-            authBrowserOptions || this.authBrowserOptions
-        );
-        return response.type === 'success';
+
+        const logoutUrl = URLParsed.toString();
+
+        if (typeof (Linking as any).addEventListener !== 'function') {
+            // Without URL event listeners, we cannot reliably detect logout completion.
+            return false;
+        }
+
+        try {
+            const canOpen = await Linking.canOpenURL(logoutUrl);
+            if (!canOpen) return false;
+
+            const loggedOut = await new Promise<boolean>((resolve) => {
+                let cleanup = () => {
+                    // assigned below
+                };
+
+                const timeout = setTimeout(() => {
+                    cleanup();
+                    resolve(false);
+                }, 2 * 60 * 1000);
+
+                const handler = (event: any) => {
+                    const url = event?.url ? String(event.url) : '';
+                    if (!url) return;
+                    if (!url.startsWith(this.logoutRedirectUri)) return;
+                    cleanup();
+                    resolve(true);
+                };
+
+                const subscription = (Linking as any).addEventListener(
+                    'url',
+                    handler
+                );
+
+                cleanup = () => {
+                    clearTimeout(timeout);
+                    if (subscription?.remove) subscription.remove();
+                    // Back-compat for older RN versions
+                    if ((Linking as any).removeEventListener) {
+                        try {
+                            (Linking as any).removeEventListener(
+                                'url',
+                                handler
+                            );
+                        } catch (_) {
+                            // ignore
+                        }
+                    }
+                };
+
+                // Open after listener is attached so we don't miss fast redirects.
+                Linking.openURL(logoutUrl).catch((openError: any) => {
+                    console.error(
+                        'Something went wrong when trying to open logout URL',
+                        openError?.message ?? String(openError)
+                    );
+                    cleanup();
+                    resolve(false);
+                });
+            });
+
+            return loggedOut;
+        } catch (error: any) {
+            console.error(
+                'Something went wrong when trying to open logout URL',
+                error?.message ?? String(error)
+            );
+            return false;
+        }
     }
 
     /**

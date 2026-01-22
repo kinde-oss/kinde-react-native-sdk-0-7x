@@ -1,11 +1,8 @@
 import CryptoJS from 'crypto-js';
-import InAppBrowser from 'react-native-inappbrowser-reborn';
 import { InvalidTypeException } from '../common/exceptions/invalid-type.exception';
 import { PropertyRequiredException } from '../common/exceptions/property-required.exception';
 import { UnexpectedException } from '../common/exceptions/unexpected.exception';
-import { AuthBrowserOptions } from '../types/Auth';
 import { AdditionalParameters } from '../types/KindeSDK';
-import KindeSDK from './KindeSDK';
 import { AdditionalParametersAllow } from './constants';
 import { LoginMethodParams } from '@kinde/js-utils';
 import 'react-native-get-random-values';
@@ -147,61 +144,6 @@ export const addAdditionalParameters = (
  * @param {AuthBrowserOptions} [options] - Optional browser options.
  * @returns A promise that resolves with the token or null if authentication fails.
  */
-export const OpenWebInApp = async (
-    url: string,
-    kindeSDK: KindeSDK,
-    options?: AuthBrowserOptions
-) => {
-    try {
-        const response = await openWebBrowser(
-            url,
-            kindeSDK.redirectUri,
-            options || kindeSDK.authBrowserOptions
-        );
-        if (response.type === 'success' && response.url) {
-            return kindeSDK.getToken(response.url);
-        }
-        console.warn(
-            'Something wrong when trying to authenticate. Reason: ',
-            response.type
-        );
-        return null;
-    } catch (error: any) {
-        console.error(
-            'Something wrong when trying to authenticate.',
-            error.message
-        );
-        return null;
-    }
-};
-
-/**
- * Opens a web browser using custom tabs on Android or default browser on other platforms.
- * @param {string} url - The URL to open.
- * @param {string} redirectUri - The redirect URI.
- * @param {AuthBrowserOptions} [options] - Optional browser options.
- * @returns A promise that resolves with the authentication response.
- * @throws Error if no web browser is found.
- */
-export const openWebBrowser = async (
-    url: string,
-    redirectUri: string,
-    options?: AuthBrowserOptions
-) => {
-    if (await InAppBrowser.isAvailable()) {
-        return InAppBrowser.openAuth(url, redirectUri, {
-            ephemeralWebSession: false,
-            showTitle: false,
-            enableUrlBarHiding: true,
-            enableDefaultShare: false,
-            forceCloseOnRedirection: false,
-            showInRecents: true,
-            ...options
-        });
-    }
-    throw new Error('Not found web browser');
-};
-
 export const convertObject2FormData = (obj: Record<string, any>) => {
     const formData = new FormData();
 
