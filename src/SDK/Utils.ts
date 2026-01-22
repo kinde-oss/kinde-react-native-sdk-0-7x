@@ -154,27 +154,28 @@ export const convertObject2FormData = (obj: Record<string, any>) => {
     return formData;
 };
 
+/**
+ * All snake_case keys that are valid AdditionalParameters.
+ * Used to detect whether the caller passed AdditionalParameters (snake_case)
+ * vs LoginMethodParams (camelCase).
+ */
+const ADDITIONAL_PARAMETERS_KEYS: ReadonlyArray<keyof AdditionalParameters> = [
+    'is_create_org',
+    'org_code',
+    'org_name',
+    'connection_id',
+    'login_hint',
+    'plan_interest',
+    'pricing_table_key'
+] as const;
+
 export const isAdditionalParameters = (
     additionalParameters: AdditionalParameters | LoginMethodParams
 ): boolean => {
-    return (
-        Object.prototype.hasOwnProperty.call(
-            additionalParameters,
-            'is_create_org'
-        ) ||
-        Object.prototype.hasOwnProperty.call(
-            additionalParameters,
-            'org_code'
-        ) ||
-        Object.prototype.hasOwnProperty.call(
-            additionalParameters,
-            'org_name'
-        ) ||
-        Object.prototype.hasOwnProperty.call(
-            additionalParameters,
-            'connection_id'
-        ) ||
-        Object.prototype.hasOwnProperty.call(additionalParameters, 'login_hint')
+    // Detect snake_case by checking if any of the known AdditionalParameters keys are present.
+    // Note: 'audience' and 'lang' exist in both types, so they are not discriminators.
+    return ADDITIONAL_PARAMETERS_KEYS.some((key) =>
+        Object.prototype.hasOwnProperty.call(additionalParameters, key)
     );
 };
 

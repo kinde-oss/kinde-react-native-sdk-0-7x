@@ -28,11 +28,11 @@ npx react-native start       # Terminal 1: Metro bundler
 
 ## Prerequisites
 
-| Tool              | Notes                                                                    |
-| ----------------- | ------------------------------------------------------------------------ |
-| **Node.js + npm** | LTS recommended                                                          |
-| **Xcode**         | With iOS Simulator and Command Line Tools                                |
-| **rbenv**         | Recommended for managing Ruby versions (avoids macOS system Ruby issues) |
+| Tool              | Notes                                                                   |
+| ----------------- | ----------------------------------------------------------------------- |
+| **Node.js + npm** | LTS recommended                                                         |
+| **Xcode**         | With iOS Simulator and Command Line Tools                               |
+| **rbenv**         | Recommended for managing Ruby versions (avoids system Ruby on macOS)    |
 
 ### Install rbenv (one-time)
 
@@ -170,7 +170,7 @@ bundle exec pod install
 
 ## Project Structure
 
-```
+```text
 ios/
 ├── App.tsx                  # Sample app UI (configure Kinde here)
 ├── index.js                 # Entry point
