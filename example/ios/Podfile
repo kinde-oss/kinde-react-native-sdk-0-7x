@@ -1,5 +1,5 @@
-require_relative '../node_modules/react-native/scripts/react_native_pods'
-require_relative '../node_modules/@react-native-community/cli-platform-ios/native_modules'
+require_relative '../../node_modules/react-native/scripts/react_native_pods'
+require_relative '../../node_modules/@react-native-community/cli-platform-ios/native_modules'
 
 platform :ios, '12.4'
 
@@ -37,16 +37,22 @@ module ::Pod
   end
 end
 
-target 'KindeSDKRN' do
-  config = use_native_modules!
+# Repo root where node_modules lives
+$RepoRoot = File.expand_path('../..', __dir__)
 
+target 'KindeSDKRN' do
   use_react_native!(
-    :path => config[:reactNativePath],
+    :path => "#{$RepoRoot}/node_modules/react-native",
     :hermes_enabled => true,
     :fabric_enabled => false,
     :flipper_configuration => flipper_config,
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
+  
+  # Native modules required by the SDK (manually specify since we're in a subdirectory)
+  pod 'react-native-app-auth', :path => "#{$RepoRoot}/node_modules/react-native-app-auth"
+  pod 'RNKeychain', :path => "#{$RepoRoot}/node_modules/react-native-keychain"
+  pod 'react-native-get-random-values', :path => "#{$RepoRoot}/node_modules/react-native-get-random-values"
 
   target 'KindeSDKRNTests' do
     inherit! :complete

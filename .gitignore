@@ -59,10 +59,17 @@ project.xcworkspace
 # CocoaPods
 /ios/Pods/
 /ios/*.xcworkspace/
+/example/ios/Pods/
+/example/ios/*.xcworkspace/
 
 # Bundler (iOS)
 /ios/.bundle/
 /ios/vendor/bundle/
+/example/ios/.bundle/
+/example/ios/vendor/bundle/
+
+# Example build artifacts
+/example/ios/build/
 
 # Android/IntelliJ
 #

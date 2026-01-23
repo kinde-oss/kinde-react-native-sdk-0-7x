@@ -2,10 +2,10 @@ import { useMemo, useState } from 'react';
 import { SafeAreaView, Button, Text, View, ScrollView } from 'react-native';
 import KindeSDK from '../src/SDK/KindeSDK';
 
-// ⚠️ IMPORTANT: Update these values before running the iOS sample!
+// ⚠️ IMPORTANT: Update these values before running the example!
 // 1. Set your Kinde domain (e.g., https://yourapp.kinde.com)
 // 2. Set your Kinde client ID from the Kinde dashboard
-// 3. The redirect URI scheme (before ://) must match CFBundleURLSchemes in ios/KindeSDKRN/Info.plist
+// 3. The redirect URI scheme (before ://) must match CFBundleURLSchemes in example/ios/KindeSDKRN/Info.plist
 // 4. Add both redirect URIs to your Kinde application's "Allowed callback URLs"
 const kindeConfig = {
     domain: 'https://YOUR_SUBDOMAIN.kinde.com',
@@ -73,7 +73,7 @@ export default function App() {
                 <Button title="Login" onPress={onLogin} />
                 <Button title="Logout" onPress={onLogout} />
                 <Text style={{ marginTop: 12, opacity: 0.7 }}>
-                    Set kindeConfig in ios/App.tsx before testing.
+                    Set kindeConfig in example/App.tsx before testing.
                 </Text>
             </ScrollView>
         </SafeAreaView>

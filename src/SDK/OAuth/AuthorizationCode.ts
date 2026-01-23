@@ -19,6 +19,9 @@ import {
 import { authorize } from 'react-native-app-auth';
 import { Linking } from 'react-native';
 
+/** Timeout for waiting for redirect URL in fallback auth flow (2 minutes) */
+const REDIRECT_TIMEOUT_MS = 2 * 60 * 1000;
+
 type IOSCustomBrowser = 'safari' | 'chrome' | 'opera' | 'firefox';
 type AndroidCustomBrowser =
     | 'chrome'
@@ -94,7 +97,13 @@ const isLikelyUserCancelled = (error: unknown): boolean => {
             ? String((error as any).message)
             : String(error);
     const lower = message.toLowerCase();
-    return lower.includes('cancel') || lower.includes('user_cancel');
+    return (
+        lower.includes('user cancel') ||
+        lower.includes('user_cancel') ||
+        lower.includes('cancelled by user') ||
+        lower.includes('canceled by user') ||
+        /\bcancel(?:l)?ed\b/.test(lower)
+    );
 };
 
 const waitForRedirectUrl = async (
@@ -263,11 +272,17 @@ class AuthorizationCode {
                     codeChallengeMethod: 'S256'
                 };
 
+                // Map startPage to the correct IssuerRouteTypes:
+                // - 'login' and 'none' -> login route
+                // - 'registration' -> register route
+                const issuerRoute =
+                    startPage === 'registration'
+                        ? IssuerRouteTypes.register
+                        : IssuerRouteTypes.login;
+
                 const authUrl = await generateAuthUrl(
                     kindeSDK.issuer,
-                    startPage === 'login'
-                        ? IssuerRouteTypes.login
-                        : IssuerRouteTypes.register,
+                    issuerRoute,
                     params
                 );
 
@@ -284,7 +299,7 @@ class AuthorizationCode {
                 await Linking.openURL(sanitizeUrl(authUrl.url.toString()));
                 const redirectedUrl = await waitForRedirectUrl(
                     kindeSDK.redirectUri,
-                    2 * 60 * 1000
+                    REDIRECT_TIMEOUT_MS
                 );
                 if (!redirectedUrl) return null;
 
