@@ -289,11 +289,12 @@ class AuthorizationCode {
                 );
                 if (!canOpen) return null;
 
-                await Linking.openURL(sanitizeUrl(authUrl.url.toString()));
-                const redirectedUrl = await waitForRedirectUrl(
+                const redirectPromise = waitForRedirectUrl(
                     kindeSDK.redirectUri,
                     REDIRECT_TIMEOUT_MS
                 );
+                await Linking.openURL(sanitizeUrl(authUrl.url.toString()));
+                const redirectedUrl = await redirectPromise;
                 if (!redirectedUrl) return null;
 
                 return await kindeSDK.getToken(redirectedUrl);

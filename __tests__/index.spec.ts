@@ -327,15 +327,11 @@ describe('KindeSDK', () => {
             );
         });
 
-        test('[RNStorage] Dismiss log out', async () => {
+        test.each([
+            ['[RNStorage] Dismiss log out'],
+            ['[RNStorage] Cancel log out']
+        ])('%s', async () => {
             // Our fallback uses Linking; if it cannot open, return false.
-            const { Linking } = require('react-native');
-            Linking.canOpenURL = jest.fn().mockResolvedValue(false);
-            const rs = await globalClient.logout();
-            expect(rs).toEqual(false);
-        });
-
-        test('[RNStorage] Cancel log out', async () => {
             const { Linking } = require('react-native');
             Linking.canOpenURL = jest.fn().mockResolvedValue(false);
             const rs = await globalClient.logout();
@@ -379,14 +375,14 @@ describe('KindeSDK', () => {
             });
         });
 
-        test('[RNStorage] Dismiss web browser', async () => {
-            authorize.mockRejectedValue(new Error('user_cancelled'));
-            const token = await globalClient.login();
-            expect(token).toEqual(null);
-        });
-
-        test('[RNStorage] Cancel web browser', async () => {
-            authorize.mockRejectedValue(new Error('user_cancelled'));
+        test.each([
+            ['user_cancelled', '[RNStorage] Dismiss web browser'],
+            [
+                'org.openid.appauth.general error -3',
+                '[RNStorage] Cancel web browser (iOS AppAuth)'
+            ]
+        ])('%s: %s', async (errorMessage) => {
+            authorize.mockRejectedValue(new Error(errorMessage));
             const token = await globalClient.login();
             expect(token).toEqual(null);
         });

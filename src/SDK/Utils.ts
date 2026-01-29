@@ -210,6 +210,7 @@ export const isLikelyUserCancelled = (error: unknown): boolean => {
         lower.includes('user_cancel') ||
         lower.includes('cancelled by user') ||
         lower.includes('canceled by user') ||
-        /\bcancel(?:l)?ed\b/.test(lower)
+        /\bcancel(?:l)?ed\b/.test(lower) ||
+        /org\.openid\.appauth\.general error -\d+/.test(lower)
     );
 };
