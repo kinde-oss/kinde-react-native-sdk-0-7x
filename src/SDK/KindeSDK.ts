@@ -113,12 +113,12 @@ class KindeSDK extends runtime.BaseAPI {
             ...this.additionalParameters,
             ...additionalParameters
         };
-        const optionsMerged = authBrowserOptions || this.authBrowserOptions;
+        const resolvedOptions = authBrowserOptions || this.authBrowserOptions;
         return auth.authenticate(
             this,
             'login',
             additionalParametersMerged,
-            optionsMerged
+            resolvedOptions
         );
     }
 
@@ -147,13 +147,13 @@ class KindeSDK extends runtime.BaseAPI {
             ...additionalParameters
         };
 
-        const optionsMerged = authBrowserOptions || this.authBrowserOptions;
+        const resolvedOptions = authBrowserOptions || this.authBrowserOptions;
 
         return auth.authenticate(
             this,
             'registration',
             additionalParametersMerged,
-            optionsMerged
+            resolvedOptions
         );
     }
 

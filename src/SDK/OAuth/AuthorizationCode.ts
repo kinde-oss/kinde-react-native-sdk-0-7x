@@ -5,7 +5,8 @@ import {
     additionalParametersToLoginMethodParams,
     generateChallenge,
     generateRandomString,
-    isAdditionalParameters
+    isAdditionalParameters,
+    isLikelyUserCancelled
 } from '../Utils';
 import { AuthBrowserOptions } from '../../types/Auth';
 import {
@@ -41,6 +42,15 @@ const isAndroidCustomBrowser = (
         value === 'firefoxCustomTab' ||
         value === 'samsung' ||
         value === 'samsungCustomTab'
+    );
+};
+
+const isIOSCustomBrowser = (value: string): value is IOSCustomBrowser => {
+    return (
+        value === 'safari' ||
+        value === 'chrome' ||
+        value === 'opera' ||
+        value === 'firefox'
     );
 };
 
@@ -89,21 +99,6 @@ const toAdditionalParameters = (
         out.pricing_table_key = String(params.pricingTableKey);
 
     return out;
-};
-
-const isLikelyUserCancelled = (error: unknown): boolean => {
-    const message =
-        (error as any)?.message !== undefined
-            ? String((error as any).message)
-            : String(error);
-    const lower = message.toLowerCase();
-    return (
-        lower.includes('user cancel') ||
-        lower.includes('user_cancel') ||
-        lower.includes('cancelled by user') ||
-        lower.includes('canceled by user') ||
-        /\bcancel(?:l)?ed\b/.test(lower)
-    );
 };
 
 const waitForRedirectUrl = async (
@@ -180,10 +175,8 @@ class AuthorizationCode {
             options?.iosPrefersEphemeralSession ?? options?.ephemeralWebSession;
 
         const iosCustomBrowser: IOSCustomBrowser | undefined =
-            options?.iosCustomBrowser === 'safari' ||
-            options?.iosCustomBrowser === 'chrome' ||
-            options?.iosCustomBrowser === 'opera' ||
-            options?.iosCustomBrowser === 'firefox'
+            options?.iosCustomBrowser &&
+            isIOSCustomBrowser(options.iosCustomBrowser)
                 ? options.iosCustomBrowser
                 : undefined;
 

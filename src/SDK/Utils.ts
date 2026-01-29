@@ -137,13 +137,6 @@ export const addAdditionalParameters = (
     return target;
 };
 
-/**
- * Opens a web browser or in-app browser for authentication.
- * @param {string} url - The URL to open.
- * @param {KindeSDK} kindeSDK - The KindeSDK instance.
- * @param {AuthBrowserOptions} [options] - Optional browser options.
- * @returns A promise that resolves with the token or null if authentication fails.
- */
 export const convertObject2FormData = (obj: Record<string, any>) => {
     const formData = new FormData();
 
@@ -198,4 +191,25 @@ export const additionalParametersToLoginMethodParams = (
         planInterest: additionalParameters.plan_interest,
         pricingTableKey: additionalParameters.pricing_table_key
     };
+};
+
+/**
+ * Heuristic check to determine if an error was caused by user cancellation.
+ * Used to gracefully handle authentication cancellation across different platforms.
+ * @param {unknown} error - The error to check.
+ * @returns {boolean} True if the error appears to be a user cancellation.
+ */
+export const isLikelyUserCancelled = (error: unknown): boolean => {
+    const message =
+        (error as any)?.message !== undefined
+            ? String((error as any).message)
+            : String(error);
+    const lower = message.toLowerCase();
+    return (
+        lower.includes('user cancel') ||
+        lower.includes('user_cancel') ||
+        lower.includes('cancelled by user') ||
+        lower.includes('canceled by user') ||
+        /\bcancel(?:l)?ed\b/.test(lower)
+    );
 };
