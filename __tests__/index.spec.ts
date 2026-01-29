@@ -120,6 +120,8 @@ jest.mock(process.cwd() + '/src/SDK/Utils', () => ({
     additionalParametersToLoginMethodParams: jest.requireActual(
         process.cwd() + '/src/SDK/Utils'
     ).additionalParametersToLoginMethodParams,
+    isLikelyUserCancelled: jest.requireActual(process.cwd() + '/src/SDK/Utils')
+        .isLikelyUserCancelled,
     checkNotNull: jest.fn((reference, name) => {
         if (reference === null || reference === undefined) {
             throw new Error(`${name} cannot be empty`);
