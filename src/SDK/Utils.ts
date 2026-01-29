@@ -211,6 +211,7 @@ export const isLikelyUserCancelled = (error: unknown): boolean => {
         lower.includes('cancelled by user') ||
         lower.includes('canceled by user') ||
         /\bcancel(?:l)?ed\b/.test(lower) ||
-        /org\.openid\.appauth\.general error -\d+/.test(lower)
+        // iOS AppAuth error code -3 = OIDErrorCodeUserCanceledAuthorizationFlow
+        /org\.openid\.appauth\.general error -3\b/.test(lower)
     );
 };

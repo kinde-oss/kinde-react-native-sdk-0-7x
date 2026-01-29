@@ -134,8 +134,14 @@ const waitForRedirectUrl = async (
             if ((Linking as any).removeEventListener) {
                 try {
                     (Linking as any).removeEventListener('url', handler);
-                } catch (_) {
-                    // ignore
+                } catch (e) {
+                    // Suppress errors from deprecated API; log for debugging
+                    if (__DEV__) {
+                        console.debug(
+                            'removeEventListener cleanup error (expected on newer RN):',
+                            e
+                        );
+                    }
                 }
             }
         };
@@ -299,6 +305,9 @@ class AuthorizationCode {
 
                 return await kindeSDK.getToken(redirectedUrl);
             } catch (fallbackError: any) {
+                // Intentionally return null for all fallback errors to maintain
+                // consistent behavior with the primary auth flow. The fallback is
+                // a best-effort mechanism; callers should handle null returns.
                 const message =
                     fallbackError?.message ??
                     fallbackError ??

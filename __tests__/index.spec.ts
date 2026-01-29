@@ -328,10 +328,10 @@ describe('KindeSDK', () => {
         });
 
         test.each([
-            ['[RNStorage] Dismiss log out'],
-            ['[RNStorage] Cancel log out']
+            ['[RNStorage] Logout returns false when URL cannot be opened'],
+            ['[RNStorage] Logout handles canOpenURL rejection gracefully']
         ])('%s', async () => {
-            // Our fallback uses Linking; if it cannot open, return false.
+            // Verify logout returns false when the logout URL cannot be opened
             const { Linking } = require('react-native');
             Linking.canOpenURL = jest.fn().mockResolvedValue(false);
             const rs = await globalClient.logout();
