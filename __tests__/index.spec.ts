@@ -328,12 +328,25 @@ describe('KindeSDK', () => {
         });
 
         test.each([
-            ['[RNStorage] Logout returns false when URL cannot be opened'],
-            ['[RNStorage] Logout handles canOpenURL rejection gracefully']
-        ])('%s', async () => {
-            // Verify logout returns false when the logout URL cannot be opened
+            [
+                '[RNStorage] Logout returns false when URL cannot be opened',
+                'resolves-false'
+            ],
+            [
+                '[RNStorage] Logout handles canOpenURL rejection gracefully',
+                'rejects'
+            ]
+        ])('%s', async (_name, scenario) => {
             const { Linking } = require('react-native');
-            Linking.canOpenURL = jest.fn().mockResolvedValue(false);
+            if (scenario === 'rejects') {
+                // Simulate canOpenURL throwing an error
+                Linking.canOpenURL = jest
+                    .fn()
+                    .mockRejectedValue(new Error('URL scheme not supported'));
+            } else {
+                // Simulate canOpenURL returning false (URL cannot be opened)
+                Linking.canOpenURL = jest.fn().mockResolvedValue(false);
+            }
             const rs = await globalClient.logout();
             expect(rs).toEqual(false);
         });
