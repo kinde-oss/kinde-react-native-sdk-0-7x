@@ -8,7 +8,11 @@ import {
     isAdditionalParameters,
     isLikelyUserCancelled
 } from '../Utils';
-import { AuthBrowserOptions } from '../../types/Auth';
+import {
+    AuthBrowserOptions,
+    IOSCustomBrowser,
+    AndroidCustomBrowser
+} from '../../types/Auth';
 import {
     generateAuthUrl,
     IssuerRouteTypes,
@@ -22,15 +26,6 @@ import { Linking } from 'react-native';
 
 /** Timeout for waiting for redirect URL in fallback auth flow (2 minutes) */
 const REDIRECT_TIMEOUT_MS = 2 * 60 * 1000;
-
-type IOSCustomBrowser = 'safari' | 'chrome' | 'opera' | 'firefox';
-type AndroidCustomBrowser =
-    | 'chrome'
-    | 'firefox'
-    | 'chromeCustomTab'
-    | 'firefoxCustomTab'
-    | 'samsung'
-    | 'samsungCustomTab';
 
 const isAndroidCustomBrowser = (
     value: string

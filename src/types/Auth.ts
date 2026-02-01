@@ -1,3 +1,13 @@
+export type IOSCustomBrowser = 'safari' | 'chrome' | 'opera' | 'firefox';
+
+export type AndroidCustomBrowser =
+    | 'chrome'
+    | 'firefox'
+    | 'chromeCustomTab'
+    | 'firefoxCustomTab'
+    | 'samsung'
+    | 'samsungCustomTab';
+
 /**
  * Browser/session options accepted by this SDK.
  *
@@ -23,10 +33,10 @@ export type AuthBrowserOptions = {
      * `react-native-app-auth` iOS option.
      * Examples include: 'safari', 'chrome', 'firefox' (library-dependent).
      */
-    iosCustomBrowser?: string;
+    iosCustomBrowser?: IOSCustomBrowser;
 
     /** `react-native-app-auth` Android option. */
-    androidAllowCustomBrowsers?: string[];
+    androidAllowCustomBrowsers?: AndroidCustomBrowser[];
 
     /** Legacy options that are now ignored but kept for compatibility. */
     showTitle?: boolean;
