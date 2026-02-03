@@ -196,37 +196,45 @@ export const DEPRECATED_AUTH_BROWSER_OPTIONS: readonly string[] = [
  * Logs a warning if any deprecated AuthBrowserOptions are being used.
  * Only warns once per session and only in non-production environments.
  */
+let hasWarnedEphemeral = false;
 let hasWarnedDeprecated = false;
+
 export function warnDeprecatedAuthBrowserOptions(
     options?: AuthBrowserOptions
 ): void {
-    if (!options || hasWarnedDeprecated) return;
+    // Skip warnings in production (only warn in development mode)
+    if (!__DEV__) return;
+    if (!options) return;
 
     // Check for deprecated `ephemeralWebSession` (has a mapping, so separate warning)
     if (
+        !hasWarnedEphemeral &&
         options.ephemeralWebSession !== undefined &&
         options.iosPrefersEphemeralSession === undefined
     ) {
+        hasWarnedEphemeral = true;
         console.warn(
             '[KindeSDK] `ephemeralWebSession` is deprecated. Use `iosPrefersEphemeralSession` instead.'
         );
     }
 
     // Check for fully deprecated options (no equivalent)
-    const usedDeprecated = DEPRECATED_AUTH_BROWSER_OPTIONS.filter(
-        (key) =>
-            Object.prototype.hasOwnProperty.call(options, key) &&
-            (options as Record<string, unknown>)[key] !== undefined
-    );
-
-    if (usedDeprecated.length > 0) {
-        hasWarnedDeprecated = true;
-        console.warn(
-            `[KindeSDK] The following AuthBrowserOptions are deprecated and will be ignored: ${usedDeprecated.join(
-                ', '
-            )}. ` +
-                'These options were from react-native-inappbrowser-reborn and have no equivalent in react-native-app-auth.'
+    if (!hasWarnedDeprecated) {
+        const usedDeprecated = DEPRECATED_AUTH_BROWSER_OPTIONS.filter(
+            (key) =>
+                Object.prototype.hasOwnProperty.call(options, key) &&
+                (options as Record<string, unknown>)[key] !== undefined
         );
+
+        if (usedDeprecated.length > 0) {
+            hasWarnedDeprecated = true;
+            console.warn(
+                `[KindeSDK] The following AuthBrowserOptions are deprecated and will be ignored: ${usedDeprecated.join(
+                    ', '
+                )}. ` +
+                    'These options were from react-native-inappbrowser-reborn and have no equivalent in react-native-app-auth.'
+            );
+        }
     }
 }
 
@@ -235,5 +243,6 @@ export function warnDeprecatedAuthBrowserOptions(
  * @internal
  */
 export function resetDeprecationWarningState(): void {
+    hasWarnedEphemeral = false;
     hasWarnedDeprecated = false;
 }

@@ -710,17 +710,31 @@ describe('KindeSDK', () => {
             DEPRECATED_AUTH_BROWSER_OPTIONS
         } = require('../src/types/Auth');
 
+        const originalDev = (global as { __DEV__: boolean }).__DEV__;
+
         beforeEach(() => {
             resetDeprecationWarningState();
             jest.spyOn(console, 'warn').mockImplementation(() => {});
+            // Ensure we're in development mode for most tests
+            (global as { __DEV__: boolean }).__DEV__ = true;
         });
 
         afterEach(() => {
             jest.restoreAllMocks();
+            (global as { __DEV__: boolean }).__DEV__ = originalDev;
         });
 
         test('should not warn when no options are provided', () => {
             warnDeprecatedAuthBrowserOptions(undefined);
+            expect(console.warn).not.toHaveBeenCalled();
+        });
+
+        test('should not warn in production mode (__DEV__ = false)', () => {
+            (global as { __DEV__: boolean }).__DEV__ = false;
+            warnDeprecatedAuthBrowserOptions({
+                ephemeralWebSession: true,
+                showTitle: true
+            });
             expect(console.warn).not.toHaveBeenCalled();
         });
 
@@ -781,6 +795,39 @@ describe('KindeSDK', () => {
             const deprecatedWarnings = (
                 console.warn as jest.Mock
             ).mock.calls.filter((call) => call[0].includes('will be ignored'));
+            expect(deprecatedWarnings.length).toBe(1);
+        });
+
+        test('should only warn once per session for ephemeralWebSession', () => {
+            warnDeprecatedAuthBrowserOptions({ ephemeralWebSession: true });
+            warnDeprecatedAuthBrowserOptions({ ephemeralWebSession: true });
+
+            // Count ephemeralWebSession warnings
+            const ephemeralWarnings = (
+                console.warn as jest.Mock
+            ).mock.calls.filter((call) =>
+                call[0].includes('Use `iosPrefersEphemeralSession`')
+            );
+            expect(ephemeralWarnings.length).toBe(1);
+        });
+
+        test('ephemeral and deprecated warnings use separate flags', () => {
+            // First call with ephemeralWebSession
+            warnDeprecatedAuthBrowserOptions({ ephemeralWebSession: true });
+            // Second call with deprecated option
+            warnDeprecatedAuthBrowserOptions({ showTitle: true });
+
+            // Should have both warnings (separate flags)
+            const ephemeralWarnings = (
+                console.warn as jest.Mock
+            ).mock.calls.filter((call) =>
+                call[0].includes('Use `iosPrefersEphemeralSession`')
+            );
+            const deprecatedWarnings = (
+                console.warn as jest.Mock
+            ).mock.calls.filter((call) => call[0].includes('will be ignored'));
+
+            expect(ephemeralWarnings.length).toBe(1);
             expect(deprecatedWarnings.length).toBe(1);
         });
 

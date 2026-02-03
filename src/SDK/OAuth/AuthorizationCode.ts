@@ -97,15 +97,19 @@ const toAdditionalParameters = (
     return out;
 };
 
-const waitForRedirectUrl = async (
+/**
+ * Waits for a redirect URL to be received via Linking.
+ * Returns both a promise and a cancel function to allow cleanup on errors.
+ */
+const waitForRedirectUrl = (
     redirectUri: string,
     timeoutMs: number
-): Promise<string | null> => {
-    return new Promise((resolve) => {
-        let cleanup = () => {
-            // assigned below
-        };
+): { promise: Promise<string | null>; cancel: () => void } => {
+    let cleanup = () => {
+        // assigned below
+    };
 
+    const promise = new Promise<string | null>((resolve) => {
         const timeout = setTimeout(() => {
             cleanup();
             resolve(null);
@@ -142,6 +146,8 @@ const waitForRedirectUrl = async (
             }
         };
     });
+
+    return { promise, cancel: cleanup };
 };
 
 class AuthorizationCode {
@@ -294,11 +300,20 @@ class AuthorizationCode {
                 );
                 if (!canOpen) return null;
 
-                const redirectPromise = waitForRedirectUrl(
-                    kindeSDK.redirectUri,
-                    REDIRECT_TIMEOUT_MS
-                );
-                await Linking.openURL(sanitizeUrl(authUrl.url.toString()));
+                const { promise: redirectPromise, cancel: cancelRedirectWait } =
+                    waitForRedirectUrl(
+                        kindeSDK.redirectUri,
+                        REDIRECT_TIMEOUT_MS
+                    );
+
+                try {
+                    await Linking.openURL(sanitizeUrl(authUrl.url.toString()));
+                } catch (openUrlError) {
+                    // Clean up the listener immediately if openURL fails
+                    cancelRedirectWait();
+                    throw openUrlError;
+                }
+
                 const redirectedUrl = await redirectPromise;
                 if (!redirectedUrl) return null;
 
