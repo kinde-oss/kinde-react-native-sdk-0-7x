@@ -5,3 +5,7 @@ coverage
 .jest
 
 *.spec.*
+
+# Sample app native folders
+ios/
+android/

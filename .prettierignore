@@ -1,3 +1,7 @@
 dist
 .jest
 CHANGELOG.md
+
+# Sample app native folders
+ios/
+android/

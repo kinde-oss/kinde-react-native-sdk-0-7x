@@ -2,11 +2,10 @@
 
 const { KindeSDK } = require(process.cwd() + '/src/index');
 import jwtDecode from 'jwt-decode';
-import InAppBrowser from 'react-native-inappbrowser-reborn';
 import Url from 'url-parse';
 import RNStorage from '../src/SDK/Storage/RNStorage';
-import { openWebBrowser } from '../src/SDK/Utils';
 import Storage from '../src/SDK/Storage';
+import { authorize } from 'react-native-app-auth';
 
 const crypto = require('crypto');
 
@@ -53,11 +52,32 @@ jest.mock('react-native-keychain', () => ({
     resetGenericPassword: jest.fn().mockResolvedValue()
 }));
 
-jest.mock('react-native-inappbrowser-reborn', () => ({
-    isAvailable: jest.fn().mockResolvedValue(false),
-    openAuth: jest.fn().mockResolvedValue({
-        type: ''
-    })
+jest.mock('react-native-app-auth', () => ({
+    authorize: jest.fn().mockResolvedValue({}),
+    logout: jest.fn().mockResolvedValue({})
+}));
+
+jest.mock('react-native', () => ({
+    Linking: {
+        canOpenURL: jest.fn().mockResolvedValue(true),
+        openURL: jest.fn().mockResolvedValue(true),
+        addEventListener: jest.fn((eventName, handler) => {
+            // Default behavior: immediately simulate a redirect back into the app.
+            if (eventName === 'url' && typeof handler === 'function') {
+                setTimeout(() => {
+                    try {
+                        handler({
+                            url: 'myapp://myhost.kinde.com/kinde_callback'
+                        });
+                    } catch (_) {
+                        // ignore
+                    }
+                }, 0);
+            }
+            return { remove: jest.fn() };
+        }),
+        removeEventListener: jest.fn()
+    }
 }));
 
 global.FormData = FormDataMock;
@@ -95,19 +115,13 @@ const fakePayloadFromDecodeToken = {
 const getValueByKey = (obj: Record<string, any>, key: string) => obj[key];
 
 jest.mock(process.cwd() + '/src/SDK/Utils', () => ({
-    generateChallenge: jest.fn().mockReturnValue({
-        state: 'uUj8nEDL-jxeDbS_si86i7UsFmG5ewf0axDu96pdHGc',
-        codeVerifier: 'K9E0HqVA4oxGuJqFWoasgmGKzI3Uxehdr9nTF2jaLR8',
-        codeChallenge: '3Aqg8_tu8aNwnxPmhE1b1ONsThy-b6hppET0knva9Kc'
-    }),
-    generateRandomString: jest
-        .fn()
-        .mockReturnValue('uUj8nEDL-jxeDbS_si86i7UsFmG5ewf0axDu96pdHGc'),
     isAdditionalParameters: jest.requireActual(process.cwd() + '/src/SDK/Utils')
         .isAdditionalParameters,
     additionalParametersToLoginMethodParams: jest.requireActual(
         process.cwd() + '/src/SDK/Utils'
     ).additionalParametersToLoginMethodParams,
+    isLikelyUserCancelled: jest.requireActual(process.cwd() + '/src/SDK/Utils')
+        .isLikelyUserCancelled,
     checkNotNull: jest.fn((reference, name) => {
         if (reference === null || reference === undefined) {
             throw new Error(`${name} cannot be empty`);
@@ -124,30 +138,6 @@ jest.mock(process.cwd() + '/src/SDK/Utils', () => ({
         }
         return target;
     }),
-    OpenWebInApp: jest.fn(async (url, kindeSDK) => {
-        try {
-            const response = await openWebBrowser(url, kindeSDK.redirectUri);
-            if (response.type === 'success' && response.url) {
-                return kindeSDK.getToken(response.url);
-            }
-            return null;
-        } catch (error: any) {
-            return null;
-        }
-    }),
-    openWebBrowser: jest.fn(async (url: string, redirectUri: string) => {
-        if (await InAppBrowser.isAvailable()) {
-            return InAppBrowser.openAuth(url, redirectUri, {
-                ephemeralWebSession: false,
-                showTitle: false,
-                enableUrlBarHiding: true,
-                enableDefaultShare: false
-            });
-        }
-
-        throw new Error('Not found web browser');
-    }),
-
     convertObject2FormData: jest.fn((obj: Record<string, any>) => {
         const formData = new FormData();
 
@@ -200,12 +190,6 @@ describe('KindeSDK', () => {
                 json: () => Promise.resolve(fakeTokenResponse)
             })
         );
-
-        InAppBrowser.isAvailable = jest.fn().mockReturnValue(false);
-
-        InAppBrowser.openAuth = jest.fn().mockResolvedValue({
-            type: ''
-        });
 
         fetch.mockClear();
         jest.clearAllMocks();
@@ -261,165 +245,133 @@ describe('KindeSDK', () => {
 
     describe('Redirect', () => {
         test('[RNStorage] Open authenticate endpoint', async () => {
-            InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
+            authorize.mockResolvedValue({
+                authorizationCode: 'random_code',
+                codeVerifier: configuration.fakeCodeVerifier
+            });
             await globalClient.login();
+            expect(Storage.getCodeVerifier()).toEqual(
+                configuration.fakeCodeVerifier
+            );
 
-            const state = Storage.getState();
-            const codeVerifier = Storage.getCodeVerifier();
-            const codeChallenge = Storage.getCodeChallenge();
-            const nonce = Storage.getNonce();
-
-            const urlParsed = new URLSearchParams({
-                client_id: configuration.clientId || '',
-                response_type: 'code',
-                redirect_uri: configuration.redirectUri || '',
-                audience: '',
-                scope: configuration.scope || '',
-                prompt: 'login',
-                state: state,
-                nonce: nonce,
-                code_challenge: codeChallenge,
-                code_challenge_method: 'S256'
-            }).toString();
-
-            expect(InAppBrowser.openAuth).toHaveBeenCalledWith(
-                `${configuration.issuer}/oauth2/auth?${urlParsed}`,
-                globalClient.redirectUri,
-                {
-                    enableDefaultShare: false,
-                    enableUrlBarHiding: true,
-                    ephemeralWebSession: false,
-                    showTitle: false
-                }
+            expect(authorize).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    clientId: configuration.clientId,
+                    redirectUrl: configuration.redirectUri,
+                    scopes: configuration.scope.split(' '),
+                    serviceConfiguration: {
+                        authorizationEndpoint:
+                            configuration.authorizationEndpoint,
+                        tokenEndpoint: configuration.tokenEndpoint
+                    },
+                    skipCodeExchange: true,
+                    usePKCE: true
+                })
             );
         });
 
         test('[RNStorage] Open registration endpoint', async () => {
-            InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
+            authorize.mockResolvedValue({
+                authorizationCode: 'random_code',
+                codeVerifier: configuration.fakeCodeVerifier
+            });
             await globalClient.register();
 
-            const state = Storage.getState();
-            const codeVerifier = Storage.getCodeVerifier();
-            const codeChallenge = Storage.getCodeChallenge();
-            const nonce = Storage.getNonce();
-
-            const urlParsed = new URLSearchParams({
-                client_id: configuration.clientId || '',
-                response_type: 'code',
-                redirect_uri: configuration.redirectUri || '',
-                audience: '',
-                scope: configuration.scope || '',
-                prompt: 'create',
-                state: state,
-                nonce: nonce,
-                code_challenge: codeChallenge,
-                code_challenge_method: 'S256'
-            }).toString();
-
-            expect(InAppBrowser.openAuth).toHaveBeenCalledWith(
-                configuration.authorizationEndpoint +
-                    '?' +
-                    urlParsed.toString(),
-                globalClient.redirectUri,
-                {
-                    enableDefaultShare: false,
-                    enableUrlBarHiding: true,
-                    ephemeralWebSession: false,
-                    showTitle: false
-                }
+            expect(authorize).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    clientId: configuration.clientId,
+                    redirectUrl: configuration.redirectUri,
+                    scopes: configuration.scope.split(' '),
+                    serviceConfiguration: {
+                        authorizationEndpoint:
+                            configuration.authorizationEndpoint,
+                        tokenEndpoint: configuration.tokenEndpoint
+                    },
+                    additionalParameters: expect.objectContaining({
+                        prompt: 'create'
+                    }),
+                    skipCodeExchange: true,
+                    usePKCE: true
+                })
             );
         });
 
         test('[RNStorage] Logout', async () => {
-            InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
             await globalClient.logout();
-            expect(InAppBrowser.openAuth).toHaveBeenCalledWith(
+            // We don't have an idToken in storage by default here, so logout falls back to opening the logout URL.
+            const { Linking } = require('react-native');
+            expect(Linking.openURL).toHaveBeenCalledWith(
                 `${configuration.logoutEndpoint}?${new URLSearchParams({
                     redirect: configuration.logoutRedirectUri
-                }).toString()}`,
-                globalClient.redirectUri,
-                {
-                    enableDefaultShare: false,
-                    enableUrlBarHiding: true,
-                    ephemeralWebSession: false,
-                    showTitle: false
-                }
+                }).toString()}`
             );
         });
 
         test('[RNStorage] User logged out', async () => {
-            InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
-
-            InAppBrowser.openAuth = jest.fn().mockReturnValue({
-                type: 'success'
+            // Even if we have an idToken, we still use Kinde's /logout to clear the Kinde server session.
+            RNStorage.prototype.getItem = jest.fn().mockReturnValue({
+                password: JSON.stringify({
+                    ...fakeTokenResponse,
+                    id_token: 'this_is_id_token'
+                })
             });
 
             const rs = await globalClient.logout();
             expect(rs).toEqual(true);
+
+            const { Linking } = require('react-native');
+            expect(Linking.openURL).toHaveBeenCalledWith(
+                `${configuration.logoutEndpoint}?${new URLSearchParams({
+                    redirect: configuration.logoutRedirectUri
+                }).toString()}`
+            );
         });
 
-        test('[RNStorage] Dismiss log out', async () => {
-            InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
-
-            InAppBrowser.openAuth = jest.fn().mockReturnValue({
-                type: 'dismiss'
-            });
-
-            const rs = await globalClient.logout();
-            expect(rs).toEqual(false);
-        });
-
-        test('[RNStorage] Cancel log out', async () => {
-            InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
-
-            InAppBrowser.openAuth = jest.fn().mockReturnValue({
-                type: 'cancel'
-            });
-
+        test.each([
+            [
+                '[RNStorage] Logout returns false when URL cannot be opened',
+                'resolves-false'
+            ],
+            [
+                '[RNStorage] Logout handles canOpenURL rejection gracefully',
+                'rejects'
+            ]
+        ])('%s', async (_name, scenario) => {
+            const { Linking } = require('react-native');
+            if (scenario === 'rejects') {
+                // Simulate canOpenURL throwing an error
+                Linking.canOpenURL = jest
+                    .fn()
+                    .mockRejectedValue(new Error('URL scheme not supported'));
+            } else {
+                // Simulate canOpenURL returning false (URL cannot be opened)
+                Linking.canOpenURL = jest.fn().mockResolvedValue(false);
+            }
             const rs = await globalClient.logout();
             expect(rs).toEqual(false);
         });
 
         test('[RNStorage] Create Organization', async () => {
-            InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
+            authorize.mockResolvedValue({
+                authorizationCode: 'random_code',
+                codeVerifier: configuration.fakeCodeVerifier
+            });
             await globalClient.createOrg();
 
-            const state = Storage.getState();
-            const codeVerifier = Storage.getCodeVerifier();
-            const codeChallenge = Storage.getCodeChallenge();
-            const nonce = Storage.getNonce();
-
-            const urlParsed = new URLSearchParams({
-                client_id: configuration.clientId || '',
-                response_type: 'code',
-                is_create_org: true,
-                redirect_uri: configuration.redirectUri || '',
-                audience: '',
-                scope: configuration.scope || '',
-                prompt: 'create',
-                state: state,
-                nonce: nonce,
-                code_challenge: codeChallenge,
-                code_challenge_method: 'S256'
-            }).toString();
-
-            expect(InAppBrowser.openAuth).toHaveBeenCalledWith(
-                `${configuration.authorizationEndpoint}?${urlParsed}`,
-                globalClient.redirectUri,
-                {
-                    enableDefaultShare: false,
-                    enableUrlBarHiding: true,
-                    ephemeralWebSession: false,
-                    showTitle: false
-                }
+            expect(authorize).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    additionalParameters: expect.objectContaining({
+                        prompt: 'create',
+                        is_create_org: 'true'
+                    })
+                })
             );
         });
 
         test('[RNStorage] Received token from login', async () => {
-            InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
-            InAppBrowser.openAuth = jest.fn().mockReturnValue({
-                type: 'success',
-                url: 'code=random_code'
+            authorize.mockResolvedValue({
+                authorizationCode: 'random_code',
+                codeVerifier: configuration.fakeCodeVerifier
             });
             RNStorage.prototype.getItem = jest.fn().mockReturnValue({
                 password: JSON.stringify(fakeTokenResponse)
@@ -436,22 +388,14 @@ describe('KindeSDK', () => {
             });
         });
 
-        test('[RNStorage] Dismiss web browser', async () => {
-            InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
-            InAppBrowser.openAuth = jest.fn().mockReturnValue({
-                type: 'dismiss'
-            });
-
-            const token = await globalClient.login();
-            expect(token).toEqual(null);
-        });
-
-        test('[RNStorage] Cancel web browser', async () => {
-            InAppBrowser.isAvailable = jest.fn().mockReturnValue(true);
-            InAppBrowser.openAuth = jest.fn().mockReturnValue({
-                type: 'cancel'
-            });
-
+        test.each([
+            ['user_cancelled', '[RNStorage] Dismiss web browser'],
+            [
+                'org.openid.appauth.general error -3',
+                '[RNStorage] Cancel web browser (iOS AppAuth)'
+            ]
+        ])('%s: %s', async (errorMessage) => {
+            authorize.mockRejectedValue(new Error(errorMessage));
             const token = await globalClient.login();
             expect(token).toEqual(null);
         });
@@ -756,6 +700,150 @@ describe('KindeSDK', () => {
             const response = await globalClient.forceTokenRefresh();
             expect(response).toBe(null);
             expect(global.fetch).toHaveBeenCalled();
+        });
+    });
+
+    describe('AuthBrowserOptions Deprecation Warnings', () => {
+        const {
+            warnDeprecatedAuthBrowserOptions,
+            resetDeprecationWarningState,
+            DEPRECATED_AUTH_BROWSER_OPTIONS
+        } = require('../src/types/Auth');
+
+        const originalDev = (global as { __DEV__: boolean }).__DEV__;
+
+        beforeEach(() => {
+            resetDeprecationWarningState();
+            jest.spyOn(console, 'warn').mockImplementation(() => {});
+            // Ensure we're in development mode for most tests
+            (global as { __DEV__: boolean }).__DEV__ = true;
+        });
+
+        afterEach(() => {
+            jest.restoreAllMocks();
+            (global as { __DEV__: boolean }).__DEV__ = originalDev;
+        });
+
+        test('should not warn when no options are provided', () => {
+            warnDeprecatedAuthBrowserOptions(undefined);
+            expect(console.warn).not.toHaveBeenCalled();
+        });
+
+        test('should not warn in production mode (__DEV__ = false)', () => {
+            (global as { __DEV__: boolean }).__DEV__ = false;
+            warnDeprecatedAuthBrowserOptions({
+                ephemeralWebSession: true,
+                showTitle: true
+            });
+            expect(console.warn).not.toHaveBeenCalled();
+        });
+
+        test('should not warn when only active options are used', () => {
+            warnDeprecatedAuthBrowserOptions({
+                iosPrefersEphemeralSession: true,
+                iosCustomBrowser: 'safari',
+                androidAllowCustomBrowsers: ['chrome']
+            });
+            expect(console.warn).not.toHaveBeenCalled();
+        });
+
+        test('should warn when ephemeralWebSession is used without iosPrefersEphemeralSession', () => {
+            warnDeprecatedAuthBrowserOptions({
+                ephemeralWebSession: true
+            });
+            expect(console.warn).toHaveBeenCalledWith(
+                expect.stringContaining('ephemeralWebSession')
+            );
+            expect(console.warn).toHaveBeenCalledWith(
+                expect.stringContaining('iosPrefersEphemeralSession')
+            );
+        });
+
+        test('should not warn about ephemeralWebSession when iosPrefersEphemeralSession is also set', () => {
+            warnDeprecatedAuthBrowserOptions({
+                ephemeralWebSession: true,
+                iosPrefersEphemeralSession: true
+            });
+            // Should not warn about ephemeralWebSession specifically
+            const calls = (console.warn as jest.Mock).mock.calls;
+            const ephemeralSpecificWarning = calls.find(
+                (call) =>
+                    call[0].includes('ephemeralWebSession') &&
+                    call[0].includes('Use `iosPrefersEphemeralSession`')
+            );
+            expect(ephemeralSpecificWarning).toBeUndefined();
+        });
+
+        test('should warn when deprecated options are used', () => {
+            warnDeprecatedAuthBrowserOptions({
+                showTitle: true,
+                toolbarColor: '#ffffff'
+            });
+            expect(console.warn).toHaveBeenCalledWith(
+                expect.stringContaining('showTitle')
+            );
+            expect(console.warn).toHaveBeenCalledWith(
+                expect.stringContaining('toolbarColor')
+            );
+        });
+
+        test('should only warn once per session for deprecated options', () => {
+            warnDeprecatedAuthBrowserOptions({ showTitle: true });
+            warnDeprecatedAuthBrowserOptions({ toolbarColor: '#fff' });
+
+            // Count warnings about deprecated options (not ephemeralWebSession)
+            const deprecatedWarnings = (
+                console.warn as jest.Mock
+            ).mock.calls.filter((call) => call[0].includes('will be ignored'));
+            expect(deprecatedWarnings.length).toBe(1);
+        });
+
+        test('should only warn once per session for ephemeralWebSession', () => {
+            warnDeprecatedAuthBrowserOptions({ ephemeralWebSession: true });
+            warnDeprecatedAuthBrowserOptions({ ephemeralWebSession: true });
+
+            // Count ephemeralWebSession warnings
+            const ephemeralWarnings = (
+                console.warn as jest.Mock
+            ).mock.calls.filter((call) =>
+                call[0].includes('Use `iosPrefersEphemeralSession`')
+            );
+            expect(ephemeralWarnings.length).toBe(1);
+        });
+
+        test('ephemeral and deprecated warnings use separate flags', () => {
+            // First call with ephemeralWebSession
+            warnDeprecatedAuthBrowserOptions({ ephemeralWebSession: true });
+            // Second call with deprecated option
+            warnDeprecatedAuthBrowserOptions({ showTitle: true });
+
+            // Should have both warnings (separate flags)
+            const ephemeralWarnings = (
+                console.warn as jest.Mock
+            ).mock.calls.filter((call) =>
+                call[0].includes('Use `iosPrefersEphemeralSession`')
+            );
+            const deprecatedWarnings = (
+                console.warn as jest.Mock
+            ).mock.calls.filter((call) => call[0].includes('will be ignored'));
+
+            expect(ephemeralWarnings.length).toBe(1);
+            expect(deprecatedWarnings.length).toBe(1);
+        });
+
+        test('DEPRECATED_AUTH_BROWSER_OPTIONS should contain expected keys', () => {
+            expect(DEPRECATED_AUTH_BROWSER_OPTIONS).toContain('animated');
+            expect(DEPRECATED_AUTH_BROWSER_OPTIONS).toContain('showTitle');
+            expect(DEPRECATED_AUTH_BROWSER_OPTIONS).toContain('toolbarColor');
+            expect(DEPRECATED_AUTH_BROWSER_OPTIONS).toContain(
+                'modalPresentationStyle'
+            );
+            expect(DEPRECATED_AUTH_BROWSER_OPTIONS).not.toContain(
+                'iosPrefersEphemeralSession'
+            );
+            expect(DEPRECATED_AUTH_BROWSER_OPTIONS).not.toContain(
+                'ephemeralWebSession'
+            );
         });
     });
 });

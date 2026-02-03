@@ -1,0 +1,490 @@
+PODS:
+  - AppAuth (2.0.0):
+    - AppAuth/Core (= 2.0.0)
+    - AppAuth/ExternalUserAgent (= 2.0.0)
+  - AppAuth/Core (2.0.0)
+  - AppAuth/ExternalUserAgent (2.0.0):
+    - AppAuth/Core
+  - boost (1.76.0)
+  - DoubleConversion (1.1.6)
+  - FBLazyVector (0.70.8)
+  - FBReactNativeSpec (0.70.8):
+    - RCT-Folly (= 2021.07.22.00)
+    - RCTRequired (= 0.70.8)
+    - RCTTypeSafety (= 0.70.8)
+    - React-Core (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - ReactCommon/turbomodule/core (= 0.70.8)
+  - fmt (6.2.1)
+  - glog (0.3.5)
+  - hermes-engine (0.70.8)
+  - libevent (2.1.12)
+  - RCT-Folly (2021.07.22.00):
+    - boost
+    - DoubleConversion
+    - fmt (~> 6.2.1)
+    - glog
+    - RCT-Folly/Default (= 2021.07.22.00)
+  - RCT-Folly/Default (2021.07.22.00):
+    - boost
+    - DoubleConversion
+    - fmt (~> 6.2.1)
+    - glog
+  - RCT-Folly/Futures (2021.07.22.00):
+    - boost
+    - DoubleConversion
+    - fmt (~> 6.2.1)
+    - glog
+    - libevent
+  - RCTRequired (0.70.8)
+  - RCTTypeSafety (0.70.8):
+    - FBLazyVector (= 0.70.8)
+    - RCTRequired (= 0.70.8)
+    - React-Core (= 0.70.8)
+  - React (0.70.8):
+    - React-Core (= 0.70.8)
+    - React-Core/DevSupport (= 0.70.8)
+    - React-Core/RCTWebSocket (= 0.70.8)
+    - React-RCTActionSheet (= 0.70.8)
+    - React-RCTAnimation (= 0.70.8)
+    - React-RCTBlob (= 0.70.8)
+    - React-RCTImage (= 0.70.8)
+    - React-RCTLinking (= 0.70.8)
+    - React-RCTNetwork (= 0.70.8)
+    - React-RCTSettings (= 0.70.8)
+    - React-RCTText (= 0.70.8)
+    - React-RCTVibration (= 0.70.8)
+  - React-bridging (0.70.8):
+    - RCT-Folly (= 2021.07.22.00)
+    - React-jsi (= 0.70.8)
+  - React-callinvoker (0.70.8)
+  - React-Codegen (0.70.8):
+    - FBReactNativeSpec (= 0.70.8)
+    - RCT-Folly (= 2021.07.22.00)
+    - RCTRequired (= 0.70.8)
+    - RCTTypeSafety (= 0.70.8)
+    - React-Core (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - React-jsiexecutor (= 0.70.8)
+    - ReactCommon/turbomodule/core (= 0.70.8)
+  - React-Core (0.70.8):
+    - glog
+    - RCT-Folly (= 2021.07.22.00)
+    - React-Core/Default (= 0.70.8)
+    - React-cxxreact (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - React-jsiexecutor (= 0.70.8)
+    - React-perflogger (= 0.70.8)
+    - Yoga
+  - React-Core/CoreModulesHeaders (0.70.8):
+    - glog
+    - RCT-Folly (= 2021.07.22.00)
+    - React-Core/Default
+    - React-cxxreact (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - React-jsiexecutor (= 0.70.8)
+    - React-perflogger (= 0.70.8)
+    - Yoga
+  - React-Core/Default (0.70.8):
+    - glog
+    - RCT-Folly (= 2021.07.22.00)
+    - React-cxxreact (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - React-jsiexecutor (= 0.70.8)
+    - React-perflogger (= 0.70.8)
+    - Yoga
+  - React-Core/DevSupport (0.70.8):
+    - glog
+    - RCT-Folly (= 2021.07.22.00)
+    - React-Core/Default (= 0.70.8)
+    - React-Core/RCTWebSocket (= 0.70.8)
+    - React-cxxreact (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - React-jsiexecutor (= 0.70.8)
+    - React-jsinspector (= 0.70.8)
+    - React-perflogger (= 0.70.8)
+    - Yoga
+  - React-Core/RCTActionSheetHeaders (0.70.8):
+    - glog
+    - RCT-Folly (= 2021.07.22.00)
+    - React-Core/Default
+    - React-cxxreact (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - React-jsiexecutor (= 0.70.8)
+    - React-perflogger (= 0.70.8)
+    - Yoga
+  - React-Core/RCTAnimationHeaders (0.70.8):
+    - glog
+    - RCT-Folly (= 2021.07.22.00)
+    - React-Core/Default
+    - React-cxxreact (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - React-jsiexecutor (= 0.70.8)
+    - React-perflogger (= 0.70.8)
+    - Yoga
+  - React-Core/RCTBlobHeaders (0.70.8):
+    - glog
+    - RCT-Folly (= 2021.07.22.00)
+    - React-Core/Default
+    - React-cxxreact (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - React-jsiexecutor (= 0.70.8)
+    - React-perflogger (= 0.70.8)
+    - Yoga
+  - React-Core/RCTImageHeaders (0.70.8):
+    - glog
+    - RCT-Folly (= 2021.07.22.00)
+    - React-Core/Default
+    - React-cxxreact (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - React-jsiexecutor (= 0.70.8)
+    - React-perflogger (= 0.70.8)
+    - Yoga
+  - React-Core/RCTLinkingHeaders (0.70.8):
+    - glog
+    - RCT-Folly (= 2021.07.22.00)
+    - React-Core/Default
+    - React-cxxreact (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - React-jsiexecutor (= 0.70.8)
+    - React-perflogger (= 0.70.8)
+    - Yoga
+  - React-Core/RCTNetworkHeaders (0.70.8):
+    - glog
+    - RCT-Folly (= 2021.07.22.00)
+    - React-Core/Default
+    - React-cxxreact (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - React-jsiexecutor (= 0.70.8)
+    - React-perflogger (= 0.70.8)
+    - Yoga
+  - React-Core/RCTSettingsHeaders (0.70.8):
+    - glog
+    - RCT-Folly (= 2021.07.22.00)
+    - React-Core/Default
+    - React-cxxreact (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - React-jsiexecutor (= 0.70.8)
+    - React-perflogger (= 0.70.8)
+    - Yoga
+  - React-Core/RCTTextHeaders (0.70.8):
+    - glog
+    - RCT-Folly (= 2021.07.22.00)
+    - React-Core/Default
+    - React-cxxreact (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - React-jsiexecutor (= 0.70.8)
+    - React-perflogger (= 0.70.8)
+    - Yoga
+  - React-Core/RCTVibrationHeaders (0.70.8):
+    - glog
+    - RCT-Folly (= 2021.07.22.00)
+    - React-Core/Default
+    - React-cxxreact (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - React-jsiexecutor (= 0.70.8)
+    - React-perflogger (= 0.70.8)
+    - Yoga
+  - React-Core/RCTWebSocket (0.70.8):
+    - glog
+    - RCT-Folly (= 2021.07.22.00)
+    - React-Core/Default (= 0.70.8)
+    - React-cxxreact (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - React-jsiexecutor (= 0.70.8)
+    - React-perflogger (= 0.70.8)
+    - Yoga
+  - React-CoreModules (0.70.8):
+    - RCT-Folly (= 2021.07.22.00)
+    - RCTTypeSafety (= 0.70.8)
+    - React-Codegen (= 0.70.8)
+    - React-Core/CoreModulesHeaders (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - React-RCTImage (= 0.70.8)
+    - ReactCommon/turbomodule/core (= 0.70.8)
+  - React-cxxreact (0.70.8):
+    - boost (= 1.76.0)
+    - DoubleConversion
+    - glog
+    - RCT-Folly (= 2021.07.22.00)
+    - React-callinvoker (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - React-jsinspector (= 0.70.8)
+    - React-logger (= 0.70.8)
+    - React-perflogger (= 0.70.8)
+    - React-runtimeexecutor (= 0.70.8)
+  - React-hermes (0.70.8):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - RCT-Folly (= 2021.07.22.00)
+    - RCT-Folly/Futures (= 2021.07.22.00)
+    - React-cxxreact (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - React-jsiexecutor (= 0.70.8)
+    - React-jsinspector (= 0.70.8)
+    - React-perflogger (= 0.70.8)
+  - React-jsi (0.70.8):
+    - boost (= 1.76.0)
+    - DoubleConversion
+    - glog
+    - RCT-Folly (= 2021.07.22.00)
+    - React-jsi/Default (= 0.70.8)
+  - React-jsi/Default (0.70.8):
+    - boost (= 1.76.0)
+    - DoubleConversion
+    - glog
+    - RCT-Folly (= 2021.07.22.00)
+  - React-jsiexecutor (0.70.8):
+    - DoubleConversion
+    - glog
+    - RCT-Folly (= 2021.07.22.00)
+    - React-cxxreact (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - React-perflogger (= 0.70.8)
+  - React-jsinspector (0.70.8)
+  - React-logger (0.70.8):
+    - glog
+  - react-native-app-auth (8.1.0):
+    - AppAuth (>= 1.7.6)
+    - React-Core
+  - react-native-get-random-values (1.11.0):
+    - React-Core
+  - React-perflogger (0.70.8)
+  - React-RCTActionSheet (0.70.8):
+    - React-Core/RCTActionSheetHeaders (= 0.70.8)
+  - React-RCTAnimation (0.70.8):
+    - RCT-Folly (= 2021.07.22.00)
+    - RCTTypeSafety (= 0.70.8)
+    - React-Codegen (= 0.70.8)
+    - React-Core/RCTAnimationHeaders (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - ReactCommon/turbomodule/core (= 0.70.8)
+  - React-RCTBlob (0.70.8):
+    - RCT-Folly (= 2021.07.22.00)
+    - React-Codegen (= 0.70.8)
+    - React-Core/RCTBlobHeaders (= 0.70.8)
+    - React-Core/RCTWebSocket (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - React-RCTNetwork (= 0.70.8)
+    - ReactCommon/turbomodule/core (= 0.70.8)
+  - React-RCTImage (0.70.8):
+    - RCT-Folly (= 2021.07.22.00)
+    - RCTTypeSafety (= 0.70.8)
+    - React-Codegen (= 0.70.8)
+    - React-Core/RCTImageHeaders (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - React-RCTNetwork (= 0.70.8)
+    - ReactCommon/turbomodule/core (= 0.70.8)
+  - React-RCTLinking (0.70.8):
+    - React-Codegen (= 0.70.8)
+    - React-Core/RCTLinkingHeaders (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - ReactCommon/turbomodule/core (= 0.70.8)
+  - React-RCTNetwork (0.70.8):
+    - RCT-Folly (= 2021.07.22.00)
+    - RCTTypeSafety (= 0.70.8)
+    - React-Codegen (= 0.70.8)
+    - React-Core/RCTNetworkHeaders (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - ReactCommon/turbomodule/core (= 0.70.8)
+  - React-RCTSettings (0.70.8):
+    - RCT-Folly (= 2021.07.22.00)
+    - RCTTypeSafety (= 0.70.8)
+    - React-Codegen (= 0.70.8)
+    - React-Core/RCTSettingsHeaders (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - ReactCommon/turbomodule/core (= 0.70.8)
+  - React-RCTText (0.70.8):
+    - React-Core/RCTTextHeaders (= 0.70.8)
+  - React-RCTVibration (0.70.8):
+    - RCT-Folly (= 2021.07.22.00)
+    - React-Codegen (= 0.70.8)
+    - React-Core/RCTVibrationHeaders (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - ReactCommon/turbomodule/core (= 0.70.8)
+  - React-runtimeexecutor (0.70.8):
+    - React-jsi (= 0.70.8)
+  - ReactCommon/turbomodule/core (0.70.8):
+    - DoubleConversion
+    - glog
+    - RCT-Folly (= 2021.07.22.00)
+    - React-bridging (= 0.70.8)
+    - React-callinvoker (= 0.70.8)
+    - React-Core (= 0.70.8)
+    - React-cxxreact (= 0.70.8)
+    - React-jsi (= 0.70.8)
+    - React-logger (= 0.70.8)
+    - React-perflogger (= 0.70.8)
+  - RNKeychain (8.2.0):
+    - React-Core
+  - Yoga (1.14.0)
+
+DEPENDENCIES:
+  - boost (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/example/ios/boost.podspec`)
+  - DoubleConversion (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/third-party-podspecs/DoubleConversion.podspec`)
+  - FBLazyVector (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/Libraries/FBLazyVector`)
+  - FBReactNativeSpec (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/React/FBReactNativeSpec`)
+  - glog (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/third-party-podspecs/glog.podspec`)
+  - hermes-engine (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/sdks/hermes/hermes-engine.podspec`)
+  - libevent (~> 2.1.12)
+  - RCT-Folly (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)
+  - RCTRequired (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/Libraries/RCTRequired`)
+  - RCTTypeSafety (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/Libraries/TypeSafety`)
+  - React (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/`)
+  - React-bridging (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/ReactCommon`)
+  - React-callinvoker (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/ReactCommon/callinvoker`)
+  - React-Codegen (from `build/generated/ios`)
+  - React-Core (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/`)
+  - React-Core/RCTWebSocket (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/`)
+  - React-CoreModules (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/React/CoreModules`)
+  - React-cxxreact (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/ReactCommon/cxxreact`)
+  - React-hermes (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/ReactCommon/hermes`)
+  - React-jsi (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/ReactCommon/jsi`)
+  - React-jsiexecutor (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/ReactCommon/jsiexecutor`)
+  - React-jsinspector (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/ReactCommon/jsinspector`)
+  - React-logger (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/ReactCommon/logger`)
+  - react-native-app-auth (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native-app-auth`)
+  - react-native-get-random-values (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native-get-random-values`)
+  - React-perflogger (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/ReactCommon/reactperflogger`)
+  - React-RCTActionSheet (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/Libraries/ActionSheetIOS`)
+  - React-RCTAnimation (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/Libraries/NativeAnimation`)
+  - React-RCTBlob (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/Libraries/Blob`)
+  - React-RCTImage (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/Libraries/Image`)
+  - React-RCTLinking (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/Libraries/LinkingIOS`)
+  - React-RCTNetwork (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/Libraries/Network`)
+  - React-RCTSettings (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/Libraries/Settings`)
+  - React-RCTText (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/Libraries/Text`)
+  - React-RCTVibration (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/Libraries/Vibration`)
+  - React-runtimeexecutor (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/ReactCommon/runtimeexecutor`)
+  - ReactCommon/turbomodule/core (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/ReactCommon`)
+  - RNKeychain (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native-keychain`)
+  - Yoga (from `/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/ReactCommon/yoga`)
+
+SPEC REPOS:
+  trunk:
+    - AppAuth
+    - fmt
+    - libevent
+
+EXTERNAL SOURCES:
+  boost:
+    :podspec: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/example/ios/boost.podspec"
+  DoubleConversion:
+    :podspec: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/third-party-podspecs/DoubleConversion.podspec"
+  FBLazyVector:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/Libraries/FBLazyVector"
+  FBReactNativeSpec:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/React/FBReactNativeSpec"
+  glog:
+    :podspec: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/third-party-podspecs/glog.podspec"
+  hermes-engine:
+    :podspec: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/sdks/hermes/hermes-engine.podspec"
+  RCT-Folly:
+    :podspec: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/third-party-podspecs/RCT-Folly.podspec"
+  RCTRequired:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/Libraries/RCTRequired"
+  RCTTypeSafety:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/Libraries/TypeSafety"
+  React:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/"
+  React-bridging:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/ReactCommon"
+  React-callinvoker:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/ReactCommon/callinvoker"
+  React-Codegen:
+    :path: build/generated/ios
+  React-Core:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/"
+  React-CoreModules:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/React/CoreModules"
+  React-cxxreact:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/ReactCommon/cxxreact"
+  React-hermes:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/ReactCommon/hermes"
+  React-jsi:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/ReactCommon/jsi"
+  React-jsiexecutor:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/ReactCommon/jsiexecutor"
+  React-jsinspector:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/ReactCommon/jsinspector"
+  React-logger:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/ReactCommon/logger"
+  react-native-app-auth:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native-app-auth"
+  react-native-get-random-values:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native-get-random-values"
+  React-perflogger:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/ReactCommon/reactperflogger"
+  React-RCTActionSheet:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/Libraries/ActionSheetIOS"
+  React-RCTAnimation:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/Libraries/NativeAnimation"
+  React-RCTBlob:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/Libraries/Blob"
+  React-RCTImage:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/Libraries/Image"
+  React-RCTLinking:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/Libraries/LinkingIOS"
+  React-RCTNetwork:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/Libraries/Network"
+  React-RCTSettings:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/Libraries/Settings"
+  React-RCTText:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/Libraries/Text"
+  React-RCTVibration:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/Libraries/Vibration"
+  React-runtimeexecutor:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/ReactCommon/runtimeexecutor"
+  ReactCommon:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/ReactCommon"
+  RNKeychain:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native-keychain"
+  Yoga:
+    :path: "/Users/dtoxvanilla/Development/KINDE/kinde-react-native-sdk-0-7x/node_modules/react-native/ReactCommon/yoga"
+
+SPEC CHECKSUMS:
+  AppAuth: 1c1a8afa7e12f2ec3a294d9882dfa5ab7d3cb063
+  boost: 9fa78656d705f55b1220151d997e57e2a3f2cde0
+  DoubleConversion: 5189b271737e1565bdce30deb4a08d647e3f5f54
+  FBLazyVector: ce6c993e675c5e9684e3b83aa0c346eb116c3ec6
+  FBReactNativeSpec: d88a9fd45130644d4bec7edd4547e76847229579
+  fmt: ff9d55029c625d3757ed641535fd4a75fedc7ce9
+  glog: 04b94705f318337d7ead9e6d17c019bd9b1f6b1b
+  hermes-engine: 0b19f33a9c2ec1dbdede3232606eeb1101db4cec
+  libevent: 4049cae6c81cdb3654a443be001fb9bdceff7913
+  RCT-Folly: fd2673f5bfadb2a8173799b6965b892a67ae31d9
+  RCTRequired: 35a7977a5a3cb2d3830c3fef7352b7b116115829
+  RCTTypeSafety: 259790fb8b16c94e57e0d3d1e2479e69a2b93f50
+  React: 89f0551b8f7a555e38ce016a81c50bc68f1972a8
+  React-bridging: 2e425b6bc8536206918fa55bf9dd37016f99bb33
+  React-callinvoker: 1c733126b1e4d95d0d412d95c51cedf06b3b979d
+  React-Codegen: 41d2ddcd966eac2a5f2698d5cd21e3d741e999bd
+  React-Core: eaff67e16dc3c63b92d8d18db4983a303743a41f
+  React-CoreModules: f569f295874d0864bfd7a686dad3f828f4e8813a
+  React-cxxreact: 86dfdcb743fc3f14a29aa2e825c9c0324476d969
+  React-hermes: bdb312286cad0ff6647e370de2a9aa5ad9e38ce2
+  React-jsi: b4975e36dfaa15bcaada1611aac32aa06dd69943
+  React-jsiexecutor: 688fa13895ad0e95dd0ce71ae9276e370c4f35ec
+  React-jsinspector: 5e5497c844f2381e8648ec3a7d0ad25b3f27f23e
+  React-logger: f5bfa1860b3cd2efa54e21eaba91fa48455a4922
+  react-native-app-auth: e21c8ee920876b960e38c9381971bd189ebea06b
+  react-native-get-random-values: d16467cf726c618e9c7a8c3c39c31faa2244bbba
+  React-perflogger: e9249a18e055cae96fdf685bf6145cbea62506c8
+  React-RCTActionSheet: a6d2a544a4605a111ce80fa9319cc870ca3ea778
+  React-RCTAnimation: 21b776b15aa5451a0b5bcb342fd2f346817c1101
+  React-RCTBlob: 95f54d45305b4103b29d8b2c1e705b5c3183239a
+  React-RCTImage: 1b76ab9e3b60313edd85bc3fd3e07c29cec6ab68
+  React-RCTLinking: 7176da2a80f3056152a51587812d6d0c451b1f7b
+  React-RCTNetwork: d36f896304e6ef2998f58cd4199a0239bd312318
+  React-RCTSettings: 004b9a1afb5870f4bcd06521c088e738c1558940
+  React-RCTText: a2606a79fdb52dd2bde0d7fde7726160fa16b70c
+  React-RCTVibration: 19d21a3ed620352180800447771f68a101f196e9
+  React-runtimeexecutor: f795fd426264709901c09432c6ce072f8400147e
+  ReactCommon: 12e0dc251ab676fe4675307ddf6211d2605ad4d1
+  RNKeychain: bbe2f6d5cc008920324acb49ef86ccc03d3b38e4
+  Yoga: d6133108734e69e8c0becc6ba587294b94829687
+
+PODFILE CHECKSUM: 79dc1ca68fabe810a8bdbf7e074a53c0eca3229c
+
+COCOAPODS: 1.16.2

@@ -1,11 +1,8 @@
 import CryptoJS from 'crypto-js';
-import InAppBrowser from 'react-native-inappbrowser-reborn';
 import { InvalidTypeException } from '../common/exceptions/invalid-type.exception';
 import { PropertyRequiredException } from '../common/exceptions/property-required.exception';
 import { UnexpectedException } from '../common/exceptions/unexpected.exception';
-import { AuthBrowserOptions } from '../types/Auth';
 import { AdditionalParameters } from '../types/KindeSDK';
-import KindeSDK from './KindeSDK';
 import { AdditionalParametersAllow } from './constants';
 import { LoginMethodParams } from '@kinde/js-utils';
 import 'react-native-get-random-values';
@@ -140,68 +137,6 @@ export const addAdditionalParameters = (
     return target;
 };
 
-/**
- * Opens a web browser or in-app browser for authentication.
- * @param {string} url - The URL to open.
- * @param {KindeSDK} kindeSDK - The KindeSDK instance.
- * @param {AuthBrowserOptions} [options] - Optional browser options.
- * @returns A promise that resolves with the token or null if authentication fails.
- */
-export const OpenWebInApp = async (
-    url: string,
-    kindeSDK: KindeSDK,
-    options?: AuthBrowserOptions
-) => {
-    try {
-        const response = await openWebBrowser(
-            url,
-            kindeSDK.redirectUri,
-            options || kindeSDK.authBrowserOptions
-        );
-        if (response.type === 'success' && response.url) {
-            return kindeSDK.getToken(response.url);
-        }
-        console.warn(
-            'Something wrong when trying to authenticate. Reason: ',
-            response.type
-        );
-        return null;
-    } catch (error: any) {
-        console.error(
-            'Something wrong when trying to authenticate.',
-            error.message
-        );
-        return null;
-    }
-};
-
-/**
- * Opens a web browser using custom tabs on Android or default browser on other platforms.
- * @param {string} url - The URL to open.
- * @param {string} redirectUri - The redirect URI.
- * @param {AuthBrowserOptions} [options] - Optional browser options.
- * @returns A promise that resolves with the authentication response.
- * @throws Error if no web browser is found.
- */
-export const openWebBrowser = async (
-    url: string,
-    redirectUri: string,
-    options?: AuthBrowserOptions
-) => {
-    if (await InAppBrowser.isAvailable()) {
-        return InAppBrowser.openAuth(url, redirectUri, {
-            ephemeralWebSession: false,
-            showTitle: false,
-            enableUrlBarHiding: true,
-            enableDefaultShare: false,
-            forceCloseOnRedirection: false,
-            showInRecents: true,
-            ...options
-        });
-    }
-    throw new Error('Not found web browser');
-};
-
 export const convertObject2FormData = (obj: Record<string, any>) => {
     const formData = new FormData();
 
@@ -212,27 +147,28 @@ export const convertObject2FormData = (obj: Record<string, any>) => {
     return formData;
 };
 
+/**
+ * All snake_case keys that are valid AdditionalParameters.
+ * Used to detect whether the caller passed AdditionalParameters (snake_case)
+ * vs LoginMethodParams (camelCase).
+ */
+const ADDITIONAL_PARAMETERS_KEYS: ReadonlyArray<keyof AdditionalParameters> = [
+    'is_create_org',
+    'org_code',
+    'org_name',
+    'connection_id',
+    'login_hint',
+    'plan_interest',
+    'pricing_table_key'
+] as const;
+
 export const isAdditionalParameters = (
     additionalParameters: AdditionalParameters | LoginMethodParams
 ): boolean => {
-    return (
-        Object.prototype.hasOwnProperty.call(
-            additionalParameters,
-            'is_create_org'
-        ) ||
-        Object.prototype.hasOwnProperty.call(
-            additionalParameters,
-            'org_code'
-        ) ||
-        Object.prototype.hasOwnProperty.call(
-            additionalParameters,
-            'org_name'
-        ) ||
-        Object.prototype.hasOwnProperty.call(
-            additionalParameters,
-            'connection_id'
-        ) ||
-        Object.prototype.hasOwnProperty.call(additionalParameters, 'login_hint')
+    // Detect snake_case by checking if any of the known AdditionalParameters keys are present.
+    // Note: 'audience' and 'lang' exist in both types, so they are not discriminators.
+    return ADDITIONAL_PARAMETERS_KEYS.some((key) =>
+        Object.prototype.hasOwnProperty.call(additionalParameters, key)
     );
 };
 
@@ -255,4 +191,27 @@ export const additionalParametersToLoginMethodParams = (
         planInterest: additionalParameters.plan_interest,
         pricingTableKey: additionalParameters.pricing_table_key
     };
+};
+
+/**
+ * Heuristic check to determine if an error was caused by user cancellation.
+ * Used to gracefully handle authentication cancellation across different platforms.
+ * @param {unknown} error - The error to check.
+ * @returns {boolean} True if the error appears to be a user cancellation.
+ */
+export const isLikelyUserCancelled = (error: unknown): boolean => {
+    const message =
+        (error as any)?.message !== undefined
+            ? String((error as any).message)
+            : String(error);
+    const lower = message.toLowerCase();
+    return (
+        lower.includes('user cancel') ||
+        lower.includes('user_cancel') ||
+        lower.includes('cancelled by user') ||
+        lower.includes('canceled by user') ||
+        /\bcancel(?:l)?ed\b/.test(lower) ||
+        // iOS AppAuth error code -3 = OIDErrorCodeUserCanceledAuthorizationFlow
+        /org\.openid\.appauth\.general error -3\b/.test(lower)
+    );
 };

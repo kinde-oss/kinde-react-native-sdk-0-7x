@@ -6,7 +6,20 @@ You can also use the React Native 0.7x starter kit [here](https://github.com/ki
 
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com) [![Kinde Docs](https://img.shields.io/badge/Kinde-Docs-eee?style=flat-square)](https://kinde.com/docs/developer-tools) [![Kinde Community](https://img.shields.io/badge/Kinde-Community-eee?style=flat-square)](https://thekindecommunity.slack.com)
 
+## Requirements
+
+| Platform | Minimum Version |
+| -------- | --------------- |
+| iOS      | 12.0+           |
+| Android  | API 21+         |
+
+> **Note:** iOS 12.0+ is required due to the dependency on `react-native-app-auth`, which uses [AppAuth-iOS 2.0.0](https://github.com/openid/AppAuth-iOS/releases/tag/2.0.0). If your app targets iOS versions below 12.0, you will need to update your deployment target.
+
 ## Development
+
+### Example app
+
+To run the included example app (CocoaPods/Bundler/Ruby setup and run steps), see: [example/README.md](example/README.md)
 
 ### Initial set up
 
