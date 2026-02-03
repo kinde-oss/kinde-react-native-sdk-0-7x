@@ -12,10 +12,10 @@
     "main": "dist/index.js",
     "types": "dist/src/index.d.ts",
     "scripts": {
-        "build": "rimraf dist && npm run build:types && npm run build:js",
+        "build": "rimraf dist && pnpm run build:types && pnpm run build:js",
         "build:types": "tsc --emitDeclarationOnly",
         "build:js": "babel src --out-dir dist --extensions \".js,.ts\"",
-        "prepare": "npm run build && husky install",
+        "prepare": "pnpm run build && husky install",
         "test": "jest",
         "lint": "eslint . && prettier --check .",
         "lint:fix": "eslint --fix . && prettier --write .",
@@ -130,5 +130,5 @@
             "/node_modules/(?!(@react-native|react-native)/).*/"
         ]
     },
-    "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
+    "packageManager": "pnpm@9.15.4"
 }
