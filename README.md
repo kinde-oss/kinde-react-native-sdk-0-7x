@@ -10,10 +10,10 @@ You can also use the React Native 0.7x starter kit [here](https://github.com/ki
 
 | Platform | Minimum Version |
 | -------- | --------------- |
-| iOS      | 12.4+           |
+| iOS      | 12.0+           |
 | Android  | API 21+         |
 
-> **Note:** iOS 12.4+ is required due to the dependency on `react-native-app-auth` (AppAuth-iOS). If your app targets iOS versions below 12.4, you will need to update your deployment target.
+> **Note:** iOS 12.0+ is required due to the dependency on `react-native-app-auth`, which uses [AppAuth-iOS 2.0.0](https://github.com/openid/AppAuth-iOS/releases/tag/2.0.0). If your app targets iOS versions below 12.0, you will need to update your deployment target.
 
 ## Development
 
