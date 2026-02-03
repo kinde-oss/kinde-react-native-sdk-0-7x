@@ -702,4 +702,101 @@ describe('KindeSDK', () => {
             expect(global.fetch).toHaveBeenCalled();
         });
     });
+
+    describe('AuthBrowserOptions Deprecation Warnings', () => {
+        const {
+            warnDeprecatedAuthBrowserOptions,
+            resetDeprecationWarningState,
+            DEPRECATED_AUTH_BROWSER_OPTIONS
+        } = require('../src/types/Auth');
+
+        beforeEach(() => {
+            resetDeprecationWarningState();
+            jest.spyOn(console, 'warn').mockImplementation(() => {});
+        });
+
+        afterEach(() => {
+            jest.restoreAllMocks();
+        });
+
+        test('should not warn when no options are provided', () => {
+            warnDeprecatedAuthBrowserOptions(undefined);
+            expect(console.warn).not.toHaveBeenCalled();
+        });
+
+        test('should not warn when only active options are used', () => {
+            warnDeprecatedAuthBrowserOptions({
+                iosPrefersEphemeralSession: true,
+                iosCustomBrowser: 'safari',
+                androidAllowCustomBrowsers: ['chrome']
+            });
+            expect(console.warn).not.toHaveBeenCalled();
+        });
+
+        test('should warn when ephemeralWebSession is used without iosPrefersEphemeralSession', () => {
+            warnDeprecatedAuthBrowserOptions({
+                ephemeralWebSession: true
+            });
+            expect(console.warn).toHaveBeenCalledWith(
+                expect.stringContaining('ephemeralWebSession')
+            );
+            expect(console.warn).toHaveBeenCalledWith(
+                expect.stringContaining('iosPrefersEphemeralSession')
+            );
+        });
+
+        test('should not warn about ephemeralWebSession when iosPrefersEphemeralSession is also set', () => {
+            warnDeprecatedAuthBrowserOptions({
+                ephemeralWebSession: true,
+                iosPrefersEphemeralSession: true
+            });
+            // Should not warn about ephemeralWebSession specifically
+            const calls = (console.warn as jest.Mock).mock.calls;
+            const ephemeralSpecificWarning = calls.find(
+                (call) =>
+                    call[0].includes('ephemeralWebSession') &&
+                    call[0].includes('Use `iosPrefersEphemeralSession`')
+            );
+            expect(ephemeralSpecificWarning).toBeUndefined();
+        });
+
+        test('should warn when deprecated options are used', () => {
+            warnDeprecatedAuthBrowserOptions({
+                showTitle: true,
+                toolbarColor: '#ffffff'
+            });
+            expect(console.warn).toHaveBeenCalledWith(
+                expect.stringContaining('showTitle')
+            );
+            expect(console.warn).toHaveBeenCalledWith(
+                expect.stringContaining('toolbarColor')
+            );
+        });
+
+        test('should only warn once per session for deprecated options', () => {
+            warnDeprecatedAuthBrowserOptions({ showTitle: true });
+            warnDeprecatedAuthBrowserOptions({ toolbarColor: '#fff' });
+
+            // Count warnings about deprecated options (not ephemeralWebSession)
+            const deprecatedWarnings = (
+                console.warn as jest.Mock
+            ).mock.calls.filter((call) => call[0].includes('will be ignored'));
+            expect(deprecatedWarnings.length).toBe(1);
+        });
+
+        test('DEPRECATED_AUTH_BROWSER_OPTIONS should contain expected keys', () => {
+            expect(DEPRECATED_AUTH_BROWSER_OPTIONS).toContain('animated');
+            expect(DEPRECATED_AUTH_BROWSER_OPTIONS).toContain('showTitle');
+            expect(DEPRECATED_AUTH_BROWSER_OPTIONS).toContain('toolbarColor');
+            expect(DEPRECATED_AUTH_BROWSER_OPTIONS).toContain(
+                'modalPresentationStyle'
+            );
+            expect(DEPRECATED_AUTH_BROWSER_OPTIONS).not.toContain(
+                'iosPrefersEphemeralSession'
+            );
+            expect(DEPRECATED_AUTH_BROWSER_OPTIONS).not.toContain(
+                'ephemeralWebSession'
+            );
+        });
+    });
 });

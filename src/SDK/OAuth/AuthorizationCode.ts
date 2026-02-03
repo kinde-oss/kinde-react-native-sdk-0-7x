@@ -11,7 +11,8 @@ import {
 import {
     AuthBrowserOptions,
     IOSCustomBrowser,
-    AndroidCustomBrowser
+    AndroidCustomBrowser,
+    warnDeprecatedAuthBrowserOptions
 } from '../../types/Auth';
 import {
     generateAuthUrl,
@@ -158,6 +159,9 @@ class AuthorizationCode {
         additionalParameters: LoginMethodParams | AdditionalParameters,
         options?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
+        // Warn about deprecated options (once per session)
+        warnDeprecatedAuthBrowserOptions(options);
+
         let prompt: PromptTypes;
         switch (startPage) {
             case 'login':
