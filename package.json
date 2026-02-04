@@ -16,7 +16,9 @@
         "build:types": "tsc --emitDeclarationOnly",
         "build:js": "babel src --out-dir dist --extensions \".js,.ts\"",
         "prepare": "pnpm run build && husky install",
-        "test": "jest",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:ui": "vitest --ui",
         "lint": "eslint . && prettier --check .",
         "lint:fix": "eslint --fix . && prettier --write .",
         "release": "release-it"
@@ -76,11 +78,9 @@
         "@types/react-native-get-random-values": "^1.8.2",
         "@types/url-parse": "^1.4.8",
         "babel-core": "^7.0.0-bridge.0",
-        "babel-jest": "29.5.0",
         "eslint": "^8.26.0",
         "eslint-config-prettier": "^8.5.0",
         "husky": "^8.0.1",
-        "jest": "29.5.0",
         "lint-staged": "^13.0.3",
         "metro-react-native-babel-preset": "^0.73.3",
         "prettier": "^2.7.1",
@@ -88,8 +88,9 @@
         "react-native": "0.70.8",
         "react-test-renderer": "18.1.0",
         "rimraf": "^3.0.2",
-        "ts-jest": "^29.1.0",
-        "typescript": "^4.9.5"
+        "typescript": "^4.9.5",
+        "vitest": "^2.1.8",
+        "@vitest/ui": "^2.1.8"
     },
     "peerDependencies": {
         "react-native": ">= 0.70",
@@ -104,30 +105,6 @@
         "**/*.{js,jsx,ts,tsx}": [
             "npx prettier --write .",
             "npx eslint --fix"
-        ]
-    },
-    "jest": {
-        "preset": "react-native",
-        "moduleFileExtensions": [
-            "ts",
-            "tsx",
-            "js"
-        ],
-        "transform": {
-            "^.+\\.js$": "babel-jest",
-            "^.+\\.tsx?$": "ts-jest"
-        },
-        "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$",
-        "testPathIgnorePatterns": [
-            "\\.snap$",
-            "<rootDir>/node_modules/"
-        ],
-        "modulePaths": [
-            "<rootDir>"
-        ],
-        "cacheDirectory": ".jest/cache",
-        "transformIgnorePatterns": [
-            "/node_modules/(?!(@react-native|react-native)/).*/"
         ]
     },
     "packageManager": "pnpm@9.15.4"
