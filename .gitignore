@@ -82,13 +82,7 @@ local.properties
 # node.js
 #
 node_modules/
-npm-debug.log
-yarn-error.log
 dist
-
-# Lock files
-package-lock.json
-yarn.lock
 
 # BUCK
 buck-out/
@@ -105,9 +99,6 @@ buck-out/
 */fastlane/report.xml
 */fastlane/Preview.html
 */fastlane/screenshots
-
-# Jest
-.jest/
 
 # Serena mcp
 .serena
