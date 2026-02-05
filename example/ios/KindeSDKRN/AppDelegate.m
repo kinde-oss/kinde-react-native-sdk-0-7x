@@ -28,18 +28,15 @@
     if ([provider respondsToSelector:sel]) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
-      jsCodeLocation = (NSURL *)[provider performSelector:sel withObject:@"example/index" withObject:nil];
+      jsCodeLocation = (NSURL *)[provider performSelector:sel withObject:@"index" withObject:nil];
 #pragma clang diagnostic pop
     } else {
-      jsCodeLocation = [provider jsBundleURLForBundleRoot:@"example/index"];
+      jsCodeLocation = [provider jsBundleURLForBundleRoot:@"index"];
     }
 
     // Extra safety: ensure we always pass a non-nil bundle URL to RCTRootView in Debug.
     if (jsCodeLocation == nil) {
-      jsCodeLocation = [provider jsBundleURLForBundleRoot:@"index"];
-    }
-    if (jsCodeLocation == nil) {
-      jsCodeLocation = [NSURL URLWithString:@"http://127.0.0.1:8081/example/index.bundle?platform=ios&dev=true&minify=false"];
+      jsCodeLocation = [NSURL URLWithString:@"http://127.0.0.1:8081/index.bundle?platform=ios&dev=true&minify=false"];
     }
   #else
     jsCodeLocation = [[NSBundle mainBundle] URLForResource:@"main" withExtension:@"jsbundle"];

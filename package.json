@@ -28,7 +28,9 @@
         "test:ui": "vitest --ui",
         "lint": "eslint . && prettier --check .",
         "lint:fix": "eslint --fix . && prettier --write .",
-        "release": "release-it"
+        "release": "release-it",
+        "start:example": "npx react-native start --config example/metro.config.js --reset-cache",
+        "ios:example": "cd example && npx react-native run-ios --scheme KindeSDKRN"
     },
     "author": {
         "name": "Kinde",
@@ -56,6 +58,7 @@
         "url-parse": "^1.5.10"
     },
     "devDependencies": {
+        "@babel/runtime": "^7.26.0",
         "@types/crypto-js": "^4.2.2",
         "@types/node": "^18.11.7",
         "@types/react-native": "^0.70.6",

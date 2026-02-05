@@ -29,6 +29,9 @@ importers:
                 specifier: ^1.5.10
                 version: 1.5.10
         devDependencies:
+            '@babel/runtime':
+                specifier: ^7.26.0
+                version: 7.28.6
             '@types/crypto-js':
                 specifier: ^4.2.2
                 version: 4.2.2
