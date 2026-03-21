@@ -125,6 +125,8 @@ class KindeSDK extends runtime.BaseAPI {
             this.login({
                 prompt: PromptTypes.create,
                 invitationCode: invitationCode
+            }).catch((error) => {
+                console.warn('Failed to process invitation deep link:', error);
             });
         }
     }
