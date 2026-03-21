@@ -28,7 +28,8 @@ import {
     MemoryStorage,
     setActiveStorage,
     StorageKeys,
-    PortalPage
+    PortalPage,
+    PromptTypes
 } from '@kinde/js-utils';
 import { version } from '../../package.json';
 
@@ -91,6 +92,30 @@ class KindeSDK extends runtime.BaseAPI {
         this.scope = scope;
 
         this.authBrowserOptions = authBrowserOptions;
+
+        Linking.addEventListener('url', (event) => {
+            this.handleDeepLink(event.url);
+        });
+
+        Linking.getInitialURL().then((url) => {
+            this.handleDeepLink(url);
+        });
+    }
+
+    /**
+     * This function handles the deep link url that opens the app.
+     * @param {string | null} url - The URL that triggered the deep link.
+     */
+    private handleDeepLink(url: string | null) {
+        if (!url) return;
+        const URLParsed = new Url(url, true);
+        const { invitation_code: invitationCode } = URLParsed.query;
+        if (invitationCode) {
+            this.login({
+                prompt: PromptTypes.create,
+                invitationCode: invitationCode
+            });
+        }
     }
 
     /**

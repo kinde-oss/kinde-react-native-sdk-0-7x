@@ -6,6 +6,7 @@ import Url from 'url-parse';
 import RNStorage from '../src/SDK/Storage/RNStorage';
 import Storage from '../src/SDK/Storage';
 import { authorize } from 'react-native-app-auth';
+import { Linking } from 'react-native';
 
 const crypto = require('crypto');
 
@@ -76,7 +77,10 @@ jest.mock('react-native', () => ({
             }
             return { remove: jest.fn() };
         }),
-        removeEventListener: jest.fn()
+        removeEventListener: jest.fn(),
+        getInitialURL: jest
+            .fn()
+            .mockResolvedValue('myapp://myhost.kinde.com/kinde_callback')
     }
 }));
 
@@ -240,6 +244,59 @@ describe('KindeSDK', () => {
             expect(globalClient.logoutEndpoint).toBe(
                 configuration.logoutEndpoint
             );
+        });
+
+        test('calls login with "create" prompt and invitationCode when there is an invitation code in the initial url', async () => {
+            Linking.getInitialURL.mockResolvedValueOnce(
+                'https://myhost.kinde.com/oauth2/auth?invitation_code=random_code'
+            );
+
+            const loginSpy = jest.spyOn(KindeSDK.prototype, 'login');
+
+            new KindeSDK(
+                configuration.issuer,
+                configuration.redirectUri,
+                configuration.clientId,
+                configuration.logoutRedirectUri
+            );
+
+            await new Promise(process.nextTick);
+
+            expect(loginSpy).toHaveBeenCalledWith({
+                prompt: 'create',
+                invitationCode: 'random_code'
+            });
+
+            loginSpy.mockRestore();
+        });
+
+        test('calls login with "create" prompt and "create_org" flag when the event listener is called with an invitation code', async () => {
+            const loginSpy = jest.spyOn(KindeSDK.prototype, 'login');
+
+            new KindeSDK(
+                configuration.issuer,
+                configuration.redirectUri,
+                configuration.clientId,
+                configuration.logoutRedirectUri
+            );
+
+            const urlListener = Linking.addEventListener.mock.calls.find(
+                (call) => call[0] === 'url'
+            );
+            const urlListenerCallback = urlListener[1];
+
+            urlListenerCallback({
+                url: 'https://myhost.kinde.com/oauth2/auth?invitation_code=random_code'
+            });
+
+            await new Promise(process.nextTick);
+
+            expect(loginSpy).toHaveBeenCalledWith({
+                prompt: 'create',
+                invitationCode: 'random_code'
+            });
+
+            loginSpy.mockRestore();
         });
     });
 
