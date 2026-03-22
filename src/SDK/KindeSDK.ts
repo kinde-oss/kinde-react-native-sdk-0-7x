@@ -92,14 +92,17 @@ class KindeSDK extends runtime.BaseAPI {
         this.scope = scope;
 
         this.authBrowserOptions = authBrowserOptions;
-
         Linking.addEventListener('url', (event) => {
             this.handleDeepLink(event.url);
         });
 
-        Linking.getInitialURL().then((url) => {
-            this.handleDeepLink(url);
-        });
+        Linking.getInitialURL()
+            .then((url) => {
+                this.handleDeepLink(url);
+            })
+            .catch((error) => {
+                console.warn('Failed to get initial URL:', error);
+            });
     }
 
     /**
