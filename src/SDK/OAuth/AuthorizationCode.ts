@@ -93,6 +93,8 @@ const toAdditionalParameters = (
         out.plan_interest = String(params.planInterest);
     if (params.pricingTableKey !== undefined)
         out.pricing_table_key = String(params.pricingTableKey);
+    if (params.invitationCode !== undefined)
+        out.invitation_code = String(params.invitationCode);
 
     return out;
 };

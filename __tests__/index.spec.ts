@@ -6,6 +6,8 @@ import Url from 'url-parse';
 import RNStorage from '../src/SDK/Storage/RNStorage';
 import Storage from '../src/SDK/Storage';
 import { authorize } from 'react-native-app-auth';
+import { Linking } from 'react-native';
+import { describe } from 'node:test';
 
 const crypto = require('crypto');
 
@@ -76,7 +78,10 @@ jest.mock('react-native', () => ({
             }
             return { remove: jest.fn() };
         }),
-        removeEventListener: jest.fn()
+        removeEventListener: jest.fn(),
+        getInitialURL: jest
+            .fn()
+            .mockResolvedValue('myapp://myhost.kinde.com/kinde_callback')
     }
 }));
 
@@ -240,6 +245,113 @@ describe('KindeSDK', () => {
             expect(globalClient.logoutEndpoint).toBe(
                 configuration.logoutEndpoint
             );
+        });
+
+        test('calls handleDeepLink with the initial URL when `Linking.getInitialURL` is called', async () => {
+            Linking.getInitialURL.mockResolvedValueOnce('kinde.com');
+
+            const handleDeepLinkSpy = jest.spyOn(
+                KindeSDK.prototype,
+                'handleDeepLink'
+            );
+
+            new KindeSDK(
+                configuration.issuer,
+                configuration.redirectUri,
+                configuration.clientId,
+                configuration.logoutRedirectUri
+            );
+
+            await new Promise(process.nextTick);
+
+            expect(handleDeepLinkSpy).toHaveBeenCalledWith('kinde.com');
+
+            handleDeepLinkSpy.mockRestore();
+        });
+
+        test('calls handleDeepLink with the URL when `Linking.addEventListener` is called', async () => {
+            const handleDeepLinkSpy = jest.spyOn(
+                KindeSDK.prototype,
+                'handleDeepLink'
+            );
+
+            new KindeSDK(
+                configuration.issuer,
+                configuration.redirectUri,
+                configuration.clientId,
+                configuration.logoutRedirectUri
+            );
+
+            const urlListener = Linking.addEventListener.mock.calls.find(
+                (call) => call[0] === 'url'
+            );
+
+            const urlListenerCallback = urlListener[1];
+
+            urlListenerCallback({ url: 'kinde.com' });
+
+            await new Promise(process.nextTick);
+
+            expect(handleDeepLinkSpy).toHaveBeenCalledWith('kinde.com');
+
+            handleDeepLinkSpy.mockRestore();
+        });
+    });
+
+    describe('handleDeepLink', () => {
+        test('does not call login when there is no url', async () => {
+            const loginSpy = jest.spyOn(KindeSDK.prototype, 'login');
+
+            globalClient.handleDeepLink(null);
+
+            expect(loginSpy).not.toHaveBeenCalled();
+
+            loginSpy.mockRestore();
+        });
+
+        test('does not call login when the url is not a Kinde redirect url', async () => {
+            const loginSpy = jest.spyOn(KindeSDK.prototype, 'login');
+
+            const testUrls = [
+                'test.com',
+                'test.com/kinde_callback',
+                'myapp://test.com/kinde_callback',
+                'myapp://test.com/kinde_callback?invitation_code=random_code'
+            ];
+
+            for (const url of testUrls) {
+                globalClient.handleDeepLink(url);
+                expect(loginSpy).not.toHaveBeenCalled();
+            }
+
+            loginSpy.mockRestore();
+        });
+
+        test('does not call login when the url is a Kinde redirect url but has no invitation code parameter', async () => {
+            const loginSpy = jest.spyOn(KindeSDK.prototype, 'login');
+
+            globalClient.handleDeepLink(
+                'myapp://myhost.kinde.com/kinde_callback'
+            );
+
+            expect(loginSpy).not.toHaveBeenCalled();
+
+            loginSpy.mockRestore();
+        });
+
+        test('calls login with "create" prompt and invitationCode when the url is a Kinde redirect url with an invitation code parameter', async () => {
+            const loginSpy = jest.spyOn(KindeSDK.prototype, 'login');
+
+            globalClient.handleDeepLink(
+                'myapp://myhost.kinde.com/kinde_callback?invitation_code=random_code'
+            );
+
+            expect(loginSpy).toHaveBeenCalledWith({
+                prompt: 'create',
+                invitationCode: 'random_code'
+            });
+
+            loginSpy.mockRestore();
         });
     });
 
