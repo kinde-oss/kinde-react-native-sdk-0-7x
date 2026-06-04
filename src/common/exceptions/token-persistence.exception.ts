@@ -6,5 +6,6 @@ export class TokenPersistenceError extends Error {
     ) {
         super(message);
         this.name = 'TokenPersistenceError';
+        Object.setPrototypeOf(this, TokenPersistenceError.prototype);
     }
 }
