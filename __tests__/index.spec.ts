@@ -776,25 +776,25 @@ describe('KindeSDK', () => {
         test('[RNStorage] setToken throws when secure storage write is rejected', async () => {
             RNStorage.prototype.setItem = jest.fn().mockResolvedValue(false);
 
-            await expect(Storage.setToken(fakeTokenResponse)).rejects.toMatchObject(
-                {
-                    name: 'TokenPersistenceError',
-                    message: 'Secure storage rejected the token write'
-                }
-            );
+            await expect(
+                Storage.setToken(fakeTokenResponse)
+            ).rejects.toMatchObject({
+                name: 'TokenPersistenceError',
+                message: 'Secure storage rejected the token write'
+            });
         });
 
         test('[RNStorage] setToken throws when access token is missing after read-back', async () => {
             RNStorage.prototype.setItem = jest.fn().mockResolvedValue(true);
             RNStorage.prototype.getItem = jest.fn().mockResolvedValue(false);
 
-            await expect(Storage.setToken(fakeTokenResponse)).rejects.toMatchObject(
-                {
-                    name: 'TokenPersistenceError',
-                    message:
-                        'Access token was not found in secure storage after persist'
-                }
-            );
+            await expect(
+                Storage.setToken(fakeTokenResponse)
+            ).rejects.toMatchObject({
+                name: 'TokenPersistenceError',
+                message:
+                    'Access token was not found in secure storage after persist'
+            });
         });
     });
 

@@ -38,12 +38,10 @@ class Storage extends BaseStore {
 
     async setToken(token: string | TokenResponse): Promise<void> {
         const storage = await this.getStorage();
-        const expected =
-            typeof token === 'string'
-                ? (JSON.parse(token) as TokenResponse)
-                : token;
+        const serializedToken = this.convertString(token);
+        const expected = JSON.parse(serializedToken) as TokenResponse;
 
-        const written = await storage.setItem(token);
+        const written = await storage.setItem(serializedToken);
         if (!written) {
             throw new TokenPersistenceError(
                 'Secure storage rejected the token write'
@@ -142,7 +140,7 @@ class Storage extends BaseStore {
     }
 }
 
-const sessionStorage = (globalThis.sessionStorage =
-    globalThis.sessionStorage ?? new Storage()) as Storage;
+const sessionStorage = (globalThis.__kindeSdkStorage =
+    globalThis.__kindeSdkStorage ?? new Storage());
 
 export default sessionStorage;
