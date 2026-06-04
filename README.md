@@ -9,7 +9,7 @@ You can also use the React Native 0.7x starter kit [here](https://github.com/ki
 ## Requirements
 
 | Platform | Minimum Version |
-| ----------| -----------------|
+| -------- | --------------- |
 | iOS      | 12.0+           |
 | Android  | API 23+         |
 
