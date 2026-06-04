@@ -9,14 +9,13 @@ You can also use the React Native 0.7x starter kit [here](https://github.com/ki
 ## Requirements
 
 | Platform | Minimum Version |
-| -------- | --------------- |
+| ----------| -----------------|
 | iOS      | 12.0+           |
 | Android  | API 23+         |
 
 > [!NOTE]
->
-> -   **iOS:** 12.0+ is required due to the dependency on `react-native-app-auth`, which uses [AppAuth-iOS 2.0.0](https://github.com/openid/AppAuth-iOS/releases/tag/2.0.0). If your app targets iOS versions below 12.0, you will need to update your deployment target.
-> -   **Android:** API 23+ is required due to the dependency on `react-native-keychain`, which has a minimum SDK version of [23](https://github.com/oblador/react-native-keychain/blob/v10.0.0/android/gradle.properties#L14).
+> - **iOS:** 12.0+ is required due to the dependency on `react-native-app-auth`, which uses [AppAuth-iOS 2.0.0](https://github.com/openid/AppAuth-iOS/releases/tag/2.0.0). If your app targets iOS versions below 12.0, you will need to update your deployment target.
+> - **Android:** API 23+ is required due to the dependency on `react-native-keychain`, which has a minimum SDK version of [23](https://github.com/oblador/react-native-keychain/blob/v10.0.0/android/gradle.properties#L14).
 
 ## Development
 
