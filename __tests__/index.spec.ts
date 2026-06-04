@@ -172,6 +172,24 @@ const dataDecoded = {
 
 jest.mock('jwt-decode', () => jest.fn().mockReturnValue());
 
+const createKeychainMock = (initialPassword = null) => {
+    const storage = { password: initialPassword };
+    return {
+        storage,
+        getItem: jest.fn(async () =>
+            storage.password
+                ? { username: 'kinde', password: storage.password }
+                : false
+        ),
+        setItem: jest.fn(async (value) => {
+            storage.password =
+                typeof value === 'string' ? value : JSON.stringify(value);
+            return true;
+        })
+    };
+};
+
+let keychainMock = createKeychainMock();
 let globalClient;
 describe('KindeSDK', () => {
     beforeEach(() => {
@@ -184,11 +202,9 @@ describe('KindeSDK', () => {
             configuration.logoutRedirectUri
         );
 
-        RNStorage.prototype.getItem = jest
-            .fn()
-            .mockReturnValue({ password: null });
-
-        RNStorage.prototype.setItem = jest.fn();
+        keychainMock = createKeychainMock();
+        RNStorage.prototype.getItem = keychainMock.getItem;
+        RNStorage.prototype.setItem = keychainMock.setItem;
 
         global.fetch = jest.fn(() =>
             Promise.resolve({
@@ -577,16 +593,17 @@ describe('KindeSDK', () => {
         });
 
         test('[RNStorage] Check authenticated use refresh_token', async () => {
-            RNStorage.prototype.getItem = jest.fn().mockReturnValue({
-                password: JSON.stringify({
-                    ...fakeTokenResponse,
-                    access_token: '',
-                    expires_in: 0
-                })
+            keychainMock.storage.password = JSON.stringify({
+                ...fakeTokenResponse,
+                access_token: '',
+                expires_in: 0
             });
 
             const authenticated = await globalClient.isAuthenticated;
             expect(authenticated).toEqual(true);
+            expect(keychainMock.storage.password).toBe(
+                JSON.stringify(fakeTokenResponse)
+            );
         });
 
         test('[RNStorage] Get Token instance when user is authenticated', async () => {
@@ -755,6 +772,32 @@ describe('KindeSDK', () => {
         });
     });
 
+    describe('token persistence', () => {
+        test('[RNStorage] setToken throws when secure storage write is rejected', async () => {
+            RNStorage.prototype.setItem = jest.fn().mockResolvedValue(false);
+
+            await expect(Storage.setToken(fakeTokenResponse)).rejects.toMatchObject(
+                {
+                    name: 'TokenPersistenceError',
+                    message: 'Secure storage rejected the token write'
+                }
+            );
+        });
+
+        test('[RNStorage] setToken throws when access token is missing after read-back', async () => {
+            RNStorage.prototype.setItem = jest.fn().mockResolvedValue(true);
+            RNStorage.prototype.getItem = jest.fn().mockResolvedValue(false);
+
+            await expect(Storage.setToken(fakeTokenResponse)).rejects.toMatchObject(
+                {
+                    name: 'TokenPersistenceError',
+                    message:
+                        'Access token was not found in secure storage after persist'
+                }
+            );
+        });
+    });
+
     describe('forceTokenRefresh', () => {
         test(`[RNStorage] Throws an error if no refresh token found in storage`, async () => {
             RNStorage.prototype.getItem = jest.fn().mockReturnValue({
@@ -766,17 +809,10 @@ describe('KindeSDK', () => {
         });
 
         test('[RNStorage] Stores newly fetched tokens in storage', async () => {
-            let storage = {
-                username: 'kinde',
-                password: JSON.stringify(fakeTokenResponse)
-            };
-            RNStorage.prototype.getItem = jest.fn(() => storage);
-            RNStorage.prototype.setItem = jest.fn((value: unknown) => {
-                storage.password = JSON.stringify(value);
-            });
+            keychainMock.storage.password = JSON.stringify(fakeTokenResponse);
 
             const formData = new FormData();
-            const { refresh_token } = JSON.parse(storage.password);
+            const { refresh_token } = JSON.parse(keychainMock.storage.password);
             formData.append('client_id', configuration.clientId);
             formData.append('grant_type', 'refresh_token');
             formData.append('refresh_token', refresh_token);
@@ -796,7 +832,17 @@ describe('KindeSDK', () => {
             await globalClient.forceTokenRefresh();
             expect(global.fetch).toHaveBeenCalled();
             expect(global.fetch.mock.calls[0][1].body).toEqual(formData);
-            expect(storage.password).toBe(JSON.stringify(newTokensResponse));
+            expect(keychainMock.storage.password).toBe(
+                JSON.stringify(newTokensResponse)
+            );
+        });
+
+        test('[RNStorage] returns null when token persist fails after refresh', async () => {
+            keychainMock.storage.password = JSON.stringify(fakeTokenResponse);
+            RNStorage.prototype.setItem = jest.fn().mockResolvedValue(false);
+
+            const response = await globalClient.forceTokenRefresh();
+            expect(response).toBe(null);
         });
 
         test(`[RNStorage] returns "null" in the event network call rejects`, async () => {

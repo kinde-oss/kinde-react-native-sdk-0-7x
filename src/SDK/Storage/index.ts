@@ -1,4 +1,5 @@
 import jwtDecode from 'jwt-decode';
+import { TokenPersistenceError } from '../../common/exceptions/token-persistence.exception';
 import {
     AccessTokenDecoded,
     IdTokenDecoded,
@@ -35,9 +36,35 @@ class Storage extends BaseStore {
         }
     }
 
-    async setToken(token: string) {
+    async setToken(token: string | TokenResponse): Promise<void> {
         const storage = await this.getStorage();
-        return storage.setItem(token);
+        const expected =
+            typeof token === 'string'
+                ? (JSON.parse(token) as TokenResponse)
+                : token;
+
+        const written = await storage.setItem(token);
+        if (!written) {
+            throw new TokenPersistenceError(
+                'Secure storage rejected the token write'
+            );
+        }
+
+        const stored = await this.getToken();
+        if (!stored?.access_token) {
+            throw new TokenPersistenceError(
+                'Access token was not found in secure storage after persist'
+            );
+        }
+
+        if (
+            expected.access_token &&
+            stored.access_token !== expected.access_token
+        ) {
+            throw new TokenPersistenceError(
+                'Persisted access token does not match the expected value'
+            );
+        }
     }
 
     async getTokenType(type: TokenType) {
