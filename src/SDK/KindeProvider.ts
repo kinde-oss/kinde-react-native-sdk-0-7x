@@ -39,6 +39,10 @@ export const useKindeProvider = ({
                     await handleLogout();
                 } else {
                     setIsAuthenticated(true);
+                    setRefreshTimer(
+                        await Storage.getExpiredAt(),
+                        authSdk.forceTokenRefresh
+                    );
                 }
             }
         } catch (error) {

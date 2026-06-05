@@ -966,6 +966,7 @@ describe('KindeSDK', () => {
             });
 
             expect(providerRef.current.isAuthenticated).toBe(true);
+            expect(setRefreshTimerSpy).toHaveBeenCalled();
             expect(clearAllSpy).not.toHaveBeenCalled();
         });
 
