@@ -65,6 +65,10 @@ class Storage extends BaseStore {
         }
     }
 
+    async hasAccessToken(): Promise<boolean> {
+        return Boolean(await this.getAccessToken());
+    }
+
     async getTokenType(type: TokenType) {
         const token = await this.getToken();
         const newType =

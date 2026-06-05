@@ -24,17 +24,18 @@ export const useKindeProvider = ({
 
     const verifyToken = async () => {
         try {
-            const savedToken = await Storage.getToken();
             const tokenExpiry = await Storage.getExpiredAt();
             const currentTime = Math.floor(Date.now() / 1000);
             const remainingTime = tokenExpiry - currentTime;
 
-            if (savedToken && remainingTime > 10) {
+            const accessToken = await Storage.getAccessToken();
+            if (accessToken && remainingTime > 10) {
                 setIsAuthenticated(true);
                 setRefreshTimer(tokenExpiry, authSdk.forceTokenRefresh);
             } else {
                 const refreshSuccess = await authSdk.forceTokenRefresh();
-                if (!refreshSuccess) {
+                const persistedAccessToken = await Storage.getAccessToken();
+                if (!refreshSuccess || !persistedAccessToken) {
                     await handleLogout();
                 } else {
                     setIsAuthenticated(true);
