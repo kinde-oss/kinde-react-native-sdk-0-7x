@@ -448,7 +448,12 @@ class KindeSDK extends runtime.BaseAPI {
                 return;
             }
 
-            await Storage.setToken(dataResponse);
+            try {
+                await Storage.setToken(dataResponse);
+            } catch (error) {
+                reject(error);
+                return;
+            }
             resolve(dataResponse);
         });
     }
@@ -718,7 +723,11 @@ class KindeSDK extends runtime.BaseAPI {
 
             try {
                 const token = await this.useRefreshToken(refreshToken);
-                return (token?.expires_in || 0) > 0;
+                if ((token?.expires_in || 0) <= 0) {
+                    return false;
+                }
+                const accessToken = await Storage.getAccessToken();
+                return Boolean(accessToken);
             } catch (_) {
                 return false;
             }
