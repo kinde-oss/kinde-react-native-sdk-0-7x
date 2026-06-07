@@ -1,3 +1,5 @@
+import { LoginMethodParams } from '@kinde/js-utils';
+
 export type AdditionalParameters = {
     audience?: string | string[];
     /** @deprecated use isCreateOrg field instead */
@@ -11,6 +13,7 @@ export type AdditionalParameters = {
     lang?: string;
     /** @deprecated use loginHint field instead */
     login_hint?: string;
+    invitation_code?: string;
     plan_interest?: string;
     pricing_table_key?: string;
 };
@@ -71,6 +74,10 @@ export type LoginAdditionalParameters = Omit<
     'is_create_org'
 > & {
     [key: string]: unknown;
+};
+
+export type LoginMethodParamsWithInvitationCode = Partial<LoginMethodParams> & {
+    invitationCode?: string;
 };
 
 export type RegisterAdditionalParameters = OrgAdditionalParams & {

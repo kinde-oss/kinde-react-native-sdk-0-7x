@@ -2,7 +2,10 @@ import CryptoJS from 'crypto-js';
 import { InvalidTypeException } from '../common/exceptions/invalid-type.exception';
 import { PropertyRequiredException } from '../common/exceptions/property-required.exception';
 import { UnexpectedException } from '../common/exceptions/unexpected.exception';
-import { AdditionalParameters } from '../types/KindeSDK';
+import {
+    AdditionalParameters,
+    LoginMethodParamsWithInvitationCode
+} from '../types/KindeSDK';
 import { AdditionalParametersAllow } from './constants';
 import { LoginMethodParams } from '@kinde/js-utils';
 import 'react-native-get-random-values';
@@ -158,6 +161,7 @@ const ADDITIONAL_PARAMETERS_KEYS: ReadonlyArray<keyof AdditionalParameters> = [
     'org_name',
     'connection_id',
     'login_hint',
+    'invitation_code',
     'plan_interest',
     'pricing_table_key'
 ] as const;
@@ -174,7 +178,7 @@ export const isAdditionalParameters = (
 
 export const additionalParametersToLoginMethodParams = (
     additionalParameters: AdditionalParameters
-): Partial<LoginMethodParams> => {
+): LoginMethodParamsWithInvitationCode => {
     const audienceParam = additionalParameters.audience
         ? Array.isArray(additionalParameters.audience)
             ? additionalParameters.audience.join(',')
@@ -188,6 +192,7 @@ export const additionalParametersToLoginMethodParams = (
         connectionId: additionalParameters.connection_id,
         lang: additionalParameters.lang,
         loginHint: additionalParameters.login_hint,
+        invitationCode: additionalParameters.invitation_code,
         planInterest: additionalParameters.plan_interest,
         pricingTableKey: additionalParameters.pricing_table_key
     };

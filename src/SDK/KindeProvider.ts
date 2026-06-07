@@ -22,6 +22,18 @@ export const useKindeProvider = ({
         [issuerUrl, clientId, redirectUri, logoutRedirectUri]
     );
 
+    const scheduleRefresh = async () => {
+        const tokenExpiry = await Storage.getExpiredAt();
+        const currentTime = Math.floor(Date.now() / 1000);
+        const remainingTime = tokenExpiry - currentTime;
+
+        if (remainingTime > 10) {
+            setRefreshTimer(remainingTime, () => {
+                void authSdk.forceTokenRefresh();
+            });
+        }
+    };
+
     const verifyToken = async () => {
         try {
             const savedToken = await Storage.getToken();
@@ -31,13 +43,14 @@ export const useKindeProvider = ({
 
             if (savedToken && remainingTime > 10) {
                 setIsAuthenticated(true);
-                setRefreshTimer(tokenExpiry, authSdk.forceTokenRefresh);
+                await scheduleRefresh();
             } else {
                 const refreshSuccess = await authSdk.forceTokenRefresh();
                 if (!refreshSuccess) {
                     await handleLogout();
                 } else {
                     setIsAuthenticated(true);
+                    await scheduleRefresh();
                 }
             }
         } catch (error) {

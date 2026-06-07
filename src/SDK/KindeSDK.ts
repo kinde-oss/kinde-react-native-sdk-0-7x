@@ -5,6 +5,7 @@ import { UnexpectedException } from '../common/exceptions/unexpected.exception';
 import {
     AdditionalParameters,
     FeatureFlag,
+    LoginMethodParamsWithInvitationCode,
     OptionalFlag,
     OrgAdditionalParams,
     RegisterAdditionalParameters,
@@ -23,7 +24,6 @@ import { FLAG_TYPE } from './constants';
 import { AuthBrowserOptions } from '../types/Auth';
 import { Linking } from 'react-native';
 import {
-    LoginMethodParams,
     generatePortalUrl,
     MemoryStorage,
     setActiveStorage,
@@ -40,9 +40,13 @@ class KindeSDK extends runtime.BaseAPI {
     public logoutRedirectUri: string;
     public scope: string;
     public additionalParameters: Partial<
-        Pick<Partial<LoginMethodParams> | AdditionalParameters, 'audience'>
+        Pick<
+            LoginMethodParamsWithInvitationCode | AdditionalParameters,
+            'audience'
+        >
     >;
     public authBrowserOptions?: AuthBrowserOptions;
+    private refreshInFlight: Promise<TokenResponse> | null = null;
 
     /**
      * The constructor function takes in a bunch of parameters and sets them to the class properties
@@ -63,7 +67,7 @@ class KindeSDK extends runtime.BaseAPI {
         logoutRedirectUri: string,
         scope: string = 'openid profile email offline',
         additionalParameters: Omit<
-            Partial<LoginMethodParams> | AdditionalParameters,
+            LoginMethodParamsWithInvitationCode | AdditionalParameters,
             'audience'
         > = {},
         authBrowserOptions?: AuthBrowserOptions
@@ -143,7 +147,7 @@ class KindeSDK extends runtime.BaseAPI {
      */
     async login(
         additionalParameters:
-            | Partial<LoginMethodParams>
+            | LoginMethodParamsWithInvitationCode
             | AdditionalParameters = {},
         authBrowserOptions?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
@@ -175,7 +179,7 @@ class KindeSDK extends runtime.BaseAPI {
      */
     async register(
         additionalParameters:
-            | Partial<LoginMethodParams>
+            | LoginMethodParamsWithInvitationCode
             | RegisterAdditionalParameters = {},
         authBrowserOptions?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
@@ -206,7 +210,7 @@ class KindeSDK extends runtime.BaseAPI {
      */
     createOrg(
         additionalParameters:
-            | Omit<Partial<LoginMethodParams>, 'isCreateOrg'>
+            | Omit<LoginMethodParamsWithInvitationCode, 'isCreateOrg'>
             | Omit<OrgAdditionalParams, 'is_create_org'> = {},
         authBrowserOptions?: AuthBrowserOptions
     ) {
@@ -383,6 +387,14 @@ class KindeSDK extends runtime.BaseAPI {
         return this.fetchToken(formData);
     }
 
+    private createRefreshRequest(refreshToken: string): Promise<TokenResponse> {
+        const formData = new FormData();
+        formData.append('client_id', this.clientId);
+        formData.append('grant_type', 'refresh_token');
+        formData.append('refresh_token', refreshToken);
+        return this.fetchToken(formData);
+    }
+
     /**
      * This function refreshes an access token using a refresh token.
      * @param {string} [refreshToken] - The refresh token value.
@@ -390,12 +402,29 @@ class KindeSDK extends runtime.BaseAPI {
      * function with a `FormData` object containing the necessary parameters for refreshing an access
      * token.
      */
-    async useRefreshToken(refreshToken: string) {
-        const formData = new FormData();
-        formData.append('client_id', this.clientId);
-        formData.append('grant_type', 'refresh_token');
-        formData.append('refresh_token', refreshToken);
-        return this.fetchToken(formData);
+    async useRefreshToken(refreshToken: string): Promise<TokenResponse> {
+        if (this.refreshInFlight) {
+            return this.refreshInFlight;
+        }
+
+        const refreshRequest = this.createRefreshRequest(refreshToken).then(
+            (response) => {
+                this.refreshInFlight = null;
+                return response;
+            },
+            async (error: any) => {
+                this.refreshInFlight = null;
+
+                if (error?.error === 'invalid_grant') {
+                    await Storage.clearAll();
+                }
+
+                throw error;
+            }
+        );
+
+        this.refreshInFlight = refreshRequest;
+        return refreshRequest;
     }
 
     /**
@@ -416,7 +445,6 @@ class KindeSDK extends runtime.BaseAPI {
             const response = await this.useRefreshToken(
                 currentToken.refresh_token
             );
-            await Storage.setToken(response as unknown as string);
             return response;
         } catch (error) {
             console.error('Failed to refresh token:', error);
