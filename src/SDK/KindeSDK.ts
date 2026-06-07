@@ -131,13 +131,19 @@ class KindeSDK extends runtime.BaseAPI {
 
         if (!isKindeRedirectUrl) return;
 
-        const { invitation_code: invitationCode } = URLParsed.query;
+        const { invitation_code: rawInvitationCode } = URLParsed.query;
+        const invitationCode = Array.isArray(rawInvitationCode)
+            ? rawInvitationCode[0]
+            : rawInvitationCode;
 
         if (invitationCode) {
-            this.login({
-                prompt: PromptTypes.create,
-                invitationCode: invitationCode
-            }).catch((error) => {
+            const invitationLoginParameters: Partial<LoginMethodParamsWithInvitationCode> =
+                {
+                    prompt: PromptTypes.create,
+                    invitationCode: invitationCode
+                };
+
+            this.login(invitationLoginParameters).catch((error) => {
                 console.warn('Failed to process invitation deep link:', error);
             });
         }
