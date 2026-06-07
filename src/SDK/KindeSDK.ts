@@ -5,6 +5,7 @@ import { UnexpectedException } from '../common/exceptions/unexpected.exception';
 import {
     AdditionalParameters,
     FeatureFlag,
+    LoginMethodParamsWithInvitationCode,
     OptionalFlag,
     OrgAdditionalParams,
     RegisterAdditionalParameters,
@@ -23,7 +24,6 @@ import { FLAG_TYPE } from './constants';
 import { AuthBrowserOptions } from '../types/Auth';
 import { Linking } from 'react-native';
 import {
-    LoginMethodParams,
     generatePortalUrl,
     MemoryStorage,
     setActiveStorage,
@@ -40,9 +40,13 @@ class KindeSDK extends runtime.BaseAPI {
     public logoutRedirectUri: string;
     public scope: string;
     public additionalParameters: Partial<
-        Pick<Partial<LoginMethodParams> | AdditionalParameters, 'audience'>
+        Pick<
+            Partial<LoginMethodParamsWithInvitationCode> | AdditionalParameters,
+            'audience'
+        >
     >;
     public authBrowserOptions?: AuthBrowserOptions;
+    private readonly minimumTokenValiditySeconds = 10;
 
     /**
      * The constructor function takes in a bunch of parameters and sets them to the class properties
@@ -63,7 +67,7 @@ class KindeSDK extends runtime.BaseAPI {
         logoutRedirectUri: string,
         scope: string = 'openid profile email offline',
         additionalParameters: Omit<
-            Partial<LoginMethodParams> | AdditionalParameters,
+            Partial<LoginMethodParamsWithInvitationCode> | AdditionalParameters,
             'audience'
         > = {},
         authBrowserOptions?: AuthBrowserOptions
@@ -73,6 +77,11 @@ class KindeSDK extends runtime.BaseAPI {
         });
 
         super(configuration);
+
+        this.configuration = new runtime.Configuration({
+            basePath: issuer,
+            accessToken: async () => (await this.getValidAccessToken()) ?? ''
+        });
 
         this.issuer = issuer;
         checkNotNull(this.issuer, 'Issuer');
@@ -143,7 +152,7 @@ class KindeSDK extends runtime.BaseAPI {
      */
     async login(
         additionalParameters:
-            | Partial<LoginMethodParams>
+            | Partial<LoginMethodParamsWithInvitationCode>
             | AdditionalParameters = {},
         authBrowserOptions?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
@@ -175,7 +184,7 @@ class KindeSDK extends runtime.BaseAPI {
      */
     async register(
         additionalParameters:
-            | Partial<LoginMethodParams>
+            | Partial<LoginMethodParamsWithInvitationCode>
             | RegisterAdditionalParameters = {},
         authBrowserOptions?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
@@ -206,7 +215,7 @@ class KindeSDK extends runtime.BaseAPI {
      */
     createOrg(
         additionalParameters:
-            | Omit<Partial<LoginMethodParams>, 'isCreateOrg'>
+            | Omit<Partial<LoginMethodParamsWithInvitationCode>, 'isCreateOrg'>
             | Omit<OrgAdditionalParams, 'is_create_org'> = {},
         authBrowserOptions?: AuthBrowserOptions
     ) {
@@ -381,6 +390,63 @@ class KindeSDK extends runtime.BaseAPI {
         }
 
         return this.fetchToken(formData);
+    }
+
+    private isAccessTokenUsable(
+        accessToken: string | null,
+        minimumValiditySeconds: number
+    ) {
+        if (!accessToken) {
+            return false;
+        }
+
+        try {
+            const decodedToken = jwt_decode<{ exp?: number }>(accessToken);
+            const tokenExpiry = decodedToken?.exp ?? 0;
+            const currentTime = Math.floor(Date.now() / 1000);
+
+            return tokenExpiry - currentTime > minimumValiditySeconds;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    async getValidAccessToken(
+        minimumValiditySeconds: number = this.minimumTokenValiditySeconds
+    ): Promise<string | null> {
+        const storedAccessToken = await Storage.getAccessToken();
+        if (
+            this.isAccessTokenUsable(storedAccessToken, minimumValiditySeconds)
+        ) {
+            return storedAccessToken;
+        }
+
+        const storedToken = await Storage.getToken();
+        if (!storedToken?.refresh_token) {
+            if (storedToken || storedAccessToken) {
+                await Storage.clearAll();
+            }
+            return null;
+        }
+
+        const refreshResponse = await this.forceTokenRefresh();
+        if (!refreshResponse) {
+            await Storage.clearAll();
+            return null;
+        }
+
+        const refreshedAccessToken = await Storage.getAccessToken();
+        if (
+            this.isAccessTokenUsable(
+                refreshedAccessToken,
+                minimumValiditySeconds
+            )
+        ) {
+            return refreshedAccessToken;
+        }
+
+        await Storage.clearAll();
+        return null;
     }
 
     /**
@@ -706,31 +772,7 @@ class KindeSDK extends runtime.BaseAPI {
      */
     get isAuthenticated() {
         return (async () => {
-            const timeExpired = await Storage.getExpiredAt();
-            const now = new Date().getTime();
-
-            const isAuthenticated = timeExpired * 1000 > now;
-            if (isAuthenticated) {
-                return true;
-            }
-
-            const token = await Storage.getToken();
-            const refreshToken = token?.refresh_token;
-
-            if (!refreshToken) {
-                return false;
-            }
-
-            try {
-                const token = await this.useRefreshToken(refreshToken);
-                if ((token?.expires_in || 0) <= 0) {
-                    return false;
-                }
-                const accessToken = await Storage.getAccessToken();
-                return Boolean(accessToken);
-            } catch (_) {
-                return false;
-            }
+            return Boolean(await this.getValidAccessToken(0));
         })();
     }
 

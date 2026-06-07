@@ -7,7 +7,6 @@ import RNStorage from '../src/SDK/Storage/RNStorage';
 import Storage from '../src/SDK/Storage';
 import { authorize } from 'react-native-app-auth';
 import { Linking } from 'react-native';
-import { describe } from 'node:test';
 
 const crypto = require('crypto');
 
@@ -119,42 +118,42 @@ const fakePayloadFromDecodeToken = {
 
 const getValueByKey = (obj: Record<string, any>, key: string) => obj[key];
 
-jest.mock(process.cwd() + '/src/SDK/Utils', () => ({
-    isAdditionalParameters: jest.requireActual(process.cwd() + '/src/SDK/Utils')
-        .isAdditionalParameters,
-    additionalParametersToLoginMethodParams: jest.requireActual(
-        process.cwd() + '/src/SDK/Utils'
-    ).additionalParametersToLoginMethodParams,
-    isLikelyUserCancelled: jest.requireActual(process.cwd() + '/src/SDK/Utils')
-        .isLikelyUserCancelled,
-    checkNotNull: jest.fn((reference, name) => {
-        if (reference === null || reference === undefined) {
-            throw new Error(`${name} cannot be empty`);
-        }
-        return reference;
-    }),
-    checkAdditionalParameters: jest.fn(),
-    addAdditionalParameters: jest.fn((target, additionalParameters) => {
-        const keyExists = Object.keys(additionalParameters);
-        if (keyExists.length) {
-            keyExists.forEach((key) => {
-                target[key] = getValueByKey(additionalParameters, key);
+jest.mock(process.cwd() + '/src/SDK/Utils', () => {
+    const actualUtils = jest.requireActual(process.cwd() + '/src/SDK/Utils');
+
+    return {
+        ...actualUtils,
+        checkNotNull: jest.fn((reference, name) => {
+            if (reference === null || reference === undefined) {
+                throw new Error(`${name} cannot be empty`);
+            }
+            return reference;
+        }),
+        checkAdditionalParameters: jest.fn(),
+        addAdditionalParameters: jest.fn((target, additionalParameters) => {
+            const keyExists = Object.keys(additionalParameters);
+            if (keyExists.length) {
+                keyExists.forEach((key) => {
+                    target[key] = getValueByKey(additionalParameters, key);
+                });
+            }
+            return target;
+        }),
+        convertObject2FormData: jest.fn((obj: Record<string, any>) => {
+            const formData = new FormData();
+
+            Object.keys(obj).forEach((k) => {
+                formData.append(k, obj[k]);
             });
-        }
-        return target;
-    }),
-    convertObject2FormData: jest.fn((obj: Record<string, any>) => {
-        const formData = new FormData();
 
-        Object.keys(obj).forEach((k) => {
-            formData.append(k, obj[k]);
-        });
+            return formData;
+        })
+    };
+});
 
-        return formData;
-    })
-}));
-
-jest.mock(process.cwd() + '/src/ApiClient');
+jest.mock(process.cwd() + '/src/ApiClient', () =>
+    jest.requireActual(process.cwd() + '/src/ApiClient')
+);
 
 const dataDecoded = {
     azp: 'test@live',
@@ -356,7 +355,9 @@ describe('KindeSDK', () => {
         });
 
         test('calls login with "create" prompt and invitationCode when the url is a Kinde redirect url with an invitation code parameter', async () => {
-            const loginSpy = jest.spyOn(KindeSDK.prototype, 'login');
+            const loginSpy = jest
+                .spyOn(KindeSDK.prototype, 'login')
+                .mockResolvedValue(null);
 
             globalClient.handleDeepLink(
                 'myapp://myhost.kinde.com/kinde_callback?invitation_code=random_code'
@@ -531,6 +532,7 @@ describe('KindeSDK', () => {
         test('Logout Revoke Token', async () => {
             global.fetch = jest.fn(() =>
                 Promise.resolve({
+                    status: 200,
                     json: () => Promise.resolve(fakeTokenResponse)
                 })
             );
@@ -604,6 +606,73 @@ describe('KindeSDK', () => {
             expect(keychainMock.storage.password).toBe(
                 JSON.stringify(fakeTokenResponse)
             );
+        });
+
+        test('[RNStorage] returns the stored access token when it is still valid', async () => {
+            RNStorage.prototype.getItem = jest.fn().mockReturnValue({
+                password: JSON.stringify(fakeTokenResponse)
+            });
+
+            const accessToken = await globalClient.getValidAccessToken();
+
+            expect(accessToken).toEqual(fakeTokenResponse.access_token);
+            expect(global.fetch).not.toHaveBeenCalled();
+        });
+
+        test('[RNStorage] refreshes before returning a valid access token', async () => {
+            keychainMock.storage.password = JSON.stringify({
+                ...fakeTokenResponse,
+                access_token: '',
+                expires_in: 0
+            });
+
+            const refreshedTokensResponse = {
+                ...fakeTokenResponse,
+                access_token: 'this_is_new_access_token',
+                refresh_token: 'this_is_new_refresh_token',
+                id_token: 'this_is_new_id_token'
+            };
+            global.fetch = jest.fn(() =>
+                Promise.resolve({
+                    json: () => Promise.resolve(refreshedTokensResponse)
+                })
+            );
+
+            const accessToken = await globalClient.getValidAccessToken();
+
+            expect(accessToken).toEqual(refreshedTokensResponse.access_token);
+            expect(keychainMock.storage.password).toBe(
+                JSON.stringify(refreshedTokensResponse)
+            );
+        });
+
+        test('[RNStorage] clears storage when a valid access token cannot be produced', async () => {
+            keychainMock.storage.password = JSON.stringify({
+                ...fakeTokenResponse,
+                access_token: '',
+                expires_in: 0
+            });
+            const clearSpy = jest
+                .spyOn(RNStorage.prototype, 'clear')
+                .mockImplementation(async () => {
+                    keychainMock.storage.password = null;
+                    return true;
+                });
+            global.fetch = jest.fn(() =>
+                Promise.resolve({
+                    json: () => Promise.resolve({ error: 'error' })
+                })
+            );
+
+            try {
+                const accessToken = await globalClient.getValidAccessToken();
+
+                expect(accessToken).toBe(null);
+                expect(clearSpy).toHaveBeenCalledTimes(1);
+                expect(keychainMock.storage.password).toBe(null);
+            } finally {
+                clearSpy.mockRestore();
+            }
         });
 
         test('[RNStorage] Get Token instance when user is authenticated', async () => {
@@ -858,6 +927,54 @@ describe('KindeSDK', () => {
             const response = await globalClient.forceTokenRefresh();
             expect(response).toBe(null);
             expect(global.fetch).toHaveBeenCalled();
+        });
+    });
+
+    describe('API requests', () => {
+        test('[RNStorage] request refreshes an expired token before attaching the Authorization header', async () => {
+            keychainMock.storage.password = JSON.stringify({
+                ...fakeTokenResponse,
+                access_token: '',
+                expires_in: 0
+            });
+
+            const refreshedTokensResponse = {
+                ...fakeTokenResponse,
+                access_token: 'this_is_new_access_token',
+                refresh_token: 'this_is_new_refresh_token',
+                id_token: 'this_is_new_id_token'
+            };
+
+            global.fetch = jest
+                .fn()
+                .mockResolvedValueOnce({
+                    json: () => Promise.resolve(refreshedTokensResponse)
+                })
+                .mockResolvedValueOnce({
+                    status: 200,
+                    clone() {
+                        return this;
+                    }
+                });
+
+            await globalClient.request({
+                path: '/test',
+                method: 'GET',
+                headers: {
+                    'X-Test': '1'
+                }
+            });
+
+            expect(global.fetch).toHaveBeenCalledTimes(2);
+            expect(global.fetch.mock.calls[1][0]).toEqual(
+                `${configuration.issuer}/test`
+            );
+            expect(global.fetch.mock.calls[1][1].headers).toEqual(
+                expect.objectContaining({
+                    Authorization: `Bearer ${refreshedTokensResponse.access_token}`,
+                    'X-Test': '1'
+                })
+            );
         });
     });
 

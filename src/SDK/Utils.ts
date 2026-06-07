@@ -2,9 +2,11 @@ import CryptoJS from 'crypto-js';
 import { InvalidTypeException } from '../common/exceptions/invalid-type.exception';
 import { PropertyRequiredException } from '../common/exceptions/property-required.exception';
 import { UnexpectedException } from '../common/exceptions/unexpected.exception';
-import { AdditionalParameters } from '../types/KindeSDK';
+import {
+    AdditionalParameters,
+    LoginMethodParamsWithInvitationCode
+} from '../types/KindeSDK';
 import { AdditionalParametersAllow } from './constants';
-import { LoginMethodParams } from '@kinde/js-utils';
 import 'react-native-get-random-values';
 
 /**
@@ -86,14 +88,14 @@ type AdditionalParametersKeys = keyof AdditionalParameters;
  * @returns An object with the keys and values of the additionalParameters object.
  */
 export const checkAdditionalParameters = (
-    additionalParameters: AdditionalParameters = {}
+    additionalParameters:
+        | AdditionalParameters
+        | Partial<LoginMethodParamsWithInvitationCode> = {}
 ) => {
     if (typeof additionalParameters !== 'object') {
         throw new UnexpectedException('additionalParameters');
     }
-    const keyExists = Object.keys(
-        additionalParameters
-    ) as AdditionalParametersKeys[];
+    const keyExists = Object.keys(additionalParameters);
 
     if (keyExists.length) {
         const keysAllow = Object.keys(
@@ -102,13 +104,21 @@ export const checkAdditionalParameters = (
 
         for (const key of keyExists) {
             if (
-                keysAllow.includes(key) &&
-                typeof additionalParameters[key] !==
-                    AdditionalParametersAllow[key]
+                keysAllow.includes(key as AdditionalParametersKeys) &&
+                typeof (additionalParameters as Record<string, unknown>)[
+                    key
+                ] !==
+                    getValueByKey(
+                        AdditionalParametersAllow,
+                        key as AdditionalParametersKeys
+                    )
             ) {
                 throw new InvalidTypeException(
                     key,
-                    getValueByKey(AdditionalParametersAllow, key)
+                    getValueByKey(
+                        AdditionalParametersAllow,
+                        key as AdditionalParametersKeys
+                    )
                 );
             }
         }
@@ -158,12 +168,15 @@ const ADDITIONAL_PARAMETERS_KEYS: ReadonlyArray<keyof AdditionalParameters> = [
     'org_name',
     'connection_id',
     'login_hint',
+    'invitation_code',
     'plan_interest',
     'pricing_table_key'
 ] as const;
 
 export const isAdditionalParameters = (
-    additionalParameters: AdditionalParameters | LoginMethodParams
+    additionalParameters:
+        | AdditionalParameters
+        | LoginMethodParamsWithInvitationCode
 ): boolean => {
     // Detect snake_case by checking if any of the known AdditionalParameters keys are present.
     // Note: 'audience' and 'lang' exist in both types, so they are not discriminators.
@@ -174,7 +187,7 @@ export const isAdditionalParameters = (
 
 export const additionalParametersToLoginMethodParams = (
     additionalParameters: AdditionalParameters
-): Partial<LoginMethodParams> => {
+): Partial<LoginMethodParamsWithInvitationCode> => {
     const audienceParam = additionalParameters.audience
         ? Array.isArray(additionalParameters.audience)
             ? additionalParameters.audience.join(',')
@@ -188,6 +201,7 @@ export const additionalParametersToLoginMethodParams = (
         connectionId: additionalParameters.connection_id,
         lang: additionalParameters.lang,
         loginHint: additionalParameters.login_hint,
+        invitationCode: additionalParameters.invitation_code,
         planInterest: additionalParameters.plan_interest,
         pricingTableKey: additionalParameters.pricing_table_key
     };
