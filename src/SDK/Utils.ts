@@ -2,10 +2,11 @@ import CryptoJS from 'crypto-js';
 import { InvalidTypeException } from '../common/exceptions/invalid-type.exception';
 import { PropertyRequiredException } from '../common/exceptions/property-required.exception';
 import { UnexpectedException } from '../common/exceptions/unexpected.exception';
-import { AdditionalParameters } from '../types/KindeSDK';
+import { AccessTokenDecoded, AdditionalParameters } from '../types/KindeSDK';
 import { AdditionalParametersAllow } from './constants';
 import { LoginMethodParams } from '@kinde/js-utils';
 import 'react-native-get-random-values';
+import jwtDecode from 'jwt-decode';
 
 /**
  * It takes a string or a WordArray and returns a string
@@ -214,4 +215,20 @@ export const isLikelyUserCancelled = (error: unknown): boolean => {
         // iOS AppAuth error code -3 = OIDErrorCodeUserCanceledAuthorizationFlow
         /org\.openid\.appauth\.general error -3\b/.test(lower)
     );
+};
+
+/**
+ * Extracts the expiry time from a given access token.
+ * @param {string | null} accessToken - The access token to decode.
+ * @returns {number} The expiry time in seconds.
+ */
+export const extractAccessTokenExpiry = (
+    accessToken?: string | null
+): number => {
+    if (!accessToken) return 0;
+    try {
+        return jwtDecode<AccessTokenDecoded>(accessToken)?.['exp'] || 0;
+    } catch {
+        return 0;
+    }
 };

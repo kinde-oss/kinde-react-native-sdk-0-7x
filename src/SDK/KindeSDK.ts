@@ -16,7 +16,8 @@ import Storage from './Storage';
 import {
     checkAdditionalParameters,
     checkNotNull,
-    convertObject2FormData
+    convertObject2FormData,
+    extractAccessTokenExpiry
 } from './Utils';
 import * as runtime from '../ApiClient';
 import { FLAG_TYPE } from './constants';
@@ -142,7 +143,7 @@ class KindeSDK extends runtime.BaseAPI {
         if (!accessToken) {
             return false;
         }
-        const timeExpired = await Storage.getExpiredAt();
+        const timeExpired = extractAccessTokenExpiry(accessToken);
         return timeExpired * 1000 > Date.now();
     }
 

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { KindeSDK, Storage } from '..';
+import { extractAccessTokenExpiry, KindeSDK, Storage } from '..';
 import { setRefreshTimer } from '@kinde/js-utils';
 
 export interface KindeProviderProps {
@@ -24,26 +24,33 @@ export const useKindeProvider = ({
 
     const verifyToken = async () => {
         try {
-            const tokenExpiry = await Storage.getExpiredAt();
+            const accessToken = await Storage.getAccessToken();
+            const tokenExpiry = extractAccessTokenExpiry(accessToken);
             const currentTime = Math.floor(Date.now() / 1000);
             const remainingTime = tokenExpiry - currentTime;
 
-            const accessToken = await Storage.getAccessToken();
             if (accessToken && remainingTime > 10) {
                 setIsAuthenticated(true);
                 setRefreshTimer(tokenExpiry, authSdk.forceTokenRefresh);
             } else {
                 const refreshSuccess = await authSdk.forceTokenRefresh();
-                const persistedAccessToken = await Storage.getAccessToken();
-                if (!refreshSuccess || !persistedAccessToken) {
+
+                if (!refreshSuccess) {
                     await handleLogout();
-                } else {
-                    setIsAuthenticated(true);
-                    setRefreshTimer(
-                        await Storage.getExpiredAt(),
-                        authSdk.forceTokenRefresh
-                    );
+                    return;
                 }
+                const persistedAccessToken = await Storage.getAccessToken();
+                if (!persistedAccessToken) {
+                    await handleLogout();
+                    return;
+                }
+                const persistentAccessTokenExpiry =
+                    extractAccessTokenExpiry(persistedAccessToken);
+                setIsAuthenticated(true);
+                setRefreshTimer(
+                    persistentAccessTokenExpiry,
+                    authSdk.forceTokenRefresh
+                );
             }
         } catch (error) {
             console.error('Error verifying token:', error);
