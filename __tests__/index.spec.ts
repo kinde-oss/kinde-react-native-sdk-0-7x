@@ -129,7 +129,9 @@ jest.mock(process.cwd() + '/src/SDK/Utils', () => {
             }
             return reference;
         }),
-        checkAdditionalParameters: jest.fn(),
+        checkAdditionalParameters: jest.fn(
+            actualUtils.checkAdditionalParameters
+        ),
         addAdditionalParameters: jest.fn((target, additionalParameters) => {
             const keyExists = Object.keys(additionalParameters);
             if (keyExists.length) {
@@ -369,6 +371,38 @@ describe('KindeSDK', () => {
             });
 
             loginSpy.mockRestore();
+        });
+    });
+
+    describe('Additional Parameters', () => {
+        test('[RNStorage] login accepts audience arrays and serializes them for the auth request', async () => {
+            authorize.mockResolvedValue({
+                authorizationCode: 'random_code',
+                codeVerifier: configuration.fakeCodeVerifier
+            });
+
+            await globalClient.login({
+                audience: ['api://users', 'api://payments']
+            });
+
+            expect(authorize).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    additionalParameters: expect.objectContaining({
+                        prompt: 'login',
+                        audience: 'api://users,api://payments'
+                    })
+                })
+            );
+        });
+
+        test('[RNStorage] login rejects audience arrays with non-string entries', async () => {
+            await expect(
+                globalClient.login({
+                    audience: ['api://users', 123]
+                })
+            ).rejects.toThrow('InvalidType audience');
+
+            expect(authorize).not.toHaveBeenCalled();
         });
     });
 

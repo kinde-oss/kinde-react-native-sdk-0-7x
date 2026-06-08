@@ -82,6 +82,33 @@ const getValueByKey = (obj: Record<string, any>, key: string) => obj[key];
 
 type AdditionalParametersKeys = keyof AdditionalParameters;
 
+const isStringArray = (value: unknown): value is string[] => {
+    return (
+        Array.isArray(value) && value.every((item) => typeof item === 'string')
+    );
+};
+
+const getExpectedAdditionalParameterType = (
+    key: AdditionalParametersKeys
+): string => {
+    if (key === 'audience') {
+        return 'string|string[]';
+    }
+
+    return getValueByKey(AdditionalParametersAllow, key);
+};
+
+const hasValidAdditionalParameterType = (
+    key: AdditionalParametersKeys,
+    value: unknown
+): boolean => {
+    if (key === 'audience') {
+        return typeof value === 'string' || isStringArray(value);
+    }
+
+    return typeof value === getExpectedAdditionalParameterType(key);
+};
+
 /**
  * It checks if the additionalParameters object is valid
  * @param {AdditionalParameters} additionalParameters - AdditionalParameters = {}
@@ -103,22 +130,18 @@ export const checkAdditionalParameters = (
         ) as AdditionalParametersKeys[];
 
         for (const key of keyExists) {
+            const normalizedKey = key as AdditionalParametersKeys;
+            const value = (additionalParameters as Record<string, unknown>)[
+                key
+            ];
+
             if (
-                keysAllow.includes(key as AdditionalParametersKeys) &&
-                typeof (additionalParameters as Record<string, unknown>)[
-                    key
-                ] !==
-                    getValueByKey(
-                        AdditionalParametersAllow,
-                        key as AdditionalParametersKeys
-                    )
+                keysAllow.includes(normalizedKey) &&
+                !hasValidAdditionalParameterType(normalizedKey, value)
             ) {
                 throw new InvalidTypeException(
                     key,
-                    getValueByKey(
-                        AdditionalParametersAllow,
-                        key as AdditionalParametersKeys
-                    )
+                    getExpectedAdditionalParameterType(normalizedKey)
                 );
             }
         }
