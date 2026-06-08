@@ -404,6 +404,23 @@ describe('KindeSDK', () => {
 
             expect(authorize).not.toHaveBeenCalled();
         });
+
+        test.each([
+            ['invitationCode', 'invitation_code'],
+            ['connectionId', 'connection_id'],
+            ['loginHint', 'login_hint']
+        ])(
+            '[RNStorage] login rejects invalid camelCase %s values',
+            async (key, expectedKey) => {
+                await expect(
+                    globalClient.login({
+                        [key]: 123
+                    })
+                ).rejects.toThrow(`InvalidType ${expectedKey}`);
+
+                expect(authorize).not.toHaveBeenCalled();
+            }
+        );
     });
 
     describe('Redirect', () => {

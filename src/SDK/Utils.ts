@@ -82,6 +82,20 @@ const getValueByKey = (obj: Record<string, any>, key: string) => obj[key];
 
 type AdditionalParametersKeys = keyof AdditionalParameters;
 
+const ADDITIONAL_PARAMETER_KEY_ALIASES: Record<
+    string,
+    AdditionalParametersKeys
+> = {
+    isCreateOrg: 'is_create_org',
+    orgCode: 'org_code',
+    orgName: 'org_name',
+    connectionId: 'connection_id',
+    loginHint: 'login_hint',
+    invitationCode: 'invitation_code',
+    planInterest: 'plan_interest',
+    pricingTableKey: 'pricing_table_key'
+};
+
 const isStringArray = (value: unknown): value is string[] => {
     return (
         Array.isArray(value) && value.every((item) => typeof item === 'string')
@@ -130,7 +144,9 @@ export const checkAdditionalParameters = (
         ) as AdditionalParametersKeys[];
 
         for (const key of keyExists) {
-            const normalizedKey = key as AdditionalParametersKeys;
+            const normalizedKey =
+                ADDITIONAL_PARAMETER_KEY_ALIASES[key] ??
+                (key as AdditionalParametersKeys);
             const value = (additionalParameters as Record<string, unknown>)[
                 key
             ];
@@ -140,7 +156,7 @@ export const checkAdditionalParameters = (
                 !hasValidAdditionalParameterType(normalizedKey, value)
             ) {
                 throw new InvalidTypeException(
-                    key,
+                    normalizedKey,
                     getExpectedAdditionalParameterType(normalizedKey)
                 );
             }
