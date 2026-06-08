@@ -968,6 +968,73 @@ describe('KindeSDK', () => {
             await expect(refreshPromise).resolves.toEqual(newTokensResponse);
             expect(keychainMock.setItem).toHaveBeenCalledTimes(1);
         });
+
+        test('[RNStorage] does not share an in-flight refresh across different explicit refresh tokens', async () => {
+            const firstTokensResponse = {
+                ...fakeTokenResponse,
+                access_token: 'first_access_token',
+                refresh_token: 'first_new_refresh_token',
+                id_token: 'first_new_id_token'
+            };
+            const secondTokensResponse = {
+                ...fakeTokenResponse,
+                access_token: 'second_access_token',
+                refresh_token: 'second_new_refresh_token',
+                id_token: 'second_new_id_token'
+            };
+
+            const resolveFetches = [];
+            const setTokenSpy = jest
+                .spyOn(Storage, 'setToken')
+                .mockResolvedValue(undefined);
+            global.fetch = jest.fn(
+                () =>
+                    new Promise((resolve) => {
+                        resolveFetches.push(resolve);
+                    })
+            );
+
+            try {
+                const firstRefresh = globalClient.useRefreshToken(
+                    'first_refresh_token'
+                );
+                const secondRefresh = globalClient.useRefreshToken(
+                    'second_refresh_token'
+                );
+
+                await flushPromises();
+                await flushPromises();
+
+                expect(global.fetch).toHaveBeenCalledTimes(2);
+
+                const firstRefreshToken = global.fetch.mock.calls[0][1].body[
+                    Symbol.for('state')
+                ].find((entry) => entry.key === 'refresh_token')?.value;
+                const secondRefreshToken = global.fetch.mock.calls[1][1].body[
+                    Symbol.for('state')
+                ].find((entry) => entry.key === 'refresh_token')?.value;
+
+                expect(firstRefreshToken).toBe('first_refresh_token');
+                expect(secondRefreshToken).toBe('second_refresh_token');
+
+                resolveFetches[0]({
+                    json: () => Promise.resolve(firstTokensResponse)
+                });
+                resolveFetches[1]({
+                    json: () => Promise.resolve(secondTokensResponse)
+                });
+
+                await expect(firstRefresh).resolves.toEqual(
+                    firstTokensResponse
+                );
+                await expect(secondRefresh).resolves.toEqual(
+                    secondTokensResponse
+                );
+                expect(setTokenSpy).toHaveBeenCalledTimes(2);
+            } finally {
+                setTokenSpy.mockRestore();
+            }
+        });
     });
 
     describe('AuthBrowserOptions Deprecation Warnings', () => {
