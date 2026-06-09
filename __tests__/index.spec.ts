@@ -325,14 +325,14 @@ describe('KindeSDK', () => {
             loginSpy.mockRestore();
         });
 
-        test('does not call login when the url is not a Kinde redirect url', async () => {
+        test('does not call login when the url has no invitation code', async () => {
             const loginSpy = jest.spyOn(KindeSDK.prototype, 'login');
 
             const testUrls = [
                 'test.com',
                 'test.com/kinde_callback',
                 'myapp://test.com/kinde_callback',
-                'myapp://test.com/kinde_callback?invitation_code=random_code'
+                'myapp://myhost.kinde.com/kinde_callback'
             ];
 
             for (const url of testUrls) {
@@ -343,23 +343,11 @@ describe('KindeSDK', () => {
             loginSpy.mockRestore();
         });
 
-        test('does not call login when the url is a Kinde redirect url but has no invitation code parameter', async () => {
+        test('calls login with "create" prompt and invitationCode when the url has an invitation code parameter', async () => {
             const loginSpy = jest.spyOn(KindeSDK.prototype, 'login');
 
             globalClient.handleDeepLink(
-                'myapp://myhost.kinde.com/kinde_callback'
-            );
-
-            expect(loginSpy).not.toHaveBeenCalled();
-
-            loginSpy.mockRestore();
-        });
-
-        test('calls login with "create" prompt and invitationCode when the url is a Kinde redirect url with an invitation code parameter', async () => {
-            const loginSpy = jest.spyOn(KindeSDK.prototype, 'login');
-
-            globalClient.handleDeepLink(
-                'myapp://myhost.kinde.com/kinde_callback?invitation_code=random_code'
+                'myapp://test.com/anything?invitation_code=random_code'
             );
 
             expect(loginSpy).toHaveBeenCalledWith({
