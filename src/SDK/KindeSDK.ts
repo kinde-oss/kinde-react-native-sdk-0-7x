@@ -5,7 +5,6 @@ import { UnexpectedException } from '../common/exceptions/unexpected.exception';
 import {
     AdditionalParameters,
     FeatureFlag,
-    LoginMethodParamsWithInvitationCode,
     OptionalFlag,
     OrgAdditionalParams,
     RegisterAdditionalParameters,
@@ -25,6 +24,7 @@ import { AuthBrowserOptions } from '../types/Auth';
 import { Linking } from 'react-native';
 import {
     generatePortalUrl,
+    LoginMethodParams,
     MemoryStorage,
     setActiveStorage,
     StorageKeys,
@@ -40,12 +40,10 @@ class KindeSDK extends runtime.BaseAPI {
     public logoutRedirectUri: string;
     public scope: string;
     public additionalParameters: Partial<
-        Pick<
-            Partial<LoginMethodParamsWithInvitationCode> | AdditionalParameters,
-            'audience'
-        >
+        Pick<LoginMethodParams | AdditionalParameters, 'audience'>
     >;
     public authBrowserOptions?: AuthBrowserOptions;
+    private refreshInFlight = new Map<string, Promise<TokenResponse>>();
     private readonly minimumTokenValiditySeconds = 10;
 
     /**
@@ -67,7 +65,7 @@ class KindeSDK extends runtime.BaseAPI {
         logoutRedirectUri: string,
         scope: string = 'openid profile email offline',
         additionalParameters: Omit<
-            Partial<LoginMethodParamsWithInvitationCode> | AdditionalParameters,
+            LoginMethodParams | AdditionalParameters,
             'audience'
         > = {},
         authBrowserOptions?: AuthBrowserOptions
@@ -137,13 +135,10 @@ class KindeSDK extends runtime.BaseAPI {
             : rawInvitationCode;
 
         if (invitationCode) {
-            const invitationLoginParameters: Partial<LoginMethodParamsWithInvitationCode> =
-                {
-                    prompt: PromptTypes.create,
-                    invitationCode: invitationCode
-                };
-
-            this.login(invitationLoginParameters).catch((error) => {
+            this.login({
+                prompt: PromptTypes.create,
+                invitationCode: invitationCode
+            }).catch((error) => {
                 console.warn('Failed to process invitation deep link:', error);
             });
         }
@@ -158,7 +153,7 @@ class KindeSDK extends runtime.BaseAPI {
      */
     async login(
         additionalParameters:
-            | Partial<LoginMethodParamsWithInvitationCode>
+            | LoginMethodParams
             | AdditionalParameters = {},
         authBrowserOptions?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
@@ -190,7 +185,7 @@ class KindeSDK extends runtime.BaseAPI {
      */
     async register(
         additionalParameters:
-            | Partial<LoginMethodParamsWithInvitationCode>
+            | LoginMethodParams
             | RegisterAdditionalParameters = {},
         authBrowserOptions?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
@@ -221,7 +216,7 @@ class KindeSDK extends runtime.BaseAPI {
      */
     createOrg(
         additionalParameters:
-            | Omit<Partial<LoginMethodParamsWithInvitationCode>, 'isCreateOrg'>
+            | Omit<LoginMethodParams, 'isCreateOrg'>
             | Omit<OrgAdditionalParams, 'is_create_org'> = {},
         authBrowserOptions?: AuthBrowserOptions
     ) {
@@ -455,6 +450,14 @@ class KindeSDK extends runtime.BaseAPI {
         return null;
     }
 
+    private createRefreshRequest(refreshToken: string): Promise<TokenResponse> {
+        const formData = new FormData();
+        formData.append('client_id', this.clientId);
+        formData.append('grant_type', 'refresh_token');
+        formData.append('refresh_token', refreshToken);
+        return this.fetchToken(formData);
+    }
+
     /**
      * This function refreshes an access token using a refresh token.
      * @param {string} [refreshToken] - The refresh token value.
@@ -462,12 +465,31 @@ class KindeSDK extends runtime.BaseAPI {
      * function with a `FormData` object containing the necessary parameters for refreshing an access
      * token.
      */
-    async useRefreshToken(refreshToken: string) {
-        const formData = new FormData();
-        formData.append('client_id', this.clientId);
-        formData.append('grant_type', 'refresh_token');
-        formData.append('refresh_token', refreshToken);
-        return this.fetchToken(formData);
+    async useRefreshToken(refreshToken: string): Promise<TokenResponse> {
+        const existingRefreshRequest = this.refreshInFlight.get(refreshToken);
+
+        if (existingRefreshRequest) {
+            return existingRefreshRequest;
+        }
+
+        const refreshRequest = this.createRefreshRequest(refreshToken).then(
+            (response) => {
+                this.refreshInFlight.delete(refreshToken);
+                return response;
+            },
+            async (error: any) => {
+                this.refreshInFlight.delete(refreshToken);
+
+                if (error?.error === 'invalid_grant') {
+                    await Storage.clearAll();
+                }
+
+                throw error;
+            }
+        );
+
+        this.refreshInFlight.set(refreshToken, refreshRequest);
+        return refreshRequest;
     }
 
     /**
@@ -488,7 +510,9 @@ class KindeSDK extends runtime.BaseAPI {
             const response = await this.useRefreshToken(
                 currentToken.refresh_token
             );
-            await Storage.setToken(response as unknown as string);
+            if (!(await Storage.hasAccessToken())) {
+                return null;
+            }
             return response;
         } catch (error) {
             console.error('Failed to refresh token:', error);

@@ -1,12 +1,12 @@
 import CryptoJS from 'crypto-js';
 import jwtDecode from 'jwt-decode';
+import { LoginMethodParams } from '@kinde/js-utils';
 import { InvalidTypeException } from '../common/exceptions/invalid-type.exception';
 import { PropertyRequiredException } from '../common/exceptions/property-required.exception';
 import { UnexpectedException } from '../common/exceptions/unexpected.exception';
 import {
     AccessTokenDecoded,
-    AdditionalParameters,
-    LoginMethodParamsWithInvitationCode
+    AdditionalParameters
 } from '../types/KindeSDK';
 import { AdditionalParametersAllow } from './constants';
 import 'react-native-get-random-values';
@@ -133,7 +133,7 @@ const hasValidAdditionalParameterType = (
 export const checkAdditionalParameters = (
     additionalParameters:
         | AdditionalParameters
-        | Partial<LoginMethodParamsWithInvitationCode> = {}
+    | LoginMethodParams = {}
 ) => {
     if (typeof additionalParameters !== 'object') {
         throw new UnexpectedException('additionalParameters');
@@ -217,7 +217,7 @@ const ADDITIONAL_PARAMETERS_KEYS: ReadonlyArray<keyof AdditionalParameters> = [
 export const isAdditionalParameters = (
     additionalParameters:
         | AdditionalParameters
-        | LoginMethodParamsWithInvitationCode
+    | LoginMethodParams
 ): boolean => {
     // Detect snake_case by checking if any of the known AdditionalParameters keys are present.
     // Note: 'audience' and 'lang' exist in both types, so they are not discriminators.
@@ -228,7 +228,7 @@ export const isAdditionalParameters = (
 
 export const additionalParametersToLoginMethodParams = (
     additionalParameters: AdditionalParameters
-): Partial<LoginMethodParamsWithInvitationCode> => {
+): Partial<LoginMethodParams> => {
     const audienceParam = additionalParameters.audience
         ? Array.isArray(additionalParameters.audience)
             ? additionalParameters.audience.join(',')

@@ -1,6 +1,5 @@
 import {
     AdditionalParameters,
-    LoginMethodParamsWithInvitationCode,
     TokenResponse
 } from '../../types/KindeSDK';
 import KindeSDK from '../KindeSDK';
@@ -21,6 +20,7 @@ import {
 import {
     generateAuthUrl,
     IssuerRouteTypes,
+    LoginMethodParams,
     PromptTypes,
     sanitizeUrl,
     Scopes
@@ -55,7 +55,7 @@ const isIOSCustomBrowser = (value: string): value is IOSCustomBrowser => {
 
 const toAdditionalParameters = (
     additionalParameters:
-        | LoginMethodParamsWithInvitationCode
+        | LoginMethodParams
         | AdditionalParameters,
     prompt: PromptTypes
 ): Record<string, string> => {
@@ -79,7 +79,7 @@ const toAdditionalParameters = (
     }
 
     // Consumer passed LoginMethodParams (camelCase) params
-    const params = additionalParameters as LoginMethodParamsWithInvitationCode;
+    const params = additionalParameters as LoginMethodParams;
     if (params.audience !== undefined) {
         out.audience = Array.isArray(params.audience)
             ? params.audience.join(',')
@@ -170,7 +170,7 @@ class AuthorizationCode {
         kindeSDK: KindeSDK,
         startPage: 'login' | 'registration' | 'none',
         additionalParameters:
-            | LoginMethodParamsWithInvitationCode
+            | LoginMethodParams
             | AdditionalParameters,
         options?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
@@ -263,12 +263,12 @@ class AuthorizationCode {
             // Opens the auth URL in the system browser and waits for the redirect back via Linking.
             // This helps keep apps working even if AppAuth native integration isn't complete.
             try {
-                const normalizedParams: LoginMethodParamsWithInvitationCode =
+                                const normalizedParams: LoginMethodParams =
                     isAdditionalParameters(additionalParameters)
                         ? (additionalParametersToLoginMethodParams(
                               additionalParameters as AdditionalParameters
-                          ) as LoginMethodParamsWithInvitationCode)
-                        : (additionalParameters as LoginMethodParamsWithInvitationCode);
+                                                    ) as LoginMethodParams)
+                                                : (additionalParameters as LoginMethodParams);
 
                 const { codeChallenge, codeVerifier, state } =
                     generateChallenge();
