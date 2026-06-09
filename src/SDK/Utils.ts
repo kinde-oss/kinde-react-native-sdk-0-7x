@@ -1,8 +1,10 @@
 import CryptoJS from 'crypto-js';
+import jwtDecode from 'jwt-decode';
 import { InvalidTypeException } from '../common/exceptions/invalid-type.exception';
 import { PropertyRequiredException } from '../common/exceptions/property-required.exception';
 import { UnexpectedException } from '../common/exceptions/unexpected.exception';
 import {
+    AccessTokenDecoded,
     AdditionalParameters,
     LoginMethodParamsWithInvitationCode
 } from '../types/KindeSDK';
@@ -267,4 +269,20 @@ export const isLikelyUserCancelled = (error: unknown): boolean => {
         // iOS AppAuth error code -3 = OIDErrorCodeUserCanceledAuthorizationFlow
         /org\.openid\.appauth\.general error -3\b/.test(lower)
     );
+};
+
+/**
+ * Extracts the expiry time from a given access token.
+ * @param {string | null} accessToken - The access token to decode.
+ * @returns {number} The expiry time in seconds.
+ */
+export const extractAccessTokenExpiry = (
+    accessToken?: string | null
+): number => {
+    if (!accessToken) return 0;
+    try {
+        return jwtDecode<AccessTokenDecoded>(accessToken)?.['exp'] || 0;
+    } catch {
+        return 0;
+    }
 };

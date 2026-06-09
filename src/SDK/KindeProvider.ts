@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
-import { KindeSDK, Storage } from '..';
 import { setRefreshTimer } from '@kinde/js-utils';
+import KindeSDK from './KindeSDK';
+import Storage from './Storage';
+import { extractAccessTokenExpiry } from './Utils';
 
 export interface KindeProviderProps {
     issuerUrl: string;
@@ -24,21 +26,33 @@ export const useKindeProvider = ({
 
     const verifyToken = async () => {
         try {
-            const savedToken = await Storage.getToken();
-            const tokenExpiry = await Storage.getExpiredAt();
+            const accessToken = await Storage.getAccessToken();
+            const tokenExpiry = extractAccessTokenExpiry(accessToken);
             const currentTime = Math.floor(Date.now() / 1000);
             const remainingTime = tokenExpiry - currentTime;
 
-            if (savedToken && remainingTime > 10) {
+            if (accessToken && remainingTime > 10) {
                 setIsAuthenticated(true);
                 setRefreshTimer(tokenExpiry, authSdk.forceTokenRefresh);
             } else {
                 const refreshSuccess = await authSdk.forceTokenRefresh();
+
                 if (!refreshSuccess) {
                     await handleLogout();
-                } else {
-                    setIsAuthenticated(true);
+                    return;
                 }
+                const persistedAccessToken = await Storage.getAccessToken();
+                if (!persistedAccessToken) {
+                    await handleLogout();
+                    return;
+                }
+                const persistentAccessTokenExpiry =
+                    extractAccessTokenExpiry(persistedAccessToken);
+                setIsAuthenticated(true);
+                setRefreshTimer(
+                    persistentAccessTokenExpiry,
+                    authSdk.forceTokenRefresh
+                );
             }
         } catch (error) {
             console.error('Error verifying token:', error);
