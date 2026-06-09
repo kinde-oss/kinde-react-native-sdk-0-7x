@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { KindeSDK, Storage } from '..';
+import { extractAccessTokenExpiry, KindeSDK, Storage } from '..';
 import { setRefreshTimer } from '@kinde/js-utils';
 
 export interface KindeProviderProps {
@@ -36,21 +36,37 @@ export const useKindeProvider = ({
 
     const verifyToken = async () => {
         try {
-            const savedToken = await Storage.getToken();
-            const tokenExpiry = await Storage.getExpiredAt();
+            const accessToken = await Storage.getAccessToken();
+            const tokenExpiry = extractAccessTokenExpiry(accessToken);
             const currentTime = Math.floor(Date.now() / 1000);
             const remainingTime = tokenExpiry - currentTime;
 
-            if (savedToken && remainingTime > 10) {
+            if (accessToken && remainingTime > 10) {
                 setIsAuthenticated(true);
                 await scheduleRefresh();
             } else {
                 const refreshSuccess = await authSdk.forceTokenRefresh();
+
                 if (!refreshSuccess) {
                     await handleLogout();
-                } else {
-                    setIsAuthenticated(true);
-                    await scheduleRefresh();
+                    return;
+                }
+
+                const persistedAccessToken = await Storage.getAccessToken();
+                if (!persistedAccessToken) {
+                    await handleLogout();
+                    return;
+                }
+
+                setIsAuthenticated(true);
+                const refreshRemainingTime = Number(
+                    refreshSuccess.expires_in || 0
+                );
+
+                if (refreshRemainingTime > 10) {
+                    setRefreshTimer(refreshRemainingTime, () => {
+                        void authSdk.forceTokenRefresh();
+                    });
                 }
             }
         } catch (error) {

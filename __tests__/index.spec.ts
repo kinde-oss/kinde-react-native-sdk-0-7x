@@ -1,6 +1,10 @@
 // @ts-nocheck
 
+const React = require('react');
+const TestRenderer = require('react-test-renderer');
+const { act } = TestRenderer;
 const { KindeSDK } = require(process.cwd() + '/src/index');
+const { useKindeProvider } = require(process.cwd() + '/src/SDK/KindeProvider');
 import jwtDecode from 'jwt-decode';
 import Url from 'url-parse';
 import RNStorage from '../src/SDK/Storage/RNStorage';
@@ -640,6 +644,17 @@ describe('KindeSDK', () => {
             }
         });
 
+        test('[RNStorage] Check not authenticated when JWT valid but access token missing from storage', async () => {
+            keychainMock.storage.password = JSON.stringify({
+                ...fakeTokenResponse,
+                access_token: '',
+                refresh_token: ''
+            });
+
+            const authenticated = await globalClient.isAuthenticated;
+            expect(authenticated).toEqual(false);
+        });
+
         test('[RNStorage] Get Token instance when user is authenticated', async () => {
             RNStorage.prototype.getItem = jest.fn().mockReturnValue({
                 password: JSON.stringify({
@@ -828,6 +843,25 @@ describe('KindeSDK', () => {
                 name: 'TokenPersistenceError',
                 message:
                     'Access token was not found in secure storage after persist'
+            });
+        });
+
+        test('[RNStorage] setToken throws when persisted access token does not match expected', async () => {
+            RNStorage.prototype.setItem = jest.fn().mockResolvedValue(true);
+            RNStorage.prototype.getItem = jest.fn().mockResolvedValue({
+                username: 'kinde',
+                password: JSON.stringify({
+                    ...fakeTokenResponse,
+                    access_token: 'different_access_token'
+                })
+            });
+
+            await expect(
+                Storage.setToken(fakeTokenResponse)
+            ).rejects.toMatchObject({
+                name: 'TokenPersistenceError',
+                message:
+                    'Persisted access token does not match the expected value'
             });
         });
     });
@@ -1034,6 +1068,130 @@ describe('KindeSDK', () => {
             } finally {
                 setTokenSpy.mockRestore();
             }
+        });
+    });
+
+    describe('KindeProvider', () => {
+        const providerConfiguration = {
+            issuerUrl: configuration.issuer,
+            clientId: configuration.clientId,
+            redirectUri: configuration.redirectUri,
+            logoutRedirectUri: configuration.logoutRedirectUri
+        };
+
+        const renderProvider = () => {
+            const providerRef = { current: null };
+            const TestComponent = () => {
+                providerRef.current = useKindeProvider(providerConfiguration);
+                return null;
+            };
+
+            act(() => {
+                TestRenderer.create(React.createElement(TestComponent));
+            });
+
+            return providerRef;
+        };
+
+        let setRefreshTimerSpy;
+        let clearAllSpy;
+
+        beforeEach(() => {
+            jwtDecode.mockReset();
+            jwtDecode.mockReturnValue(dataDecoded);
+            setRefreshTimerSpy = jest
+                .spyOn(require('@kinde/js-utils'), 'setRefreshTimer')
+                .mockImplementation(() => {});
+            clearAllSpy = jest
+                .spyOn(Storage, 'clearAll')
+                .mockResolvedValue(undefined);
+        });
+
+        afterEach(() => {
+            setRefreshTimerSpy.mockRestore();
+            clearAllSpy.mockRestore();
+            jwtDecode.mockReset();
+        });
+
+        test('verifyToken sets authenticated when a valid access token is persisted', async () => {
+            keychainMock.storage.password = JSON.stringify(fakeTokenResponse);
+            jwtDecode.mockReturnValue(dataDecoded);
+
+            const providerRef = renderProvider();
+
+            await act(async () => {
+                await providerRef.current.verifyToken();
+            });
+
+            expect(providerRef.current.isAuthenticated).toBe(true);
+            expect(setRefreshTimerSpy).toHaveBeenCalled();
+            expect(clearAllSpy).not.toHaveBeenCalled();
+        });
+
+        test('verifyToken sets authenticated after a successful token refresh', async () => {
+            keychainMock.storage.password = JSON.stringify(fakeTokenResponse);
+            jwtDecode.mockReturnValue({
+                ...dataDecoded,
+                exp: Math.floor(Date.now() / 1000) - 100
+            });
+
+            const providerRef = renderProvider();
+
+            await act(async () => {
+                await providerRef.current.verifyToken();
+            });
+
+            expect(providerRef.current.isAuthenticated).toBe(true);
+            expect(setRefreshTimerSpy).toHaveBeenCalled();
+            expect(clearAllSpy).not.toHaveBeenCalled();
+        });
+
+        test('verifyToken clears session when token refresh fails', async () => {
+            keychainMock.storage.password = JSON.stringify(fakeTokenResponse);
+            jwtDecode.mockReturnValue({
+                ...dataDecoded,
+                exp: Math.floor(Date.now() / 1000) - 100
+            });
+            RNStorage.prototype.setItem = jest.fn().mockResolvedValue(false);
+
+            const providerRef = renderProvider();
+
+            await act(async () => {
+                await providerRef.current.verifyToken();
+            });
+
+            expect(providerRef.current.isAuthenticated).toBe(false);
+            expect(clearAllSpy).toHaveBeenCalled();
+        });
+
+        test('verifyToken clears session when refresh succeeds but access token is not persisted', async () => {
+            jwtDecode.mockReturnValue({
+                ...dataDecoded,
+                exp: Math.floor(Date.now() / 1000) - 100
+            });
+
+            const getAccessTokenSpy = jest.spyOn(Storage, 'getAccessToken');
+            getAccessTokenSpy
+                .mockResolvedValueOnce('this_is_access_token')
+                .mockResolvedValueOnce(null);
+
+            const KindeSDKModule = require(process.cwd() +
+                '/src/SDK/KindeSDK').default;
+            const forceTokenRefreshSpy = jest
+                .spyOn(KindeSDKModule.prototype, 'forceTokenRefresh')
+                .mockResolvedValue(fakeTokenResponse);
+
+            const providerRef = renderProvider();
+
+            await act(async () => {
+                await providerRef.current.verifyToken();
+            });
+
+            expect(providerRef.current.isAuthenticated).toBe(false);
+            expect(clearAllSpy).toHaveBeenCalled();
+
+            getAccessTokenSpy.mockRestore();
+            forceTokenRefreshSpy.mockRestore();
         });
     });
 

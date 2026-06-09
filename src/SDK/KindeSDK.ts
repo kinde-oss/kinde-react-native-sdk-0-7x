@@ -5,7 +5,6 @@ import { UnexpectedException } from '../common/exceptions/unexpected.exception';
 import {
     AdditionalParameters,
     FeatureFlag,
-    LoginMethodParamsWithInvitationCode,
     OptionalFlag,
     OrgAdditionalParams,
     RegisterAdditionalParameters,
@@ -17,7 +16,8 @@ import Storage from './Storage';
 import {
     checkAdditionalParameters,
     checkNotNull,
-    convertObject2FormData
+    convertObject2FormData,
+    extractAccessTokenExpiry
 } from './Utils';
 import * as runtime from '../ApiClient';
 import { FLAG_TYPE } from './constants';
@@ -25,6 +25,7 @@ import { AuthBrowserOptions } from '../types/Auth';
 import { Linking } from 'react-native';
 import {
     generatePortalUrl,
+    LoginMethodParams,
     MemoryStorage,
     setActiveStorage,
     StorageKeys,
@@ -40,10 +41,7 @@ class KindeSDK extends runtime.BaseAPI {
     public logoutRedirectUri: string;
     public scope: string;
     public additionalParameters: Partial<
-        Pick<
-            LoginMethodParamsWithInvitationCode | AdditionalParameters,
-            'audience'
-        >
+        Pick<LoginMethodParams | AdditionalParameters, 'audience'>
     >;
     public authBrowserOptions?: AuthBrowserOptions;
     private refreshInFlight = new Map<string, Promise<TokenResponse>>();
@@ -67,7 +65,7 @@ class KindeSDK extends runtime.BaseAPI {
         logoutRedirectUri: string,
         scope: string = 'openid profile email offline',
         additionalParameters: Omit<
-            LoginMethodParamsWithInvitationCode | AdditionalParameters,
+            LoginMethodParams | AdditionalParameters,
             'audience'
         > = {},
         authBrowserOptions?: AuthBrowserOptions
@@ -126,16 +124,31 @@ class KindeSDK extends runtime.BaseAPI {
 
         if (!isKindeRedirectUrl) return;
 
-        const { invitation_code: invitationCode } = URLParsed.query;
+        const { invitation_code: rawInvitationCode } = URLParsed.query;
+        const invitationCode = Array.isArray(rawInvitationCode)
+            ? rawInvitationCode[0]
+            : rawInvitationCode;
 
-        if (invitationCode) {
-            this.login({
-                prompt: PromptTypes.create,
-                invitationCode: invitationCode
-            }).catch((error) => {
-                console.warn('Failed to process invitation deep link:', error);
-            });
+        if (!invitationCode) return;
+
+        this.login({
+            prompt: PromptTypes.create,
+            invitationCode: invitationCode
+        }).catch((error) => {
+            console.warn('Failed to process invitation deep link:', error);
+        });
+    }
+
+    /**
+     * True when a non-expired access token is present in secure storage.
+     */
+    private async hasValidPersistedAccessToken(): Promise<boolean> {
+        const accessToken = await Storage.getAccessToken();
+        if (!accessToken) {
+            return false;
         }
+        const timeExpired = extractAccessTokenExpiry(accessToken);
+        return timeExpired * 1000 > Date.now();
     }
 
     /**
@@ -147,7 +160,7 @@ class KindeSDK extends runtime.BaseAPI {
      */
     async login(
         additionalParameters:
-            | LoginMethodParamsWithInvitationCode
+            | LoginMethodParams
             | AdditionalParameters = {},
         authBrowserOptions?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
@@ -179,7 +192,7 @@ class KindeSDK extends runtime.BaseAPI {
      */
     async register(
         additionalParameters:
-            | LoginMethodParamsWithInvitationCode
+            | LoginMethodParams
             | RegisterAdditionalParameters = {},
         authBrowserOptions?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
@@ -210,7 +223,7 @@ class KindeSDK extends runtime.BaseAPI {
      */
     createOrg(
         additionalParameters:
-            | Omit<LoginMethodParamsWithInvitationCode, 'isCreateOrg'>
+            | Omit<LoginMethodParams, 'isCreateOrg'>
             | Omit<OrgAdditionalParams, 'is_create_org'> = {},
         authBrowserOptions?: AuthBrowserOptions
     ) {
@@ -447,6 +460,9 @@ class KindeSDK extends runtime.BaseAPI {
             const response = await this.useRefreshToken(
                 currentToken.refresh_token
             );
+            if (!(await Storage.hasAccessToken())) {
+                return null;
+            }
             return response;
         } catch (error) {
             console.error('Failed to refresh token:', error);
@@ -736,11 +752,7 @@ class KindeSDK extends runtime.BaseAPI {
      */
     get isAuthenticated() {
         return (async () => {
-            const timeExpired = await Storage.getExpiredAt();
-            const now = new Date().getTime();
-
-            const isAuthenticated = timeExpired * 1000 > now;
-            if (isAuthenticated) {
+            if (await this.hasValidPersistedAccessToken()) {
                 return true;
             }
 
@@ -752,12 +764,11 @@ class KindeSDK extends runtime.BaseAPI {
             }
 
             try {
-                const token = await this.useRefreshToken(refreshToken);
-                if ((token?.expires_in || 0) <= 0) {
+                const refreshed = await this.useRefreshToken(refreshToken);
+                if ((refreshed?.expires_in || 0) <= 0) {
                     return false;
                 }
-                const accessToken = await Storage.getAccessToken();
-                return Boolean(accessToken);
+                return Storage.hasAccessToken();
             } catch (_) {
                 return false;
             }
