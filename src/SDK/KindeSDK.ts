@@ -43,7 +43,6 @@ class KindeSDK extends runtime.BaseAPI {
         Pick<LoginMethodParams | AdditionalParameters, 'audience'>
     >;
     public authBrowserOptions?: AuthBrowserOptions;
-    private refreshInFlight = new Map<string, Promise<TokenResponse>>();
     private readonly minimumTokenValiditySeconds = 10;
 
     /**
@@ -450,14 +449,6 @@ class KindeSDK extends runtime.BaseAPI {
         return null;
     }
 
-    private createRefreshRequest(refreshToken: string): Promise<TokenResponse> {
-        const formData = new FormData();
-        formData.append('client_id', this.clientId);
-        formData.append('grant_type', 'refresh_token');
-        formData.append('refresh_token', refreshToken);
-        return this.fetchToken(formData);
-    }
-
     /**
      * This function refreshes an access token using a refresh token.
      * @param {string} [refreshToken] - The refresh token value.
@@ -466,30 +457,11 @@ class KindeSDK extends runtime.BaseAPI {
      * token.
      */
     async useRefreshToken(refreshToken: string): Promise<TokenResponse> {
-        const existingRefreshRequest = this.refreshInFlight.get(refreshToken);
-
-        if (existingRefreshRequest) {
-            return existingRefreshRequest;
-        }
-
-        const refreshRequest = this.createRefreshRequest(refreshToken).then(
-            (response) => {
-                this.refreshInFlight.delete(refreshToken);
-                return response;
-            },
-            async (error: any) => {
-                this.refreshInFlight.delete(refreshToken);
-
-                if (error?.error === 'invalid_grant') {
-                    await Storage.clearAll();
-                }
-
-                throw error;
-            }
-        );
-
-        this.refreshInFlight.set(refreshToken, refreshRequest);
-        return refreshRequest;
+        const formData = new FormData();
+        formData.append('client_id', this.clientId);
+        formData.append('grant_type', 'refresh_token');
+        formData.append('refresh_token', refreshToken);
+        return this.fetchToken(formData);
     }
 
     /**
