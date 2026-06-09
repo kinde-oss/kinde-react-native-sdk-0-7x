@@ -764,10 +764,7 @@ class KindeSDK extends runtime.BaseAPI {
             }
 
             try {
-                const refreshed = await this.useRefreshToken(refreshToken);
-                if ((refreshed?.expires_in || 0) <= 0) {
-                    return false;
-                }
+                await this.useRefreshToken(refreshToken);
                 return Storage.hasAccessToken();
             } catch (_) {
                 return false;
