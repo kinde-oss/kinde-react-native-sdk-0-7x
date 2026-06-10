@@ -190,6 +190,8 @@ const createKeychainMock = (initialPassword = null) => {
     };
 };
 
+const flushPromises = () => new Promise(process.nextTick);
+
 let keychainMock = createKeychainMock();
 let globalClient;
 describe('KindeSDK', () => {
@@ -980,6 +982,78 @@ describe('KindeSDK', () => {
                 expect.objectContaining({
                     Authorization: `Bearer ${refreshedTokensResponse.access_token}`,
                     'X-Test': '1'
+                })
+            );
+        });
+
+        test('[RNStorage] concurrent requests share a single refresh before attaching Authorization headers', async () => {
+            keychainMock.storage.password = JSON.stringify({
+                ...fakeTokenResponse,
+                access_token: '',
+                expires_in: 0
+            });
+
+            const refreshedTokensResponse = {
+                ...fakeTokenResponse,
+                access_token: 'this_is_new_access_token',
+                refresh_token: 'this_is_new_refresh_token',
+                id_token: 'this_is_new_id_token'
+            };
+
+            let resolveRefresh;
+            const refreshResponse = new Promise((resolve) => {
+                resolveRefresh = resolve;
+            });
+
+            global.fetch = jest
+                .fn()
+                .mockImplementationOnce(() => refreshResponse)
+                .mockImplementation(() =>
+                    Promise.resolve({
+                        status: 200,
+                        clone() {
+                            return this;
+                        }
+                    })
+                );
+
+            const firstRequest = globalClient.request({
+                path: '/test',
+                method: 'GET',
+                headers: {
+                    'X-Test': '1'
+                }
+            });
+            const secondRequest = globalClient.request({
+                path: '/test-2',
+                method: 'GET',
+                headers: {
+                    'X-Test': '2'
+                }
+            });
+
+            await flushPromises();
+            await flushPromises();
+
+            expect(global.fetch).toHaveBeenCalledTimes(1);
+
+            resolveRefresh({
+                json: () => Promise.resolve(refreshedTokensResponse)
+            });
+
+            await Promise.all([firstRequest, secondRequest]);
+
+            expect(global.fetch).toHaveBeenCalledTimes(3);
+            expect(global.fetch.mock.calls[1][1].headers).toEqual(
+                expect.objectContaining({
+                    Authorization: `Bearer ${refreshedTokensResponse.access_token}`,
+                    'X-Test': '1'
+                })
+            );
+            expect(global.fetch.mock.calls[2][1].headers).toEqual(
+                expect.objectContaining({
+                    Authorization: `Bearer ${refreshedTokensResponse.access_token}`,
+                    'X-Test': '2'
                 })
             );
         });

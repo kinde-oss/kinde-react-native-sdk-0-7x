@@ -44,6 +44,7 @@ class KindeSDK extends runtime.BaseAPI {
     >;
     public authBrowserOptions?: AuthBrowserOptions;
     private readonly minimumTokenValiditySeconds = 10;
+    private refreshInFlight = new Map<string, Promise<TokenResponse>>();
 
     /**
      * The constructor function takes in a bunch of parameters and sets them to the class properties
@@ -437,6 +438,14 @@ class KindeSDK extends runtime.BaseAPI {
         return null;
     }
 
+    private createRefreshRequest(refreshToken: string): Promise<TokenResponse> {
+        const formData = new FormData();
+        formData.append('client_id', this.clientId);
+        formData.append('grant_type', 'refresh_token');
+        formData.append('refresh_token', refreshToken);
+        return this.fetchToken(formData);
+    }
+
     /**
      * This function refreshes an access token using a refresh token.
      * @param {string} [refreshToken] - The refresh token value.
@@ -445,11 +454,25 @@ class KindeSDK extends runtime.BaseAPI {
      * token.
      */
     async useRefreshToken(refreshToken: string): Promise<TokenResponse> {
-        const formData = new FormData();
-        formData.append('client_id', this.clientId);
-        formData.append('grant_type', 'refresh_token');
-        formData.append('refresh_token', refreshToken);
-        return this.fetchToken(formData);
+        const existingRefreshRequest = this.refreshInFlight.get(refreshToken);
+
+        if (existingRefreshRequest) {
+            return existingRefreshRequest;
+        }
+
+        const refreshRequest = this.createRefreshRequest(refreshToken).then(
+            (response) => {
+                this.refreshInFlight.delete(refreshToken);
+                return response;
+            },
+            (error) => {
+                this.refreshInFlight.delete(refreshToken);
+                throw error;
+            }
+        );
+
+        this.refreshInFlight.set(refreshToken, refreshRequest);
+        return refreshRequest;
     }
 
     /**
