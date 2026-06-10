@@ -40,7 +40,7 @@ class KindeSDK extends runtime.BaseAPI {
     public logoutRedirectUri: string;
     public scope: string;
     public additionalParameters: Partial<
-        Pick<LoginMethodParams | AdditionalParameters, 'audience'>
+        Pick<Partial<LoginMethodParams> | AdditionalParameters, 'audience'>
     >;
     public authBrowserOptions?: AuthBrowserOptions;
     private readonly minimumTokenValiditySeconds = 10;
@@ -65,7 +65,7 @@ class KindeSDK extends runtime.BaseAPI {
         logoutRedirectUri: string,
         scope: string = 'openid profile email offline',
         additionalParameters: Omit<
-            LoginMethodParams | AdditionalParameters,
+            Partial<LoginMethodParams> | AdditionalParameters,
             'audience'
         > = {},
         authBrowserOptions?: AuthBrowserOptions
