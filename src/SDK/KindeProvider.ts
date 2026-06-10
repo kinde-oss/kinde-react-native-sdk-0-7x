@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { setRefreshTimer } from '@kinde/js-utils';
 import { extractAccessTokenExpiry, KindeSDK, Storage } from '..';
+import { setRefreshTimer } from '@kinde/js-utils';
 
 export interface KindeProviderProps {
     issuerUrl: string;

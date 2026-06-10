@@ -140,7 +140,7 @@ class KindeSDK extends runtime.BaseAPI {
      */
     async login(
         additionalParameters:
-            | LoginMethodParams
+            | Partial<LoginMethodParams>
             | AdditionalParameters = {},
         authBrowserOptions?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
@@ -172,7 +172,7 @@ class KindeSDK extends runtime.BaseAPI {
      */
     async register(
         additionalParameters:
-            | LoginMethodParams
+            | Partial<LoginMethodParams>
             | RegisterAdditionalParameters = {},
         authBrowserOptions?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
@@ -203,7 +203,7 @@ class KindeSDK extends runtime.BaseAPI {
      */
     createOrg(
         additionalParameters:
-            | Omit<LoginMethodParams, 'isCreateOrg'>
+            | Omit<Partial<LoginMethodParams>, 'isCreateOrg'>
             | Omit<OrgAdditionalParams, 'is_create_org'> = {},
         authBrowserOptions?: AuthBrowserOptions
     ) {
