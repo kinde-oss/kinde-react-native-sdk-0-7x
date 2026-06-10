@@ -22,18 +22,6 @@ export const useKindeProvider = ({
         [issuerUrl, clientId, redirectUri, logoutRedirectUri]
     );
 
-    const scheduleRefresh = async () => {
-        const tokenExpiry = await Storage.getExpiredAt();
-        const currentTime = Math.floor(Date.now() / 1000);
-        const remainingTime = tokenExpiry - currentTime;
-
-        if (remainingTime > 10) {
-            setRefreshTimer(remainingTime, () => {
-                void authSdk.forceTokenRefresh();
-            });
-        }
-    };
-
     const verifyToken = async () => {
         try {
             const accessToken = await Storage.getAccessToken();
@@ -43,7 +31,7 @@ export const useKindeProvider = ({
 
             if (accessToken && remainingTime > 10) {
                 setIsAuthenticated(true);
-                await scheduleRefresh();
+                setRefreshTimer(tokenExpiry, authSdk.forceTokenRefresh);
             } else {
                 const refreshSuccess = await authSdk.forceTokenRefresh();
 
@@ -51,23 +39,18 @@ export const useKindeProvider = ({
                     await handleLogout();
                     return;
                 }
-
                 const persistedAccessToken = await Storage.getAccessToken();
                 if (!persistedAccessToken) {
                     await handleLogout();
                     return;
                 }
-
+                const persistentAccessTokenExpiry =
+                    extractAccessTokenExpiry(persistedAccessToken);
                 setIsAuthenticated(true);
-                const refreshRemainingTime = Number(
-                    refreshSuccess.expires_in || 0
+                setRefreshTimer(
+                    persistentAccessTokenExpiry,
+                    authSdk.forceTokenRefresh
                 );
-
-                if (refreshRemainingTime > 10) {
-                    setRefreshTimer(refreshRemainingTime, () => {
-                        void authSdk.forceTokenRefresh();
-                    });
-                }
             }
         } catch (error) {
             console.error('Error verifying token:', error);

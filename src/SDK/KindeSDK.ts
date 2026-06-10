@@ -24,8 +24,8 @@ import { FLAG_TYPE } from './constants';
 import { AuthBrowserOptions } from '../types/Auth';
 import { Linking } from 'react-native';
 import {
-    generatePortalUrl,
     LoginMethodParams,
+    generatePortalUrl,
     MemoryStorage,
     setActiveStorage,
     StorageKeys,
@@ -41,7 +41,7 @@ class KindeSDK extends runtime.BaseAPI {
     public logoutRedirectUri: string;
     public scope: string;
     public additionalParameters: Partial<
-        Pick<LoginMethodParams | AdditionalParameters, 'audience'>
+        Pick<Partial<LoginMethodParams> | AdditionalParameters, 'audience'>
     >;
     public authBrowserOptions?: AuthBrowserOptions;
     private refreshInFlight = new Map<string, Promise<TokenResponse>>();
@@ -65,7 +65,7 @@ class KindeSDK extends runtime.BaseAPI {
         logoutRedirectUri: string,
         scope: string = 'openid profile email offline',
         additionalParameters: Omit<
-            LoginMethodParams | AdditionalParameters,
+            Partial<LoginMethodParams> | AdditionalParameters,
             'audience'
         > = {},
         authBrowserOptions?: AuthBrowserOptions
@@ -115,19 +115,7 @@ class KindeSDK extends runtime.BaseAPI {
         if (!url) return;
 
         const URLParsed = new Url(url, true);
-        const redirectUrlParsed = new Url(this.redirectUri, true);
-
-        const isKindeRedirectUrl =
-            URLParsed.protocol === redirectUrlParsed.protocol &&
-            URLParsed.host === redirectUrlParsed.host &&
-            URLParsed.pathname === redirectUrlParsed.pathname;
-
-        if (!isKindeRedirectUrl) return;
-
-        const { invitation_code: rawInvitationCode } = URLParsed.query;
-        const invitationCode = Array.isArray(rawInvitationCode)
-            ? rawInvitationCode[0]
-            : rawInvitationCode;
+        const { invitation_code: invitationCode } = URLParsed.query;
 
         if (!invitationCode) return;
 
@@ -160,7 +148,7 @@ class KindeSDK extends runtime.BaseAPI {
      */
     async login(
         additionalParameters:
-            | LoginMethodParams
+            | Partial<LoginMethodParams>
             | AdditionalParameters = {},
         authBrowserOptions?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
@@ -192,7 +180,7 @@ class KindeSDK extends runtime.BaseAPI {
      */
     async register(
         additionalParameters:
-            | LoginMethodParams
+            | Partial<LoginMethodParams>
             | RegisterAdditionalParameters = {},
         authBrowserOptions?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
@@ -223,7 +211,7 @@ class KindeSDK extends runtime.BaseAPI {
      */
     createOrg(
         additionalParameters:
-            | Omit<LoginMethodParams, 'isCreateOrg'>
+            | Omit<Partial<LoginMethodParams>, 'isCreateOrg'>
             | Omit<OrgAdditionalParams, 'is_create_org'> = {},
         authBrowserOptions?: AuthBrowserOptions
     ) {
@@ -764,7 +752,10 @@ class KindeSDK extends runtime.BaseAPI {
             }
 
             try {
-                await this.useRefreshToken(refreshToken);
+                const refreshed = await this.useRefreshToken(refreshToken);
+                if ((refreshed?.expires_in || 0) <= 0) {
+                    return false;
+                }
                 return Storage.hasAccessToken();
             } catch (_) {
                 return false;

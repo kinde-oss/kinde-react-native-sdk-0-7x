@@ -11,6 +11,7 @@ import RNStorage from '../src/SDK/Storage/RNStorage';
 import Storage from '../src/SDK/Storage';
 import { authorize } from 'react-native-app-auth';
 import { Linking } from 'react-native';
+import { describe } from 'node:test';
 
 const crypto = require('crypto');
 
@@ -122,38 +123,43 @@ const fakePayloadFromDecodeToken = {
 
 const getValueByKey = (obj: Record<string, any>, key: string) => obj[key];
 
-jest.mock(process.cwd() + '/src/SDK/Utils', () => {
-    const actualUtils = jest.requireActual(process.cwd() + '/src/SDK/Utils');
-
-    return {
-        ...actualUtils,
-        checkNotNull: jest.fn((reference, name) => {
-            if (reference === null || reference === undefined) {
-                throw new Error(`${name} cannot be empty`);
-            }
-            return reference;
-        }),
-        checkAdditionalParameters: jest.fn(),
-        addAdditionalParameters: jest.fn((target, additionalParameters) => {
-            const keyExists = Object.keys(additionalParameters);
-            if (keyExists.length) {
-                keyExists.forEach((key) => {
-                    target[key] = getValueByKey(additionalParameters, key);
-                });
-            }
-            return target;
-        }),
-        convertObject2FormData: jest.fn((obj: Record<string, any>) => {
-            const formData = new FormData();
-
-            Object.keys(obj).forEach((k) => {
-                formData.append(k, obj[k]);
+jest.mock(process.cwd() + '/src/SDK/Utils', () => ({
+    isAdditionalParameters: jest.requireActual(process.cwd() + '/src/SDK/Utils')
+        .isAdditionalParameters,
+    additionalParametersToLoginMethodParams: jest.requireActual(
+        process.cwd() + '/src/SDK/Utils'
+    ).additionalParametersToLoginMethodParams,
+    isLikelyUserCancelled: jest.requireActual(process.cwd() + '/src/SDK/Utils')
+        .isLikelyUserCancelled,
+    extractAccessTokenExpiry: jest.requireActual(
+        process.cwd() + '/src/SDK/Utils'
+    ).extractAccessTokenExpiry,
+    checkNotNull: jest.fn((reference, name) => {
+        if (reference === null || reference === undefined) {
+            throw new Error(`${name} cannot be empty`);
+        }
+        return reference;
+    }),
+    checkAdditionalParameters: jest.fn(),
+    addAdditionalParameters: jest.fn((target, additionalParameters) => {
+        const keyExists = Object.keys(additionalParameters);
+        if (keyExists.length) {
+            keyExists.forEach((key) => {
+                target[key] = getValueByKey(additionalParameters, key);
             });
+        }
+        return target;
+    }),
+    convertObject2FormData: jest.fn((obj: Record<string, any>) => {
+        const formData = new FormData();
 
-            return formData;
-        })
-    };
-});
+        Object.keys(obj).forEach((k) => {
+            formData.append(k, obj[k]);
+        });
+
+        return formData;
+    })
+}));
 
 jest.mock(process.cwd() + '/src/ApiClient');
 
@@ -328,14 +334,14 @@ describe('KindeSDK', () => {
             loginSpy.mockRestore();
         });
 
-        test('does not call login when the url is not a Kinde redirect url', async () => {
+        test('does not call login when the url has no invitation code', async () => {
             const loginSpy = jest.spyOn(KindeSDK.prototype, 'login');
 
             const testUrls = [
                 'test.com',
                 'test.com/kinde_callback',
                 'myapp://test.com/kinde_callback',
-                'myapp://test.com/kinde_callback?invitation_code=random_code'
+                'myapp://myhost.kinde.com/kinde_callback'
             ];
 
             for (const url of testUrls) {
@@ -346,25 +352,11 @@ describe('KindeSDK', () => {
             loginSpy.mockRestore();
         });
 
-        test('does not call login when the url is a Kinde redirect url but has no invitation code parameter', async () => {
+        test('calls login with "create" prompt and invitationCode when the url has an invitation code parameter', async () => {
             const loginSpy = jest.spyOn(KindeSDK.prototype, 'login');
 
             globalClient.handleDeepLink(
-                'myapp://myhost.kinde.com/kinde_callback'
-            );
-
-            expect(loginSpy).not.toHaveBeenCalled();
-
-            loginSpy.mockRestore();
-        });
-
-        test('calls login with "create" prompt and invitationCode when the url is a Kinde redirect url with an invitation code parameter', async () => {
-            const loginSpy = jest
-                .spyOn(KindeSDK.prototype, 'login')
-                .mockResolvedValue(null);
-
-            globalClient.handleDeepLink(
-                'myapp://myhost.kinde.com/kinde_callback?invitation_code=random_code'
+                'myapp://test.com/anything?invitation_code=random_code'
             );
 
             expect(loginSpy).toHaveBeenCalledWith({
@@ -618,7 +610,7 @@ describe('KindeSDK', () => {
                 expires_in: 0
             });
             const clearSpy = jest
-                .spyOn(RNStorage.prototype, 'clear')
+                .spyOn(Storage, 'clearAll')
                 .mockImplementation(async () => {
                     keychainMock.storage.password = null;
                     return true;

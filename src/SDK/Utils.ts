@@ -159,7 +159,6 @@ const ADDITIONAL_PARAMETERS_KEYS: ReadonlyArray<keyof AdditionalParameters> = [
     'org_name',
     'connection_id',
     'login_hint',
-    'invitation_code',
     'plan_interest',
     'pricing_table_key'
 ] as const;
@@ -190,7 +189,6 @@ export const additionalParametersToLoginMethodParams = (
         connectionId: additionalParameters.connection_id,
         lang: additionalParameters.lang,
         loginHint: additionalParameters.login_hint,
-        invitationCode: additionalParameters.invitation_code,
         planInterest: additionalParameters.plan_interest,
         pricingTableKey: additionalParameters.pricing_table_key
     };
