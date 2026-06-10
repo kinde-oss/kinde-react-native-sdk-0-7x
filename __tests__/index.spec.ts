@@ -364,55 +364,6 @@ describe('KindeSDK', () => {
         });
     });
 
-    describe('Additional Parameters', () => {
-        test('[RNStorage] login accepts audience arrays and serializes them for the auth request', async () => {
-            authorize.mockResolvedValue({
-                authorizationCode: 'random_code',
-                codeVerifier: configuration.fakeCodeVerifier
-            });
-
-            await globalClient.login({
-                audience: ['api://users', 'api://payments']
-            });
-
-            expect(authorize).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    additionalParameters: expect.objectContaining({
-                        prompt: 'login',
-                        audience: 'api://users,api://payments'
-                    })
-                })
-            );
-        });
-
-        test('[RNStorage] login rejects audience arrays with non-string entries', async () => {
-            await expect(
-                globalClient.login({
-                    audience: ['api://users', 123]
-                })
-            ).rejects.toThrow('InvalidType audience');
-
-            expect(authorize).not.toHaveBeenCalled();
-        });
-
-        test.each([
-            ['invitationCode', 'invitation_code'],
-            ['connectionId', 'connection_id'],
-            ['loginHint', 'login_hint']
-        ])(
-            '[RNStorage] login rejects invalid camelCase %s values',
-            async (key, expectedKey) => {
-                await expect(
-                    globalClient.login({
-                        [key]: 123
-                    })
-                ).rejects.toThrow(`InvalidType ${expectedKey}`);
-
-                expect(authorize).not.toHaveBeenCalled();
-            }
-        );
-    });
-
     describe('Redirect', () => {
         test('[RNStorage] Open authenticate endpoint', async () => {
             authorize.mockResolvedValue({

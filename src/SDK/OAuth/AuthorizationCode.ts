@@ -1,7 +1,4 @@
-import {
-    AdditionalParameters,
-    TokenResponse
-} from '../../types/KindeSDK';
+import { AdditionalParameters, TokenResponse } from '../../types/KindeSDK';
 import KindeSDK from '../KindeSDK';
 import Storage from '../Storage';
 import {
@@ -54,9 +51,7 @@ const isIOSCustomBrowser = (value: string): value is IOSCustomBrowser => {
 };
 
 const toAdditionalParameters = (
-    additionalParameters:
-        | LoginMethodParams
-        | AdditionalParameters,
+    additionalParameters: LoginMethodParams | AdditionalParameters,
     prompt: PromptTypes
 ): Record<string, string> => {
     const out: Record<string, string> = {
@@ -169,9 +164,7 @@ class AuthorizationCode {
     async authenticate(
         kindeSDK: KindeSDK,
         startPage: 'login' | 'registration' | 'none',
-        additionalParameters:
-            | LoginMethodParams
-            | AdditionalParameters,
+        additionalParameters: LoginMethodParams | AdditionalParameters,
         options?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
         // Warn about deprecated options (once per session)
@@ -263,12 +256,12 @@ class AuthorizationCode {
             // Opens the auth URL in the system browser and waits for the redirect back via Linking.
             // This helps keep apps working even if AppAuth native integration isn't complete.
             try {
-                                const normalizedParams: LoginMethodParams =
+                const normalizedParams: LoginMethodParams =
                     isAdditionalParameters(additionalParameters)
                         ? (additionalParametersToLoginMethodParams(
                               additionalParameters as AdditionalParameters
-                                                    ) as LoginMethodParams)
-                                                : (additionalParameters as LoginMethodParams);
+                          ) as LoginMethodParams)
+                        : (additionalParameters as LoginMethodParams);
 
                 const { codeChallenge, codeVerifier, state } =
                     generateChallenge();

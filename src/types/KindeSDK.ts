@@ -11,8 +11,6 @@ export type AdditionalParameters = {
     lang?: string;
     /** @deprecated use loginHint field instead */
     login_hint?: string;
-    /** @deprecated use invitationCode field instead */
-    invitation_code?: string;
     plan_interest?: string;
     pricing_table_key?: string;
 };

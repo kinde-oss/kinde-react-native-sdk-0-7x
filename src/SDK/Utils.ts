@@ -1,15 +1,12 @@
 import CryptoJS from 'crypto-js';
-import jwtDecode from 'jwt-decode';
-import { LoginMethodParams } from '@kinde/js-utils';
 import { InvalidTypeException } from '../common/exceptions/invalid-type.exception';
 import { PropertyRequiredException } from '../common/exceptions/property-required.exception';
 import { UnexpectedException } from '../common/exceptions/unexpected.exception';
-import {
-    AccessTokenDecoded,
-    AdditionalParameters
-} from '../types/KindeSDK';
+import { AccessTokenDecoded, AdditionalParameters } from '../types/KindeSDK';
 import { AdditionalParametersAllow } from './constants';
+import { LoginMethodParams } from '@kinde/js-utils';
 import 'react-native-get-random-values';
+import jwtDecode from 'jwt-decode';
 
 /**
  * It takes a string or a WordArray and returns a string
@@ -84,61 +81,20 @@ const getValueByKey = (obj: Record<string, any>, key: string) => obj[key];
 
 type AdditionalParametersKeys = keyof AdditionalParameters;
 
-const ADDITIONAL_PARAMETER_KEY_ALIASES: Record<
-    string,
-    AdditionalParametersKeys
-> = {
-    isCreateOrg: 'is_create_org',
-    orgCode: 'org_code',
-    orgName: 'org_name',
-    connectionId: 'connection_id',
-    loginHint: 'login_hint',
-    invitationCode: 'invitation_code',
-    planInterest: 'plan_interest',
-    pricingTableKey: 'pricing_table_key'
-};
-
-const isStringArray = (value: unknown): value is string[] => {
-    return (
-        Array.isArray(value) && value.every((item) => typeof item === 'string')
-    );
-};
-
-const getExpectedAdditionalParameterType = (
-    key: AdditionalParametersKeys
-): string => {
-    if (key === 'audience') {
-        return 'string|string[]';
-    }
-
-    return getValueByKey(AdditionalParametersAllow, key);
-};
-
-const hasValidAdditionalParameterType = (
-    key: AdditionalParametersKeys,
-    value: unknown
-): boolean => {
-    if (key === 'audience') {
-        return typeof value === 'string' || isStringArray(value);
-    }
-
-    return typeof value === getExpectedAdditionalParameterType(key);
-};
-
 /**
  * It checks if the additionalParameters object is valid
  * @param {AdditionalParameters} additionalParameters - AdditionalParameters = {}
  * @returns An object with the keys and values of the additionalParameters object.
  */
 export const checkAdditionalParameters = (
-    additionalParameters:
-        | AdditionalParameters
-    | LoginMethodParams = {}
+    additionalParameters: AdditionalParameters = {}
 ) => {
     if (typeof additionalParameters !== 'object') {
         throw new UnexpectedException('additionalParameters');
     }
-    const keyExists = Object.keys(additionalParameters);
+    const keyExists = Object.keys(
+        additionalParameters
+    ) as AdditionalParametersKeys[];
 
     if (keyExists.length) {
         const keysAllow = Object.keys(
@@ -146,20 +102,14 @@ export const checkAdditionalParameters = (
         ) as AdditionalParametersKeys[];
 
         for (const key of keyExists) {
-            const normalizedKey =
-                ADDITIONAL_PARAMETER_KEY_ALIASES[key] ??
-                (key as AdditionalParametersKeys);
-            const value = (additionalParameters as Record<string, unknown>)[
-                key
-            ];
-
             if (
-                keysAllow.includes(normalizedKey) &&
-                !hasValidAdditionalParameterType(normalizedKey, value)
+                keysAllow.includes(key) &&
+                typeof additionalParameters[key] !==
+                    AdditionalParametersAllow[key]
             ) {
                 throw new InvalidTypeException(
-                    normalizedKey,
-                    getExpectedAdditionalParameterType(normalizedKey)
+                    key,
+                    getValueByKey(AdditionalParametersAllow, key)
                 );
             }
         }
@@ -209,15 +159,12 @@ const ADDITIONAL_PARAMETERS_KEYS: ReadonlyArray<keyof AdditionalParameters> = [
     'org_name',
     'connection_id',
     'login_hint',
-    'invitation_code',
     'plan_interest',
     'pricing_table_key'
 ] as const;
 
 export const isAdditionalParameters = (
-    additionalParameters:
-        | AdditionalParameters
-    | LoginMethodParams
+    additionalParameters: AdditionalParameters | LoginMethodParams
 ): boolean => {
     // Detect snake_case by checking if any of the known AdditionalParameters keys are present.
     // Note: 'audience' and 'lang' exist in both types, so they are not discriminators.
@@ -242,7 +189,6 @@ export const additionalParametersToLoginMethodParams = (
         connectionId: additionalParameters.connection_id,
         lang: additionalParameters.lang,
         loginHint: additionalParameters.login_hint,
-        invitationCode: additionalParameters.invitation_code,
         planInterest: additionalParameters.plan_interest,
         pricingTableKey: additionalParameters.pricing_table_key
     };

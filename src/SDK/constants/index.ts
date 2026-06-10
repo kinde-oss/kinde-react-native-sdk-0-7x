@@ -8,7 +8,6 @@ export const AdditionalParametersAllow = {
     connection_id: 'string',
     lang: 'string',
     login_hint: 'string',
-    invitation_code: 'string',
     plan_interest: 'string',
     pricing_table_key: 'string'
 };
