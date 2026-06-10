@@ -995,6 +995,48 @@ describe('KindeSDK', () => {
             expect(keychainMock.setItem).toHaveBeenCalledTimes(1);
         });
 
+        test('[RNStorage] shares the same refresh request across SDK instances', async () => {
+            keychainMock.storage.password = JSON.stringify(fakeTokenResponse);
+
+            const secondClient = new KindeSDK(
+                configuration.issuer,
+                configuration.redirectUri,
+                configuration.clientId,
+                configuration.logoutRedirectUri
+            );
+
+            const newTokensResponse = {
+                ...fakeTokenResponse,
+                access_token: 'this_is_new_access_token',
+                refresh_token: 'this_is_new_refresh_token',
+                id_token: 'this_is_new_id_token'
+            };
+
+            let resolveFetch;
+            const fetchResponse = new Promise((resolve) => {
+                resolveFetch = resolve;
+            });
+
+            global.fetch = jest.fn(() => fetchResponse);
+
+            const firstRefresh = globalClient.forceTokenRefresh();
+            const secondRefresh = secondClient.forceTokenRefresh();
+
+            await flushPromises();
+            await flushPromises();
+
+            expect(global.fetch).toHaveBeenCalledTimes(1);
+
+            resolveFetch({
+                json: () => Promise.resolve(newTokensResponse)
+            });
+
+            await expect(
+                Promise.all([firstRefresh, secondRefresh])
+            ).resolves.toEqual([newTokensResponse, newTokensResponse]);
+            expect(keychainMock.setItem).toHaveBeenCalledTimes(1);
+        });
+
         test('[RNStorage] does not share an in-flight refresh across different explicit refresh tokens', async () => {
             const firstTokensResponse = {
                 ...fakeTokenResponse,

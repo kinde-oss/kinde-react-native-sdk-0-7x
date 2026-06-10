@@ -44,7 +44,7 @@ class KindeSDK extends runtime.BaseAPI {
         Pick<Partial<LoginMethodParams> | AdditionalParameters, 'audience'>
     >;
     public authBrowserOptions?: AuthBrowserOptions;
-    private refreshInFlight = new Map<string, Promise<TokenResponse>>();
+    private static refreshInFlight = new Map<string, Promise<TokenResponse>>();
 
     /**
      * The constructor function takes in a bunch of parameters and sets them to the class properties
@@ -404,7 +404,9 @@ class KindeSDK extends runtime.BaseAPI {
      * token.
      */
     async useRefreshToken(refreshToken: string): Promise<TokenResponse> {
-        const existingRefreshRequest = this.refreshInFlight.get(refreshToken);
+        const existingRefreshRequest = KindeSDK.refreshInFlight.get(
+            refreshToken
+        );
 
         if (existingRefreshRequest) {
             return existingRefreshRequest;
@@ -412,11 +414,11 @@ class KindeSDK extends runtime.BaseAPI {
 
         const refreshRequest = this.createRefreshRequest(refreshToken).then(
             (response) => {
-                this.refreshInFlight.delete(refreshToken);
+                KindeSDK.refreshInFlight.delete(refreshToken);
                 return response;
             },
             async (error: any) => {
-                this.refreshInFlight.delete(refreshToken);
+                KindeSDK.refreshInFlight.delete(refreshToken);
 
                 if (error?.error === 'invalid_grant') {
                     await Storage.clearAll();
@@ -426,7 +428,7 @@ class KindeSDK extends runtime.BaseAPI {
             }
         );
 
-        this.refreshInFlight.set(refreshToken, refreshRequest);
+        KindeSDK.refreshInFlight.set(refreshToken, refreshRequest);
         return refreshRequest;
     }
 
