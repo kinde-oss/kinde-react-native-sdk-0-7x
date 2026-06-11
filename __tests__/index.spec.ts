@@ -196,6 +196,8 @@ const createKeychainMock = (initialPassword = null) => {
     };
 };
 
+const flushPromises = () => new Promise(process.nextTick);
+
 let keychainMock = createKeychainMock();
 let globalClient;
 describe('KindeSDK', () => {
@@ -601,6 +603,39 @@ describe('KindeSDK', () => {
             );
         });
 
+        test('[RNStorage] clears the stored session when refresh is rejected with invalid_grant during isAuthenticated', async () => {
+            keychainMock.storage.password = JSON.stringify({
+                ...fakeTokenResponse,
+                access_token: '',
+                expires_in: 0
+            });
+            const clearSpy = jest
+                .spyOn(Storage, 'clearAll')
+                .mockImplementation(async () => {
+                    keychainMock.storage.password = null;
+                    return true;
+                });
+            global.fetch = jest.fn(() =>
+                Promise.resolve({
+                    json: () =>
+                        Promise.resolve({
+                            error: 'invalid_grant',
+                            error_description: 'refresh token expired'
+                        })
+                })
+            );
+
+            try {
+                const authenticated = await globalClient.isAuthenticated;
+
+                expect(authenticated).toEqual(false);
+                expect(clearSpy).toHaveBeenCalledTimes(1);
+                expect(keychainMock.storage.password).toBe(null);
+            } finally {
+                clearSpy.mockRestore();
+            }
+        });
+
         test('[RNStorage] Check not authenticated when JWT valid but access token missing from storage', async () => {
             keychainMock.storage.password = JSON.stringify({
                 ...fakeTokenResponse,
@@ -883,6 +918,190 @@ describe('KindeSDK', () => {
             const response = await globalClient.forceTokenRefresh();
             expect(response).toBe(null);
             expect(global.fetch).toHaveBeenCalled();
+        });
+
+        test('[RNStorage] shares a single in-flight refresh across concurrent refresh calls', async () => {
+            keychainMock.storage.password = JSON.stringify(fakeTokenResponse);
+
+            const newTokensResponse = {
+                ...fakeTokenResponse,
+                access_token: 'this_is_new_access_token',
+                refresh_token: 'this_is_new_refresh_token',
+                id_token: 'this_is_new_id_token'
+            };
+
+            let resolveFetch;
+            const fetchResponse = new Promise((resolve) => {
+                resolveFetch = resolve;
+            });
+
+            global.fetch = jest.fn(() => fetchResponse);
+
+            const firstRefresh = globalClient.forceTokenRefresh();
+            const secondRefresh = globalClient.forceTokenRefresh();
+
+            await flushPromises();
+            await flushPromises();
+
+            expect(global.fetch).toHaveBeenCalledTimes(1);
+
+            resolveFetch({
+                json: () => Promise.resolve(newTokensResponse)
+            });
+
+            await expect(
+                Promise.all([firstRefresh, secondRefresh])
+            ).resolves.toEqual([newTokensResponse, newTokensResponse]);
+            expect(keychainMock.setItem).toHaveBeenCalledTimes(1);
+            expect(keychainMock.storage.password).toBe(
+                JSON.stringify(newTokensResponse)
+            );
+        });
+
+        test('[RNStorage] shares the same refresh request between isAuthenticated and forceTokenRefresh', async () => {
+            keychainMock.storage.password = JSON.stringify({
+                ...fakeTokenResponse,
+                access_token: ''
+            });
+
+            const newTokensResponse = {
+                ...fakeTokenResponse,
+                access_token: 'this_is_new_access_token',
+                refresh_token: 'this_is_new_refresh_token',
+                id_token: 'this_is_new_id_token'
+            };
+
+            let resolveFetch;
+            const fetchResponse = new Promise((resolve) => {
+                resolveFetch = resolve;
+            });
+
+            global.fetch = jest.fn(() => fetchResponse);
+
+            const authenticatedPromise = globalClient.isAuthenticated;
+            const refreshPromise = globalClient.forceTokenRefresh();
+
+            await flushPromises();
+            await flushPromises();
+
+            expect(global.fetch).toHaveBeenCalledTimes(1);
+
+            resolveFetch({
+                json: () => Promise.resolve(newTokensResponse)
+            });
+
+            await expect(authenticatedPromise).resolves.toBe(true);
+            await expect(refreshPromise).resolves.toEqual(newTokensResponse);
+            expect(keychainMock.setItem).toHaveBeenCalledTimes(1);
+        });
+
+        test('[RNStorage] shares the same refresh request across SDK instances', async () => {
+            keychainMock.storage.password = JSON.stringify(fakeTokenResponse);
+
+            const secondClient = new KindeSDK(
+                configuration.issuer,
+                configuration.redirectUri,
+                configuration.clientId,
+                configuration.logoutRedirectUri
+            );
+
+            const newTokensResponse = {
+                ...fakeTokenResponse,
+                access_token: 'this_is_new_access_token',
+                refresh_token: 'this_is_new_refresh_token',
+                id_token: 'this_is_new_id_token'
+            };
+
+            let resolveFetch;
+            const fetchResponse = new Promise((resolve) => {
+                resolveFetch = resolve;
+            });
+
+            global.fetch = jest.fn(() => fetchResponse);
+
+            const firstRefresh = globalClient.forceTokenRefresh();
+            const secondRefresh = secondClient.forceTokenRefresh();
+
+            await flushPromises();
+            await flushPromises();
+
+            expect(global.fetch).toHaveBeenCalledTimes(1);
+
+            resolveFetch({
+                json: () => Promise.resolve(newTokensResponse)
+            });
+
+            await expect(
+                Promise.all([firstRefresh, secondRefresh])
+            ).resolves.toEqual([newTokensResponse, newTokensResponse]);
+            expect(keychainMock.setItem).toHaveBeenCalledTimes(1);
+        });
+
+        test('[RNStorage] does not share an in-flight refresh across different explicit refresh tokens', async () => {
+            const firstTokensResponse = {
+                ...fakeTokenResponse,
+                access_token: 'first_access_token',
+                refresh_token: 'first_new_refresh_token',
+                id_token: 'first_new_id_token'
+            };
+            const secondTokensResponse = {
+                ...fakeTokenResponse,
+                access_token: 'second_access_token',
+                refresh_token: 'second_new_refresh_token',
+                id_token: 'second_new_id_token'
+            };
+
+            const resolveFetches = [];
+            const setTokenSpy = jest
+                .spyOn(Storage, 'setToken')
+                .mockResolvedValue(undefined);
+            global.fetch = jest.fn(
+                () =>
+                    new Promise((resolve) => {
+                        resolveFetches.push(resolve);
+                    })
+            );
+
+            try {
+                const firstRefresh = globalClient.useRefreshToken(
+                    'first_refresh_token'
+                );
+                const secondRefresh = globalClient.useRefreshToken(
+                    'second_refresh_token'
+                );
+
+                await flushPromises();
+                await flushPromises();
+
+                expect(global.fetch).toHaveBeenCalledTimes(2);
+
+                const firstRefreshToken = global.fetch.mock.calls[0][1].body[
+                    Symbol.for('state')
+                ].find((entry) => entry.key === 'refresh_token')?.value;
+                const secondRefreshToken = global.fetch.mock.calls[1][1].body[
+                    Symbol.for('state')
+                ].find((entry) => entry.key === 'refresh_token')?.value;
+
+                expect(firstRefreshToken).toBe('first_refresh_token');
+                expect(secondRefreshToken).toBe('second_refresh_token');
+
+                resolveFetches[0]({
+                    json: () => Promise.resolve(firstTokensResponse)
+                });
+                resolveFetches[1]({
+                    json: () => Promise.resolve(secondTokensResponse)
+                });
+
+                await expect(firstRefresh).resolves.toEqual(
+                    firstTokensResponse
+                );
+                await expect(secondRefresh).resolves.toEqual(
+                    secondTokensResponse
+                );
+                expect(setTokenSpy).toHaveBeenCalledTimes(2);
+            } finally {
+                setTokenSpy.mockRestore();
+            }
         });
     });
 
