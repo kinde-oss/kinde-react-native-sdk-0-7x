@@ -1057,6 +1057,47 @@ describe('KindeSDK', () => {
             expect(keychainMock.setItem).toHaveBeenCalledTimes(1);
         });
 
+        test('[RNStorage] concurrent isAuthenticated calls share a single refresh request', async () => {
+            keychainMock.storage.password = JSON.stringify({
+                ...fakeTokenResponse,
+                access_token: '',
+                expires_in: 0
+            });
+
+            const newTokensResponse = {
+                ...fakeTokenResponse,
+                access_token: 'this_is_new_access_token',
+                refresh_token: 'this_is_new_refresh_token',
+                id_token: 'this_is_new_id_token'
+            };
+
+            let resolveFetch;
+            const fetchResponse = new Promise((resolve) => {
+                resolveFetch = resolve;
+            });
+
+            global.fetch = jest.fn(() => fetchResponse);
+
+            const firstAuthenticatedPromise = globalClient.isAuthenticated;
+            const secondAuthenticatedPromise = globalClient.isAuthenticated;
+
+            await flushPromises();
+            await flushPromises();
+
+            expect(global.fetch).toHaveBeenCalledTimes(1);
+
+            resolveFetch({
+                json: () => Promise.resolve(newTokensResponse)
+            });
+
+            await expect(firstAuthenticatedPromise).resolves.toBe(true);
+            await expect(secondAuthenticatedPromise).resolves.toBe(true);
+            expect(keychainMock.setItem).toHaveBeenCalledTimes(1);
+            expect(keychainMock.storage.password).toBe(
+                JSON.stringify(newTokensResponse)
+            );
+        });
+
         test('[RNStorage] shares the same refresh request across SDK instances', async () => {
             keychainMock.storage.password = JSON.stringify(fakeTokenResponse);
 
