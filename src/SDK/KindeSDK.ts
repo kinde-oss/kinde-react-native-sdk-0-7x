@@ -44,7 +44,7 @@ class KindeSDK extends runtime.BaseAPI {
     >;
     public authBrowserOptions?: AuthBrowserOptions;
     private readonly minimumTokenValiditySeconds = 10;
-    private refreshInFlight = new Map<string, Promise<TokenResponse>>();
+    private static refreshInFlight = new Map<string, Promise<TokenResponse>>();
 
     /**
      * The constructor function takes in a bunch of parameters and sets them to the class properties
@@ -420,7 +420,13 @@ class KindeSDK extends runtime.BaseAPI {
 
         const refreshResponse = await this.forceTokenRefresh();
         if (!refreshResponse) {
-            await Storage.clearAll();
+            const latestStoredToken = await Storage.getToken();
+            const latestAccessToken = await Storage.getAccessToken();
+
+            if (latestStoredToken || latestAccessToken) {
+                await Storage.clearAll();
+            }
+
             return null;
         }
 
@@ -437,7 +443,6 @@ class KindeSDK extends runtime.BaseAPI {
         await Storage.clearAll();
         return null;
     }
-
     private createRefreshRequest(refreshToken: string): Promise<TokenResponse> {
         const formData = new FormData();
         formData.append('client_id', this.clientId);
@@ -454,7 +459,9 @@ class KindeSDK extends runtime.BaseAPI {
      * token.
      */
     async useRefreshToken(refreshToken: string): Promise<TokenResponse> {
-        const existingRefreshRequest = this.refreshInFlight.get(refreshToken);
+        const existingRefreshRequest = KindeSDK.refreshInFlight.get(
+            refreshToken
+        );
 
         if (existingRefreshRequest) {
             return existingRefreshRequest;
@@ -462,16 +469,21 @@ class KindeSDK extends runtime.BaseAPI {
 
         const refreshRequest = this.createRefreshRequest(refreshToken).then(
             (response) => {
-                this.refreshInFlight.delete(refreshToken);
+                KindeSDK.refreshInFlight.delete(refreshToken);
                 return response;
             },
-            (error) => {
-                this.refreshInFlight.delete(refreshToken);
+            async (error: any) => {
+                KindeSDK.refreshInFlight.delete(refreshToken);
+
+                if (error?.error === 'invalid_grant') {
+                    await Storage.clearAll();
+                }
+
                 throw error;
             }
         );
 
-        this.refreshInFlight.set(refreshToken, refreshRequest);
+        KindeSDK.refreshInFlight.set(refreshToken, refreshRequest);
         return refreshRequest;
     }
 
