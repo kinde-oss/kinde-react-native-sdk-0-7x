@@ -16,7 +16,8 @@ import Storage from './Storage';
 import {
     checkAdditionalParameters,
     checkNotNull,
-    convertObject2FormData
+    convertObject2FormData,
+    extractAccessTokenExpiry
 } from './Utils';
 import * as runtime from '../ApiClient';
 import { FLAG_TYPE } from './constants';
@@ -390,8 +391,7 @@ class KindeSDK extends runtime.BaseAPI {
         }
 
         try {
-            const decodedToken = jwt_decode<{ exp?: number }>(accessToken);
-            const tokenExpiry = decodedToken?.exp ?? 0;
+            const tokenExpiry = extractAccessTokenExpiry(accessToken);
             const currentTime = Math.floor(Date.now() / 1000);
 
             return tokenExpiry - currentTime > minimumValiditySeconds;
@@ -400,6 +400,14 @@ class KindeSDK extends runtime.BaseAPI {
         }
     }
 
+    /**
+     * Returns a usable access token for API calls.
+     * If the stored access token is missing or too close to expiry, this will
+     * attempt a refresh before returning. When a usable token cannot be
+     * produced, persisted auth state is cleared and `null` is returned.
+     * @param {number} [minimumValiditySeconds] - Minimum remaining lifetime required for the token.
+     * @returns {Promise<string | null>} A usable access token or `null` when the session cannot be recovered.
+     */
     async getValidAccessToken(
         minimumValiditySeconds: number = this.minimumTokenValiditySeconds
     ): Promise<string | null> {
@@ -459,9 +467,8 @@ class KindeSDK extends runtime.BaseAPI {
      * token.
      */
     async useRefreshToken(refreshToken: string): Promise<TokenResponse> {
-        const existingRefreshRequest = KindeSDK.refreshInFlight.get(
-            refreshToken
-        );
+        const existingRefreshRequest =
+            KindeSDK.refreshInFlight.get(refreshToken);
 
         if (existingRefreshRequest) {
             return existingRefreshRequest;
