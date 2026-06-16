@@ -124,11 +124,17 @@ export class BaseAPI {
             context,
             initOverrides
         );
-        const accessToken = await Storage.getAccessToken();
+        const accessTokenProvider = this.configuration.accessToken;
+        const accessToken = accessTokenProvider
+            ? await accessTokenProvider()
+            : await Storage.getAccessToken();
         const response = await this.fetchApi(url, {
             ...init,
             headers: {
-                Authorization: accessToken ? `Bearer ${accessToken}` : ''
+                ...init.headers,
+                ...(accessToken
+                    ? { Authorization: `Bearer ${accessToken}` }
+                    : {})
             }
         });
         if (response.status >= 200 && response.status < 300) {

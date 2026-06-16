@@ -1,17 +1,12 @@
 // @ts-nocheck
 
-const React = require('react');
-const TestRenderer = require('react-test-renderer');
-const { act } = TestRenderer;
 const { KindeSDK } = require(process.cwd() + '/src/index');
-const { useKindeProvider } = require(process.cwd() + '/src/SDK/KindeProvider');
 import jwtDecode from 'jwt-decode';
 import Url from 'url-parse';
 import RNStorage from '../src/SDK/Storage/RNStorage';
 import Storage from '../src/SDK/Storage';
 import { authorize } from 'react-native-app-auth';
 import { Linking } from 'react-native';
-import { describe } from 'node:test';
 
 const crypto = require('crypto');
 
@@ -123,45 +118,44 @@ const fakePayloadFromDecodeToken = {
 
 const getValueByKey = (obj: Record<string, any>, key: string) => obj[key];
 
-jest.mock(process.cwd() + '/src/SDK/Utils', () => ({
-    isAdditionalParameters: jest.requireActual(process.cwd() + '/src/SDK/Utils')
-        .isAdditionalParameters,
-    additionalParametersToLoginMethodParams: jest.requireActual(
-        process.cwd() + '/src/SDK/Utils'
-    ).additionalParametersToLoginMethodParams,
-    isLikelyUserCancelled: jest.requireActual(process.cwd() + '/src/SDK/Utils')
-        .isLikelyUserCancelled,
-    extractAccessTokenExpiry: jest.requireActual(
-        process.cwd() + '/src/SDK/Utils'
-    ).extractAccessTokenExpiry,
-    checkNotNull: jest.fn((reference, name) => {
-        if (reference === null || reference === undefined) {
-            throw new Error(`${name} cannot be empty`);
-        }
-        return reference;
-    }),
-    checkAdditionalParameters: jest.fn(),
-    addAdditionalParameters: jest.fn((target, additionalParameters) => {
-        const keyExists = Object.keys(additionalParameters);
-        if (keyExists.length) {
-            keyExists.forEach((key) => {
-                target[key] = getValueByKey(additionalParameters, key);
+jest.mock(process.cwd() + '/src/SDK/Utils', () => {
+    const actualUtils = jest.requireActual(process.cwd() + '/src/SDK/Utils');
+
+    return {
+        ...actualUtils,
+        checkNotNull: jest.fn((reference, name) => {
+            if (reference === null || reference === undefined) {
+                throw new Error(`${name} cannot be empty`);
+            }
+            return reference;
+        }),
+        checkAdditionalParameters: jest.fn(
+            actualUtils.checkAdditionalParameters
+        ),
+        addAdditionalParameters: jest.fn((target, additionalParameters) => {
+            const keyExists = Object.keys(additionalParameters);
+            if (keyExists.length) {
+                keyExists.forEach((key) => {
+                    target[key] = getValueByKey(additionalParameters, key);
+                });
+            }
+            return target;
+        }),
+        convertObject2FormData: jest.fn((obj: Record<string, any>) => {
+            const formData = new FormData();
+
+            Object.keys(obj).forEach((k) => {
+                formData.append(k, obj[k]);
             });
-        }
-        return target;
-    }),
-    convertObject2FormData: jest.fn((obj: Record<string, any>) => {
-        const formData = new FormData();
 
-        Object.keys(obj).forEach((k) => {
-            formData.append(k, obj[k]);
-        });
+            return formData;
+        })
+    };
+});
 
-        return formData;
-    })
-}));
-
-jest.mock(process.cwd() + '/src/ApiClient');
+jest.mock(process.cwd() + '/src/ApiClient', () =>
+    jest.requireActual(process.cwd() + '/src/ApiClient')
+);
 
 const dataDecoded = {
     azp: 'test@live',
@@ -528,6 +522,7 @@ describe('KindeSDK', () => {
         test('Logout Revoke Token', async () => {
             global.fetch = jest.fn(() =>
                 Promise.resolve({
+                    status: 200,
                     json: () => Promise.resolve(fakeTokenResponse)
                 })
             );
@@ -603,6 +598,17 @@ describe('KindeSDK', () => {
             );
         });
 
+        test('[RNStorage] returns the stored access token when it is still valid', async () => {
+            RNStorage.prototype.getItem = jest.fn().mockReturnValue({
+                password: JSON.stringify(fakeTokenResponse)
+            });
+
+            const accessToken = await globalClient.getValidAccessToken();
+
+            expect(accessToken).toEqual(fakeTokenResponse.access_token);
+            expect(global.fetch).not.toHaveBeenCalled();
+        });
+
         test('[RNStorage] clears the stored session when refresh is rejected with invalid_grant during isAuthenticated', async () => {
             keychainMock.storage.password = JSON.stringify({
                 ...fakeTokenResponse,
@@ -636,6 +642,33 @@ describe('KindeSDK', () => {
             }
         });
 
+        test('[RNStorage] refreshes before returning a valid access token', async () => {
+            keychainMock.storage.password = JSON.stringify({
+                ...fakeTokenResponse,
+                access_token: '',
+                expires_in: 0
+            });
+
+            const refreshedTokensResponse = {
+                ...fakeTokenResponse,
+                access_token: 'this_is_new_access_token',
+                refresh_token: 'this_is_new_refresh_token',
+                id_token: 'this_is_new_id_token'
+            };
+            global.fetch = jest.fn(() =>
+                Promise.resolve({
+                    json: () => Promise.resolve(refreshedTokensResponse)
+                })
+            );
+
+            const accessToken = await globalClient.getValidAccessToken();
+
+            expect(accessToken).toEqual(refreshedTokensResponse.access_token);
+            expect(keychainMock.storage.password).toBe(
+                JSON.stringify(refreshedTokensResponse)
+            );
+        });
+
         test('[RNStorage] Check not authenticated when JWT valid but access token missing from storage', async () => {
             keychainMock.storage.password = JSON.stringify({
                 ...fakeTokenResponse,
@@ -645,6 +678,35 @@ describe('KindeSDK', () => {
 
             const authenticated = await globalClient.isAuthenticated;
             expect(authenticated).toEqual(false);
+        });
+
+        test('[RNStorage] clears storage when a valid access token cannot be produced', async () => {
+            keychainMock.storage.password = JSON.stringify({
+                ...fakeTokenResponse,
+                access_token: '',
+                expires_in: 0
+            });
+            const clearSpy = jest
+                .spyOn(RNStorage.prototype, 'clear')
+                .mockImplementation(async () => {
+                    keychainMock.storage.password = null;
+                    return true;
+                });
+            global.fetch = jest.fn(() =>
+                Promise.resolve({
+                    json: () => Promise.resolve({ error: 'error' })
+                })
+            );
+
+            try {
+                const accessToken = await globalClient.getValidAccessToken();
+
+                expect(accessToken).toBe(null);
+                expect(clearSpy).toHaveBeenCalledTimes(1);
+                expect(keychainMock.storage.password).toBe(null);
+            } finally {
+                clearSpy.mockRestore();
+            }
         });
 
         test('[RNStorage] Get Token instance when user is authenticated', async () => {
@@ -995,6 +1057,47 @@ describe('KindeSDK', () => {
             expect(keychainMock.setItem).toHaveBeenCalledTimes(1);
         });
 
+        test('[RNStorage] concurrent isAuthenticated calls share a single refresh request', async () => {
+            keychainMock.storage.password = JSON.stringify({
+                ...fakeTokenResponse,
+                access_token: '',
+                expires_in: 0
+            });
+
+            const newTokensResponse = {
+                ...fakeTokenResponse,
+                access_token: 'this_is_new_access_token',
+                refresh_token: 'this_is_new_refresh_token',
+                id_token: 'this_is_new_id_token'
+            };
+
+            let resolveFetch;
+            const fetchResponse = new Promise((resolve) => {
+                resolveFetch = resolve;
+            });
+
+            global.fetch = jest.fn(() => fetchResponse);
+
+            const firstAuthenticatedPromise = globalClient.isAuthenticated;
+            const secondAuthenticatedPromise = globalClient.isAuthenticated;
+
+            await flushPromises();
+            await flushPromises();
+
+            expect(global.fetch).toHaveBeenCalledTimes(1);
+
+            resolveFetch({
+                json: () => Promise.resolve(newTokensResponse)
+            });
+
+            await expect(firstAuthenticatedPromise).resolves.toBe(true);
+            await expect(secondAuthenticatedPromise).resolves.toBe(true);
+            expect(keychainMock.setItem).toHaveBeenCalledTimes(1);
+            expect(keychainMock.storage.password).toBe(
+                JSON.stringify(newTokensResponse)
+            );
+        });
+
         test('[RNStorage] shares the same refresh request across SDK instances', async () => {
             keychainMock.storage.password = JSON.stringify(fakeTokenResponse);
 
@@ -1105,127 +1208,123 @@ describe('KindeSDK', () => {
         });
     });
 
-    describe('KindeProvider', () => {
-        const providerConfiguration = {
-            issuerUrl: configuration.issuer,
-            clientId: configuration.clientId,
-            redirectUri: configuration.redirectUri,
-            logoutRedirectUri: configuration.logoutRedirectUri
-        };
+    describe('API requests', () => {
+        test('[RNStorage] request refreshes an expired token before attaching the Authorization header', async () => {
+            keychainMock.storage.password = JSON.stringify({
+                ...fakeTokenResponse,
+                access_token: '',
+                expires_in: 0
+            });
 
-        const renderProvider = () => {
-            const providerRef = { current: null };
-            const TestComponent = () => {
-                providerRef.current = useKindeProvider(providerConfiguration);
-                return null;
+            const refreshedTokensResponse = {
+                ...fakeTokenResponse,
+                access_token: 'this_is_new_access_token',
+                refresh_token: 'this_is_new_refresh_token',
+                id_token: 'this_is_new_id_token'
             };
 
-            act(() => {
-                TestRenderer.create(React.createElement(TestComponent));
+            global.fetch = jest
+                .fn()
+                .mockResolvedValueOnce({
+                    json: () => Promise.resolve(refreshedTokensResponse)
+                })
+                .mockResolvedValueOnce({
+                    status: 200,
+                    clone() {
+                        return this;
+                    }
+                });
+
+            await globalClient.request({
+                path: '/test',
+                method: 'GET',
+                headers: {
+                    'X-Test': '1'
+                }
             });
 
-            return providerRef;
-        };
-
-        let setRefreshTimerSpy;
-        let clearAllSpy;
-
-        beforeEach(() => {
-            jwtDecode.mockReset();
-            jwtDecode.mockReturnValue(dataDecoded);
-            setRefreshTimerSpy = jest
-                .spyOn(require('@kinde/js-utils'), 'setRefreshTimer')
-                .mockImplementation(() => {});
-            clearAllSpy = jest
-                .spyOn(Storage, 'clearAll')
-                .mockResolvedValue(undefined);
+            expect(global.fetch).toHaveBeenCalledTimes(2);
+            expect(global.fetch.mock.calls[1][0]).toEqual(
+                `${configuration.issuer}/test`
+            );
+            expect(global.fetch.mock.calls[1][1].headers).toEqual(
+                expect.objectContaining({
+                    Authorization: `Bearer ${refreshedTokensResponse.access_token}`,
+                    'X-Test': '1'
+                })
+            );
         });
 
-        afterEach(() => {
-            setRefreshTimerSpy.mockRestore();
-            clearAllSpy.mockRestore();
-            jwtDecode.mockReset();
-        });
-
-        test('verifyToken sets authenticated when a valid access token is persisted', async () => {
-            keychainMock.storage.password = JSON.stringify(fakeTokenResponse);
-            jwtDecode.mockReturnValue(dataDecoded);
-
-            const providerRef = renderProvider();
-
-            await act(async () => {
-                await providerRef.current.verifyToken();
+        test('[RNStorage] concurrent requests share a single refresh before attaching Authorization headers', async () => {
+            keychainMock.storage.password = JSON.stringify({
+                ...fakeTokenResponse,
+                access_token: '',
+                expires_in: 0
             });
 
-            expect(providerRef.current.isAuthenticated).toBe(true);
-            expect(setRefreshTimerSpy).toHaveBeenCalled();
-            expect(clearAllSpy).not.toHaveBeenCalled();
-        });
+            const refreshedTokensResponse = {
+                ...fakeTokenResponse,
+                access_token: 'this_is_new_access_token',
+                refresh_token: 'this_is_new_refresh_token',
+                id_token: 'this_is_new_id_token'
+            };
 
-        test('verifyToken sets authenticated after a successful token refresh', async () => {
-            keychainMock.storage.password = JSON.stringify(fakeTokenResponse);
-            jwtDecode.mockReturnValue({
-                ...dataDecoded,
-                exp: Math.floor(Date.now() / 1000) - 100
+            let resolveRefresh;
+            const refreshResponse = new Promise((resolve) => {
+                resolveRefresh = resolve;
             });
 
-            const providerRef = renderProvider();
+            global.fetch = jest
+                .fn()
+                .mockImplementationOnce(() => refreshResponse)
+                .mockImplementation(() =>
+                    Promise.resolve({
+                        status: 200,
+                        clone() {
+                            return this;
+                        }
+                    })
+                );
 
-            await act(async () => {
-                await providerRef.current.verifyToken();
+            const firstRequest = globalClient.request({
+                path: '/test',
+                method: 'GET',
+                headers: {
+                    'X-Test': '1'
+                }
+            });
+            const secondRequest = globalClient.request({
+                path: '/test-2',
+                method: 'GET',
+                headers: {
+                    'X-Test': '2'
+                }
             });
 
-            expect(providerRef.current.isAuthenticated).toBe(true);
-            expect(setRefreshTimerSpy).toHaveBeenCalled();
-            expect(clearAllSpy).not.toHaveBeenCalled();
-        });
+            await flushPromises();
+            await flushPromises();
 
-        test('verifyToken clears session when token refresh fails', async () => {
-            keychainMock.storage.password = JSON.stringify(fakeTokenResponse);
-            jwtDecode.mockReturnValue({
-                ...dataDecoded,
-                exp: Math.floor(Date.now() / 1000) - 100
-            });
-            RNStorage.prototype.setItem = jest.fn().mockResolvedValue(false);
+            expect(global.fetch).toHaveBeenCalledTimes(1);
 
-            const providerRef = renderProvider();
-
-            await act(async () => {
-                await providerRef.current.verifyToken();
+            resolveRefresh({
+                json: () => Promise.resolve(refreshedTokensResponse)
             });
 
-            expect(providerRef.current.isAuthenticated).toBe(false);
-            expect(clearAllSpy).toHaveBeenCalled();
-        });
+            await Promise.all([firstRequest, secondRequest]);
 
-        test('verifyToken clears session when refresh succeeds but access token is not persisted', async () => {
-            jwtDecode.mockReturnValue({
-                ...dataDecoded,
-                exp: Math.floor(Date.now() / 1000) - 100
-            });
-
-            const getAccessTokenSpy = jest.spyOn(Storage, 'getAccessToken');
-            getAccessTokenSpy
-                .mockResolvedValueOnce('this_is_access_token')
-                .mockResolvedValueOnce(null);
-
-            const KindeSDKModule = require(process.cwd() +
-                '/src/SDK/KindeSDK').default;
-            const forceTokenRefreshSpy = jest
-                .spyOn(KindeSDKModule.prototype, 'forceTokenRefresh')
-                .mockResolvedValue(fakeTokenResponse);
-
-            const providerRef = renderProvider();
-
-            await act(async () => {
-                await providerRef.current.verifyToken();
-            });
-
-            expect(providerRef.current.isAuthenticated).toBe(false);
-            expect(clearAllSpy).toHaveBeenCalled();
-
-            getAccessTokenSpy.mockRestore();
-            forceTokenRefreshSpy.mockRestore();
+            expect(global.fetch).toHaveBeenCalledTimes(3);
+            expect(global.fetch.mock.calls[1][1].headers).toEqual(
+                expect.objectContaining({
+                    Authorization: `Bearer ${refreshedTokensResponse.access_token}`,
+                    'X-Test': '1'
+                })
+            );
+            expect(global.fetch.mock.calls[2][1].headers).toEqual(
+                expect.objectContaining({
+                    Authorization: `Bearer ${refreshedTokensResponse.access_token}`,
+                    'X-Test': '2'
+                })
+            );
         });
     });
 

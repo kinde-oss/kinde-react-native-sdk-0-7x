@@ -24,8 +24,8 @@ import { FLAG_TYPE } from './constants';
 import { AuthBrowserOptions } from '../types/Auth';
 import { Linking } from 'react-native';
 import {
-    LoginMethodParams,
     generatePortalUrl,
+    LoginMethodParams,
     MemoryStorage,
     setActiveStorage,
     StorageKeys,
@@ -44,6 +44,7 @@ class KindeSDK extends runtime.BaseAPI {
         Pick<Partial<LoginMethodParams> | AdditionalParameters, 'audience'>
     >;
     public authBrowserOptions?: AuthBrowserOptions;
+    private readonly minimumTokenValiditySeconds = 10;
     private static refreshInFlight = new Map<string, Promise<TokenResponse>>();
 
     /**
@@ -75,6 +76,11 @@ class KindeSDK extends runtime.BaseAPI {
         });
 
         super(configuration);
+
+        this.configuration = new runtime.Configuration({
+            basePath: issuer,
+            accessToken: async () => (await this.getValidAccessToken()) ?? ''
+        });
 
         this.issuer = issuer;
         checkNotNull(this.issuer, 'Issuer');
@@ -125,18 +131,6 @@ class KindeSDK extends runtime.BaseAPI {
         }).catch((error) => {
             console.warn('Failed to process invitation deep link:', error);
         });
-    }
-
-    /**
-     * True when a non-expired access token is present in secure storage.
-     */
-    private async hasValidPersistedAccessToken(): Promise<boolean> {
-        const accessToken = await Storage.getAccessToken();
-        if (!accessToken) {
-            return false;
-        }
-        const timeExpired = extractAccessTokenExpiry(accessToken);
-        return timeExpired * 1000 > Date.now();
     }
 
     /**
@@ -388,6 +382,75 @@ class KindeSDK extends runtime.BaseAPI {
         return this.fetchToken(formData);
     }
 
+    private isAccessTokenUsable(
+        accessToken: string | null,
+        minimumValiditySeconds: number
+    ) {
+        if (!accessToken) {
+            return false;
+        }
+
+        try {
+            const tokenExpiry = extractAccessTokenExpiry(accessToken);
+            const currentTime = Math.floor(Date.now() / 1000);
+
+            return tokenExpiry - currentTime > minimumValiditySeconds;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    /**
+     * Returns a usable access token for API calls.
+     * If the stored access token is missing or too close to expiry, this will
+     * attempt a refresh before returning. When a usable token cannot be
+     * produced, persisted auth state is cleared and `null` is returned.
+     * @param {number} [minimumValiditySeconds] - Minimum remaining lifetime required for the token.
+     * @returns {Promise<string | null>} A usable access token or `null` when the session cannot be recovered.
+     */
+    async getValidAccessToken(
+        minimumValiditySeconds: number = this.minimumTokenValiditySeconds
+    ): Promise<string | null> {
+        const storedAccessToken = await Storage.getAccessToken();
+        if (
+            this.isAccessTokenUsable(storedAccessToken, minimumValiditySeconds)
+        ) {
+            return storedAccessToken;
+        }
+
+        const storedToken = await Storage.getToken();
+        if (!storedToken?.refresh_token) {
+            if (storedToken || storedAccessToken) {
+                await Storage.clearAll();
+            }
+            return null;
+        }
+
+        const refreshResponse = await this.forceTokenRefresh();
+        if (!refreshResponse) {
+            const latestStoredToken = await Storage.getToken();
+            const latestAccessToken = await Storage.getAccessToken();
+
+            if (latestStoredToken || latestAccessToken) {
+                await Storage.clearAll();
+            }
+
+            return null;
+        }
+
+        const refreshedAccessToken = await Storage.getAccessToken();
+        if (
+            this.isAccessTokenUsable(
+                refreshedAccessToken,
+                minimumValiditySeconds
+            )
+        ) {
+            return refreshedAccessToken;
+        }
+
+        await Storage.clearAll();
+        return null;
+    }
     private createRefreshRequest(refreshToken: string): Promise<TokenResponse> {
         const formData = new FormData();
         formData.append('client_id', this.clientId);
@@ -404,9 +467,8 @@ class KindeSDK extends runtime.BaseAPI {
      * token.
      */
     async useRefreshToken(refreshToken: string): Promise<TokenResponse> {
-        const existingRefreshRequest = KindeSDK.refreshInFlight.get(
-            refreshToken
-        );
+        const existingRefreshRequest =
+            KindeSDK.refreshInFlight.get(refreshToken);
 
         if (existingRefreshRequest) {
             return existingRefreshRequest;
@@ -742,26 +804,7 @@ class KindeSDK extends runtime.BaseAPI {
      */
     get isAuthenticated() {
         return (async () => {
-            if (await this.hasValidPersistedAccessToken()) {
-                return true;
-            }
-
-            const token = await Storage.getToken();
-            const refreshToken = token?.refresh_token;
-
-            if (!refreshToken) {
-                return false;
-            }
-
-            try {
-                const refreshed = await this.useRefreshToken(refreshToken);
-                if ((refreshed?.expires_in || 0) <= 0) {
-                    return false;
-                }
-                return Storage.hasAccessToken();
-            } catch (_) {
-                return false;
-            }
+            return Boolean(await this.getValidAccessToken(0));
         })();
     }
 
