@@ -15,7 +15,7 @@ jobs:
 
               uses: actions/setup-node@v6
             - name: Install dependencies
-              run: npm install # `npm ci` (won't work lock files are .gitignored)
+              run: npm install --legacy-peer-deps # `npm ci` (won't work lock files are .gitignored)
 
             - name: Run tests
               run: npm test
