@@ -84,7 +84,7 @@
         "react": "18.2.0",
         "react-native": "0.73.0",
         "react-native-app-auth": "^8.0.0",
-        "react-native-get-random-values": "^1.11.0",
+        "react-native-get-random-values": "^2.0.0",
         "react-native-keychain": "^10.0.0",
         "react-test-renderer": "18.2.0",
         "rimraf": "^6.0.0",
