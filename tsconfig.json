@@ -11,7 +11,13 @@
         "outDir": "./dist",
         "lib": ["es2016"],
         "types": ["react-native"],
-        "resolveJsonModule": true
+        "resolveJsonModule": true,
+        "baseUrl": ".",
+        "paths": {
+            "@kinde/js-utils": [
+                "node_modules/@kinde/js-utils/dist/lib/main"
+            ]
+        }
     },
     "include": ["src"],
     "exclude": ["dist", "node_modules", "**/__tests__/*", "**/test/*"]
