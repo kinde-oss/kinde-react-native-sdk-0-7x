@@ -93,7 +93,7 @@
     },
     "peerDependencies": {
         "react-native": ">= 0.73",
-        "react-native-get-random-values": ">= 1.10",
+        "react-native-get-random-values": ">= 2.0",
         "react-native-app-auth": ">= 8.0",
         "react-native-keychain": ">= 10.0"
     },
