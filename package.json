@@ -15,7 +15,7 @@
         "build": "rimraf dist && npm run build:types && npm run build:js",
         "build:types": "tsc --emitDeclarationOnly",
         "build:js": "babel src --out-dir dist --extensions \".js,.ts\"",
-        "prepare": "npm run build && husky install",
+        "prepare": "npm run build && husky",
         "test": "jest",
         "lint": "eslint . && prettier --check .",
         "lint:fix": "eslint --fix . && prettier --write .",
