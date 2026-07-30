@@ -9,14 +9,25 @@ import {
 import { TokenType } from '../Enums/TokenType.enum';
 import BaseStore from './Base';
 
+type StorageDriver = {
+    getItem: () => Promise<unknown>;
+    setItem: (value: string) => Promise<boolean>;
+    clear: () => Promise<boolean>;
+};
+
 class Storage extends BaseStore {
     constructor() {
         super();
     }
 
-    async getStorage() {
+    async getStorage(): Promise<StorageDriver> {
         const builder = await import('./RNStorage');
-        return new builder.default();
+        const StorageBuilder =
+            (builder as { default?: { default?: new () => StorageDriver } })
+                .default?.default ??
+            (builder as { default?: new () => StorageDriver }).default ??
+            (builder as unknown as new () => StorageDriver);
+        return new (StorageBuilder as new () => StorageDriver)();
     }
 
     async getToken(): Promise<TokenResponse | null> {

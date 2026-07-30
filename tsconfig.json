@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "declaration": true,
-        "target": "es5",
+        "target": "es2016",
         "module": "commonjs",
         "strict": true,
         "emitDeclarationOnly": true,
@@ -12,11 +12,8 @@
         "lib": ["es2016"],
         "types": ["react-native"],
         "resolveJsonModule": true,
-        "baseUrl": ".",
         "paths": {
-            "@kinde/js-utils": [
-                "node_modules/@kinde/js-utils/dist/lib/main"
-            ]
+            "@kinde/js-utils": ["./node_modules/@kinde/js-utils/dist/lib/main"]
         }
     },
     "include": ["src"],
