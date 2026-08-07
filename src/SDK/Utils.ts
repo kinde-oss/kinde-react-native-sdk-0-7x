@@ -6,7 +6,7 @@ import { AccessTokenDecoded, AdditionalParameters } from '../types/KindeSDK';
 import { AdditionalParametersAllow } from './constants';
 import { LoginMethodParams } from '@kinde/js-utils';
 import 'react-native-get-random-values';
-import jwtDecode from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 
 /**
  * It takes a string or a WordArray and returns a string
