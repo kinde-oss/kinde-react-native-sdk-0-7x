@@ -4,6 +4,6 @@ source 'https://rubygems.org'
 # Using Ruby 3.2.x avoids the FBReactNativeSpec podspec arity error.
 ruby '3.4.9'
 
-gem 'cocoapods', '~> 1.16.2'
+gem 'cocoapods', '~> 1.17.0'
 # Useful utilities for cleaning Pods during debugging.
 gem 'cocoapods-deintegrate', '~> 1.0'
