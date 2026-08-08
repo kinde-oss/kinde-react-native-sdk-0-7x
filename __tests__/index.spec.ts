@@ -1,7 +1,7 @@
 // @ts-nocheck
 
 const { KindeSDK } = require(process.cwd() + '/src/index');
-import jwtDecode from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 import Url from 'url-parse';
 import RNStorage from '../src/SDK/Storage/RNStorage';
 import Storage from '../src/SDK/Storage';
@@ -171,7 +171,7 @@ const dataDecoded = {
     preferred_email: 'usertesting@yopmail.com'
 };
 
-jest.mock('jwt-decode', () => jest.fn().mockReturnValue());
+jest.mock('jwt-decode', () => ({ jwtDecode: jest.fn().mockReturnValue() }));
 
 const createKeychainMock = (initialPassword = null) => {
     const storage = { password: initialPassword };

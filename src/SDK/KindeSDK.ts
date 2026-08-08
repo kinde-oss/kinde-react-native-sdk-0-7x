@@ -1,4 +1,4 @@
-import jwt_decode from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 import Url from 'url-parse';
 import { UnAuthenticatedException } from '../common/exceptions/unauthenticated.exception';
 import { UnexpectedException } from '../common/exceptions/unexpected.exception';
@@ -589,7 +589,7 @@ class KindeSDK extends runtime.BaseAPI {
             throw new UnAuthenticatedException();
         }
 
-        return jwt_decode(token);
+        return jwtDecode(token);
     }
 
     /**

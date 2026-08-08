@@ -41,7 +41,7 @@
         "@babel/runtime": "^7.19.4",
         "@kinde/js-utils": "0.32.0",
         "crypto-js": "^4.2.0",
-        "jwt-decode": "^3.1.2",
+        "jwt-decode": "^4.0.0",
         "url-parse": "^1.5.10"
     },
     "devDependencies": {

@@ -1,4 +1,4 @@
-import jwtDecode from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 import { TokenPersistenceError } from '../../common/exceptions/token-persistence.exception';
 import {
     AccessTokenDecoded,
