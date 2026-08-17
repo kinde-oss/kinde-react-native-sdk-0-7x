@@ -124,10 +124,7 @@ export type AuthBrowserOptions = {
      * @deprecated No equivalent in react-native-app-auth. Ignored.
      */
     modalTransitionStyle?:
-        | 'coverVertical'
-        | 'flipHorizontal'
-        | 'crossDissolve'
-        | 'partialCurl';
+        'coverVertical' | 'flipHorizontal' | 'crossDissolve' | 'partialCurl';
 
     /** @deprecated No equivalent in react-native-app-auth. Ignored. */
     navigationBarColor?: string;

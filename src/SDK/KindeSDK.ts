@@ -142,8 +142,7 @@ class KindeSDK extends runtime.BaseAPI {
      */
     async login(
         additionalParameters:
-            | Partial<LoginMethodParams>
-            | AdditionalParameters = {},
+            Partial<LoginMethodParams> | AdditionalParameters = {},
         authBrowserOptions?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
         checkAdditionalParameters(additionalParameters);
@@ -174,8 +173,7 @@ class KindeSDK extends runtime.BaseAPI {
      */
     async register(
         additionalParameters:
-            | Partial<LoginMethodParams>
-            | RegisterAdditionalParameters = {},
+            Partial<LoginMethodParams> | RegisterAdditionalParameters = {},
         authBrowserOptions?: AuthBrowserOptions
     ): Promise<TokenResponse | null> {
         checkAdditionalParameters(additionalParameters);
@@ -277,10 +275,13 @@ class KindeSDK extends runtime.BaseAPI {
                     // assigned below
                 };
 
-                const timeout = setTimeout(() => {
-                    cleanup();
-                    resolve(false);
-                }, 2 * 60 * 1000);
+                const timeout = setTimeout(
+                    () => {
+                        cleanup();
+                        resolve(false);
+                    },
+                    2 * 60 * 1000
+                );
 
                 const handler = (event: any) => {
                     const url = event?.url ? String(event.url) : '';

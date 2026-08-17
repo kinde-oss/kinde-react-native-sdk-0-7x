@@ -275,21 +275,30 @@ function isFormData(value: any): value is FormData {
 
 export class ResponseError extends Error {
     name: 'ResponseError' = 'ResponseError';
-    constructor(public response: Response, msg?: string) {
+    constructor(
+        public response: Response,
+        msg?: string
+    ) {
         super(msg);
     }
 }
 
 export class FetchError extends Error {
     name: 'FetchError' = 'FetchError';
-    constructor(public cause: unknown, msg?: string) {
+    constructor(
+        public cause: unknown,
+        msg?: string
+    ) {
         super(msg);
     }
 }
 
 export class RequiredError extends Error {
     name: 'RequiredError' = 'RequiredError';
-    constructor(public field: string, msg?: string) {
+    constructor(
+        public field: string,
+        msg?: string
+    ) {
         super(msg);
     }
 }
@@ -305,13 +314,7 @@ export type FetchAPI = WindowOrWorkerGlobalScope['fetch'];
 
 export type Json = any;
 export type HTTPMethod =
-    | 'GET'
-    | 'POST'
-    | 'PUT'
-    | 'PATCH'
-    | 'DELETE'
-    | 'OPTIONS'
-    | 'HEAD';
+    'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS' | 'HEAD';
 export type HTTPHeaders = { [key: string]: string };
 export type HTTPQuery = {
     [key: string]:
@@ -331,10 +334,7 @@ export type HTTPRequestInit = {
     body?: HTTPBody;
 };
 export type ModelPropertyNaming =
-    | 'camelCase'
-    | 'snake_case'
-    | 'PascalCase'
-    | 'original';
+    'camelCase' | 'snake_case' | 'PascalCase' | 'original';
 
 export type InitOverrideFunction = (requestContext: {
     init: HTTPRequestInit;
