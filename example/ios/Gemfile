@@ -2,7 +2,7 @@ source 'https://rubygems.org'
 
 # RN 0.70-era CocoaPods integration is not compatible with Ruby 4.x.
 # Using Ruby 3.2.x avoids the FBReactNativeSpec podspec arity error.
-ruby '3.4.10'
+ruby '3.4.11'
 
 gem 'cocoapods', '~> 1.17.0'
 # Useful utilities for cleaning Pods during debugging.
