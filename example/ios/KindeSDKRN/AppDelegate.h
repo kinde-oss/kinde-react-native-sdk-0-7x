@@ -8,6 +8,8 @@
  */
 
 #import <UIKit/UIKit.h>
+#import <React-RCTAppDelegate/RCTDefaultReactNativeFactoryDelegate.h>
+#import <React-RCTAppDelegate/RCTReactNativeFactory.h>
 
 #import <react-native-app-auth/RNAppAuthAuthorizationFlowManager.h>
 
@@ -15,5 +17,7 @@
 
 @property (nonatomic, strong) UIWindow *window;
 @property (nonatomic, weak) id<RNAppAuthAuthorizationFlowManagerDelegate> authorizationFlowManagerDelegate;
+@property (nonatomic, strong) RCTDefaultReactNativeFactoryDelegate *reactNativeDelegate;
+@property (nonatomic, strong) RCTReactNativeFactory *reactNativeFactory;
 
 @end

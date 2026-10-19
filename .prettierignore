@@ -1,6 +1,7 @@
 dist
 .jest
 CHANGELOG.md
+.tsupgrader
 
 # Sample app native folders
 ios/

@@ -62,7 +62,7 @@ export default function App() {
         <SafeAreaView style={{ flex: 1 }}>
             <ScrollView contentContainerStyle={{ padding: 16 }}>
                 <Text style={{ fontSize: 20, fontWeight: '600' }}>
-                    KindeSDKRN iOS sample
+                    KindeSDKRN sample
                 </Text>
                 <Text>Status: {status}</Text>
                 {error ? (
