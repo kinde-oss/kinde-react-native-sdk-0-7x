@@ -19,7 +19,10 @@
         "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
         "lint": "eslint . && prettier --check .",
         "lint:fix": "eslint --fix . && prettier --write .",
-        "release": "release-it"
+        "release": "release-it",
+        "start": "react-native start",
+        "ios": "react-native run-ios",
+        "android": "react-native run-android"
     },
     "author": {
         "name": "Kinde",
@@ -67,9 +70,15 @@
         "@babel/preset-env": "^7.0.0",
         "@babel/preset-typescript": "^7.18.6",
         "@babel/register": "^7.0.0",
+        "@react-native-community/cli": "20.2.0",
+        "@react-native-community/cli-platform-android": "20.2.0",
+        "@react-native-community/cli-platform-ios": "20.2.0",
+        "@react-native/babel-preset": "0.87.1",
+        "@react-native/jest-preset": "0.87.1",
+        "@react-native/metro-config": "0.87.1",
         "@types/crypto-js": "^4.2.2",
         "@types/node": "^24.0.0",
-        "@types/react": "^18.2.0",
+        "@types/react": "^19.2.0",
         "@types/react-native-get-random-values": "^1.8.2",
         "@types/url-parse": "^1.4.8",
         "babel-core": "^7.0.0-bridge.0",
@@ -81,12 +90,12 @@
         "lint-staged": "^17.0.0",
         "metro-react-native-babel-preset": "^0.77.0",
         "prettier": "^3.0.0",
-        "react": "18.2.0",
-        "react-native": "0.73.0",
+        "react": "19.2.3",
+        "react-native": "0.87.1",
         "react-native-app-auth": "^8.0.0",
         "react-native-get-random-values": "^1.11.0",
         "react-native-keychain": "^10.0.0",
-        "react-test-renderer": "18.2.0",
+        "react-test-renderer": "19.2.3",
         "rimraf": "^6.0.0",
         "typescript": "^7.0.0"
     },
@@ -111,7 +120,7 @@
         ]
     },
     "jest": {
-        "preset": "react-native",
+        "preset": "@react-native/jest-preset",
         "moduleFileExtensions": [
             "ts",
             "tsx",
@@ -123,7 +132,8 @@
         "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$",
         "testPathIgnorePatterns": [
             "\\.snap$",
-            "<rootDir>/node_modules/"
+            "<rootDir>/node_modules/",
+            "<rootDir>/.tsupgrader/"
         ],
         "modulePaths": [
             "<rootDir>"

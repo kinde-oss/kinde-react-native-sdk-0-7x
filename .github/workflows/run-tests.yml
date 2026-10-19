@@ -9,13 +9,47 @@ on:
 jobs:
     test:
         runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                react-native: [current, minimum]
         steps:
             - uses: actions/checkout@v7
             - name: Set up Node.js
 
               uses: actions/setup-node@v7
+              with:
+                  node-version: '24'
             - name: Install dependencies
               run: npm install # `npm ci` (won't work lock files are .gitignored)
 
             - name: Run tests
-              run: npm test
+              run: npm test -- --runInBand
+
+            - name: Build SDK and check lint
+              run: |
+                  npm run build
+                  npm run lint
+
+            - name: Bundle native samples
+              if: matrix.react-native == 'current'
+              run: |
+                  mkdir -p .tsupgrader/bundles
+                  npx react-native bundle --entry-file example/index.js --platform ios --dev false --bundle-output .tsupgrader/bundles/ios.jsbundle --max-workers 2
+                  npx react-native bundle --entry-file example/index.js --platform android --dev false --bundle-output .tsupgrader/bundles/android.jsbundle --max-workers 2
+
+            - name: Prepare minimum supported React Native compatibility project
+              if: matrix.react-native == 'minimum'
+              run: node scripts/prepare-rn-073-compatibility.js
+
+            - name: Install minimum supported React Native dependencies
+              if: matrix.react-native == 'minimum'
+              working-directory: .tsupgrader/rn-073
+              run: npm install
+
+            - name: Build and test against React Native 0.73 and React 18
+              if: matrix.react-native == 'minimum'
+              working-directory: .tsupgrader/rn-073
+              run: |
+                  npm run build
+                  npm test -- --runInBand

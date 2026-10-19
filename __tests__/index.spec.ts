@@ -288,6 +288,33 @@ describe('KindeSDK', () => {
             handleDeepLinkSpy.mockRestore();
         });
 
+        test.each([null, undefined])(
+            'normalizes an absent initial URL (%s) without starting login',
+            async (initialUrl) => {
+                Linking.getInitialURL.mockResolvedValueOnce(initialUrl);
+                const handleDeepLinkSpy = jest.spyOn(
+                    KindeSDK.prototype,
+                    'handleDeepLink'
+                );
+                const loginSpy = jest.spyOn(KindeSDK.prototype, 'login');
+
+                new KindeSDK(
+                    configuration.issuer,
+                    configuration.redirectUri,
+                    configuration.clientId,
+                    configuration.logoutRedirectUri
+                );
+
+                await flushPromises();
+
+                expect(handleDeepLinkSpy).toHaveBeenCalledWith(null);
+                expect(loginSpy).not.toHaveBeenCalled();
+
+                handleDeepLinkSpy.mockRestore();
+                loginSpy.mockRestore();
+            }
+        );
+
         test('calls handleDeepLink with the URL when `Linking.addEventListener` is called', async () => {
             const handleDeepLinkSpy = jest.spyOn(
                 KindeSDK.prototype,

@@ -11,10 +11,9 @@
 #import <XCTest/XCTest.h>
 
 #import <React/RCTLog.h>
-#import <React/RCTRootView.h>
 
 #define TIMEOUT_SECONDS 600
-#define TEXT_TO_LOOK_FOR @"Welcome to React Native!"
+#define TEXT_TO_LOOK_FOR @"KindeSDKRN sample"
 
 @interface KindeSDKRNTests : XCTestCase
 
@@ -35,7 +34,7 @@
   return NO;
 }
 
-- (void)testRendersWelcomeScreen
+- (void)testRendersKindeSample
 {
   UIViewController *vc = [[[RCTSharedApplication() delegate] window] rootViewController];
   NSDate *date = [NSDate dateWithTimeIntervalSinceNow:TIMEOUT_SECONDS];

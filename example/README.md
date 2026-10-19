@@ -1,194 +1,134 @@
 # Example App (KindeSDKRN)
 
-This folder contains a sample React Native app that demonstrates the Kinde SDK with `react-native-app-auth`.
+The iOS and Android samples use React Native 0.87.1, React 19.2.3 and the New
+Architecture. These development requirements do not raise the published SDK's
+React Native peer requirement of >= 0.73.
 
----
+## Breaking changes and compatibility
 
-## Quick Start (TL;DR)
+This is a breaking upgrade for contributors running the native samples:
 
-```bash
-# From repo root
-npm install
+- React Native 0.73 / React 18 development tooling moves to React Native
+  0.87.1 / React 19.2.3.
+- The samples require the New Architecture, iOS 15.1+ and Android API 24+.
+  Their Node, Xcode, Gradle and Android SDK requirements also change below.
+- Obsolete manually linked React Native Xcode projects and tvOS targets are
+  removed. Only the iOS app and its existing test target are migrated here.
 
-# iOS native dependencies
-cd example/ios
-rbenv install 3.2.2          # if not already installed
-rbenv local 3.2.2
-gem install bundler -v 2.4.10
-bundle _2.4.10_ install
-bundle exec pod install
-cd ../..
+These are **not intended SDK consumer breaking changes**: the published runtime
+dependencies, peer ranges and public method signatures remain unchanged. The six
+new CLI/Babel/Jest/Metro packages are development-only. Consumers do not have to
+upgrade their applications to React 19 or React Native 0.87 to use this SDK.
+The only SDK source adjustment normalizes an absent initial URL with `url ?? null`,
+retaining support for the older `string | null` result.
 
-# Run
-npx react-native start       # Terminal 1: Metro bundler
-# Then build & run from Xcode (see below)
-```
+Keeping the SDK compatible is different from proving compatibility. CI includes
+a separate React Native 0.73 / React 18 build and test project; that job and native
+authentication/device checks must pass before compatibility is considered verified.
 
----
+The newer sample platform floors and New Architecture requirement cannot be
+retained at their old values while using supported React Native 0.87.1 settings.
+If older development environments must remain supported, use a separate legacy
+sample/tooling lane or defer this tooling upgrade; do not lower native requirements
+or disable the New Architecture to force a build.
 
 ## Prerequisites
 
-| Tool              | Notes                                                                |
-| ----------------- | -------------------------------------------------------------------- |
-| **Node.js + npm** | LTS recommended                                                      |
-| **Xcode**         | With iOS Simulator and Command Line Tools                            |
-| **rbenv**         | Recommended for managing Ruby versions (avoids system Ruby on macOS) |
+| Tool                    | Required version                                        |
+| ----------------------- | ------------------------------------------------------- |
+| Node.js                 | 22.13+ on Node 22, 24.3+ on Node 24, or 26+             |
+| Ruby                    | 3.4.10, pinned in `ios/.ruby-version` and `ios/Gemfile` |
+| CocoaPods               | Install through the pinned Bundler environment          |
+| Xcode                   | 16.1+ with an iOS 15.1+ simulator                       |
+| JDK                     | 17+ compatible with Gradle 9.4.1                        |
+| Android SDK             | Platform 37, Build Tools 37.0.0 and NDK 27.1.12297006   |
+| Android device/emulator | API 24+                                                 |
 
-### Install rbenv (one-time)
-
-```bash
-brew install rbenv ruby-build
-```
-
-Then add rbenv to your shell. Run `rbenv init` and follow the instructions, then **restart your terminal**.
-
----
-
-## Step-by-Step Setup
-
-### 1. Clone and install JS dependencies
+Use the repository's declared Yarn version to install JavaScript dependencies:
 
 ```bash
-git clone https://github.com/kinde-oss/kinde-react-native-sdk-0-7x.git
-cd kinde-react-native-sdk-0-7x
-npm install
+# From the repository root
+yarn install
 ```
 
-### 2. Set up Ruby and CocoaPods
+## Configure Kinde
 
-This project pins Ruby 3.2.2 and Bundler 2.4.10 for reproducible builds.
+Update `kindeConfig` in [App.tsx](./App.tsx) with your Kinde domain and public
+application client ID. Register these URLs in the Kinde dashboard:
 
-```bash
-cd example/ios
+- Callback: `com.kindesdkrn://kinde_callback`
+- Logout redirect: `com.kindesdkrn://kinde_logout`
 
-# Install and use the pinned Ruby version
-rbenv install 3.2.2    # skip if already installed
-rbenv local 3.2.2
+Do not put a client secret in the mobile app. On iOS the app delegate forwards
+OAuth callbacks to AppAuth before handling other links through React Native.
+On Android AppAuth receives the login callback and the main activity handles the
+distinct logout URL through React Native Linking.
 
-# Verify you're using rbenv Ruby (NOT system Ruby)
-which ruby       # should show ~/.rbenv/shims/ruby
-ruby -v          # should show 3.2.2
+## iOS
 
-# Install Bundler and gems
-gem install bundler -v 2.4.10
-bundle _2.4.10_ install
-
-# Install CocoaPods dependencies
-bundle exec pod install
-```
-
-> ⚠️ **Always run CocoaPods through Bundler:** `bundle exec pod install`
-
-### 3. Configure Kinde credentials
-
-Edit `example/App.tsx` and update the `kindeConfig` object with your Kinde application details:
-
-```typescript
-const kindeConfig = {
-    domain: 'https://YOUR_SUBDOMAIN.kinde.com',
-    clientId: 'YOUR_CLIENT_ID',
-    redirectUri: 'com.kindesdkrn://kinde_callback',
-    logoutRedirectUri: 'com.kindesdkrn://kinde_logout',
-    scope: 'openid profile email offline'
-};
-```
-
-In your [Kinde dashboard](https://app.kinde.com), add these **Allowed callback URLs**:
-
-- `com.kindesdkrn://kinde_callback`
-- `com.kindesdkrn://kinde_logout`
-
-### 4. Start Metro bundler
-
-From the **repo root**:
-
-```bash
-npx react-native start
-```
-
-Keep this terminal running.
-
-### 5. Build and run in Xcode
-
-1. Open **`example/ios/KindeSDKRN.xcworkspace`** in Xcode (NOT `.xcodeproj`)
-2. Select scheme: **KindeSDKRN**
-3. Select a simulator (e.g., iPhone 15 Pro)
-4. Press **⌘R** to build and run
-
----
-
-## Troubleshooting
-
-### "Library 'AppAuth' not found" or linker errors
-
-You likely opened `.xcodeproj` instead of `.xcworkspace`, or Pods are out of sync.
-
-```bash
-# Close Xcode first, then:
-rm -rf ~/Library/Developer/Xcode/DerivedData/KindeSDKRN-*
-cd example/ios
-bundle exec pod install
-# Reopen example/ios/KindeSDKRN.xcworkspace
-```
-
-### Using wrong Ruby (system Ruby errors)
-
-If you see errors referencing `/System/Library/Frameworks/Ruby.framework/` or `/usr/bin/bundle`:
-
-```bash
-# Check which Ruby you're using
-which ruby && ruby -v
-which bundle && bundle -v
-
-# Should show rbenv paths like:
-# /Users/you/.rbenv/shims/ruby
-# ruby 3.2.2
-```
-
-If not, ensure rbenv is initialized in your shell config (`.zshrc` or `.bashrc`).
-
-### Metro bundler issues
-
-If you see errors like `"Property 'require' doesn't exist"` or module resolution errors:
-
-```bash
-# Reset Metro cache
-npx react-native start --reset-cache
-```
-
-### Pods won't install / boost download fails
-
-Some networks block `boostorg.jfrog.io`. The Podfile includes a workaround that uses `archives.boost.io` instead. If you still have issues:
+With the pinned Ruby selected:
 
 ```bash
 cd example/ios
-bundle exec pod cache clean --all
+bundle install
 bundle exec pod install
+cd ../..
+npm start
 ```
 
----
+In another terminal, run `npm run ios`, or open
+`example/ios/KindeSDKRN.xcworkspace` in Xcode and run the `KindeSDKRN` scheme.
+Always open the workspace, not the project, so CocoaPods dependencies are linked.
 
-## Project Structure
+The sample targets iOS 15.1+ and uses the React Native factory and dependency
+provider. Autolinking supplies AppAuth, Keychain and random values; no legacy
+Flipper, Boost download override or manual React Native library linking is used.
 
-```text
-example/
-├── App.tsx                  # Sample app UI (configure Kinde here)
-├── index.js                 # Entry point
-├── ios/
-│   ├── Podfile              # CocoaPods dependencies
-│   ├── Gemfile              # Ruby/Bundler dependencies
-│   ├── .ruby-version        # Pinned Ruby version (3.2.2)
-│   ├── KindeSDKRN/
-│   │   ├── AppDelegate.h/m  # iOS app delegate (handles OAuth redirects)
-│   │   └── Info.plist       # URL schemes for deep linking
-│   └── KindeSDKRN.xcworkspace  # ← Open this in Xcode
+## Android
+
+Set `ANDROID_HOME` to your Android SDK directory and make the JDK available via
+`JAVA_HOME`. Start Metro with `npm start`, then run `npm run android` from another
+terminal with an emulator or device connected.
+
+To compile without launching a device:
+
+```bash
+cd android
+./gradlew :app:assembleDebug
 ```
 
----
+The sample targets Android API 36, compiles against API 37 and requires API 24+.
+Both platforms use `example/index.js` as their JavaScript entry point.
 
-## Notes
+## Validation
 
-- **Always open `.xcworkspace`**, not `.xcodeproj`. The workspace includes CocoaPods-managed dependencies.
-- **`example/ios/Pods/`** is generated by CocoaPods and git-ignored.
-- **Deployment target** is iOS 12.4+.
-- The example uses `react-native-app-auth` for OAuth, which requires the `RNAppAuthAuthorizationFlowManager` protocol in `AppDelegate`.
+From the repository root:
+
+```bash
+npm run build
+npm test -- --runInBand
+npm run lint
+```
+
+Native builds and a real authentication smoke test are also required before
+claiming the migration is regression-free. Exercise login, registration, secure
+token persistence, token refresh, invitation links and logout on both platforms.
+Unit tests mock authentication and storage and do not replace those device checks.
+
+If CocoaPods or Gradle fails, fix the reported prerequisite or dependency issue;
+do not disable the New Architecture or patch installed dependencies to hide it.
+
+## Migration references
+
+- [Official React Native 0.87.1 template](https://github.com/react-native-community/template/tree/0.87.1/template):
+  the development dependency versions, Babel/Metro presets, Android toolchain
+  and native application entry points follow this versioned reference.
+- [Android Gradle properties](https://github.com/react-native-community/template/blob/0.87.1/template/android/gradle.properties):
+  the `android.builtInKotlin=false` and `android.newDsl=false` settings are
+  upstream AGP 9 compatibility settings, not local dependency patches.
+- [iOS factory startup](https://github.com/react-native-community/template/blob/0.87.1/template/ios/HelloWorld/AppDelegate.swift)
+  and [Podfile](https://github.com/react-native-community/template/blob/0.87.1/template/ios/Podfile):
+  this sample retains Objective-C++ to preserve its existing AppAuth callbacks,
+  and adjusts the application root to the repository's nested iOS layout.
+- [React Native 0.82: New Architecture only](https://reactnative.dev/blog/2025/10/08/react-native-0.82):
+  disabling the New Architecture is not a supported migration path.

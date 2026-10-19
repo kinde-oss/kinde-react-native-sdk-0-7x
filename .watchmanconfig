@@ -1,3 +1,3 @@
 {
-    "ignore_dirs": [".git", "node_modules", null]
+    "ignore_dirs": [".git", ".jest", ".tsupgrader", "dist"]
 }

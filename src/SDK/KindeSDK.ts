@@ -106,7 +106,7 @@ class KindeSDK extends runtime.BaseAPI {
 
         Linking.getInitialURL()
             .then((url) => {
-                this.handleDeepLink(url);
+                this.handleDeepLink(url ?? null);
             })
             .catch((error) => {
                 console.warn('Failed to get initial URL:', error);

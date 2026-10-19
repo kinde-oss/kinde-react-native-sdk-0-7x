@@ -24,6 +24,11 @@ You can also use the React Native 0.7x starter kit [here](https://github.com/ki
 
 To run the included example app (CocoaPods/Bundler/Ruby setup and run steps), see: [example/README.md](example/README.md)
 
+The SDK's React Native peer requirement remains **>= 0.73**. Development tooling
+and the native examples use **React Native 0.87.1 / React 19.2.3** and the New
+Architecture, requiring **iOS 15.1+ / Android API 24+** for the examples.
+Consumers must also meet the platform requirements of their own React Native version.
+
 ### Initial set up
 
 1. Clone the repository to your machine:

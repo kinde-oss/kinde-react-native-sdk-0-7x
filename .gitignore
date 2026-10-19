@@ -76,6 +76,8 @@ project.xcworkspace
 build/
 .idea
 .gradle
+.cxx/
+.kotlin/
 local.properties
 *.iml
 
@@ -111,3 +113,4 @@ buck-out/
 
 # Serena mcp
 .serena
+.tsupgrader/
